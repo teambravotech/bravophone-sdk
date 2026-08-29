@@ -5,7 +5,7 @@ softphone aparece como uma janela flutuante arrastável, com as mesmas
 funcionalidades da extensão de navegador.
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone"></script>
+<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.1"></script>
 <script>
   Bravophone.init({ token: 'TOKEN_DO_USUARIO' })
 </script>

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Validação: iframe srcdoc + assets no CDN</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+         max-width: 860px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 21px; margin: 0 0 4px; }
+  .sub { color: #6b7280; font-size: 13.5px; margin: 0 0 8px; }
+  .why { background: #eff6ff; border-left: 3px solid #2563eb; padding: 12px 14px;
+         border-radius: 0 8px 8px 0; font-size: 13.5px; margin: 0 0 26px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em;
+       color: #6b7280; margin: 28px 0 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #e5e7eb;
+           vertical-align: top; }
+  th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; }
+  td.r { width: 96px; font-weight: 600; white-space: nowrap; }
+  .pass { color: #15803d; } .fail { color: #b91c1c; } .wait { color: #a16207; }
+  td.d { color: #6b7280; font-size: 12.5px; }
+  button { padding: 10px 18px; font-size: 15px; font-weight: 600; cursor: pointer;
+           border: 1px solid #2563eb; border-radius: 8px; background: #2563eb; color: #fff; }
+  button:hover { background: #1d4ed8; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .verdict { margin-top: 26px; padding: 16px 18px; border-radius: 10px;
+             border: 1px solid #e5e7eb; font-size: 14.5px; display: none; }
+  .verdict.show { display: block; }
+  .verdict.good { background: #f0fdf4; border-color: #86efac; }
+  .verdict.bad  { background: #fef2f2; border-color: #fca5a5; }
+  code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 12.5px;
+         font-family: ui-monospace, SFMono-Regular, monospace; }
+  iframe { display: none; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #111827; color: #e5e7eb; }
+    th, td { border-color: #374151; }
+    .why { background: #172554; }
+    code { background: #1f2937; }
+    .verdict { border-color: #374151; }
+    .verdict.good { background: #052e16; border-color: #166534; }
+    .verdict.bad  { background: #450a0a; border-color: #991b1b; }
+  }
+</style>
+</head>
+<body>
+
+<h1>iframe <code>srcdoc</code> + assets no CDN</h1>
+<p class="sub">Valida o modelo self-hosted: iframe na origem do cliente, conteúdo vindo do jsDelivr.</p>
+
+<p class="why">
+  <b>O que decide o modelo:</b> se <code>getUserMedia</code> funciona dentro de um iframe
+  <code>srcdoc</code>. Sem microfone não há webphone, e todo o resto do plano cai junto.
+  Os demais testes cobrem o que o <code>chrome-shim</code> e o bundle precisam para rodar lá dentro.
+</p>
+
+<p><button id="run">Executar validação</button>
+<span id="note" style="font-size:13px;color:#6b7280;margin-left:10px"></span></p>
+
+<h2>Resultados</h2>
+<table>
+  <thead><tr><th>Resultado</th><th>Verificação</th><th>Detalhe</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+
+<div class="verdict" id="verdict"></div>
+
+<script>
+// .umd.js, não .cjs: os CDNs servem .cjs como application/node e o
+// navegador recusa esse MIME num <script src> por causa do nosniff.
+const CDN = 'https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.1.1/dist/bravophone.umd.js'
+const CDN_FONT = 'https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.0.8/files/roboto-latin-400-normal.woff2'
+
+const rows = document.getElementById('rows')
+const results = []
+
+function add(name, detail) {
+  const tr = document.createElement('tr')
+  tr.innerHTML = `<td class="r wait">…</td><td>${name}</td><td class="d">${detail || ''}</td>`
+  rows.appendChild(tr)
+  return {
+    pass(d) { tr.children[0].className = 'r pass'; tr.children[0].textContent = 'passa'
+              if (d) tr.children[2].textContent = d; results.push({ name, ok: true }) },
+    fail(d) { tr.children[0].className = 'r fail'; tr.children[0].textContent = 'falha'
+              if (d) tr.children[2].textContent = d; results.push({ name, ok: false }) },
+  }
+}
+
+/** Cria um iframe srcdoc e resolve com o resultado que ele reportar. */
+function probe(html, { allow } = {}) {
+  return new Promise((resolve) => {
+    const id = 'p' + Math.random().toString(36).slice(2)
+    const frame = document.createElement('iframe')
+    if (allow) frame.setAttribute('allow', allow)
+    const onMsg = (ev) => {
+      if (ev.source !== frame.contentWindow || !ev.data || ev.data.id !== id) return
+      window.removeEventListener('message', onMsg)
+      frame.remove()
+      resolve(ev.data)
+    }
+    window.addEventListener('message', onMsg)
+    frame.srcdoc = `<!doctype html><meta charset="utf-8"><body><script>
+      const ID = ${JSON.stringify(id)};
+      const send = (r) => parent.postMessage(Object.assign({ id: ID }, r), '*');
+      window.onerror = (m) => send({ ok: false, detail: 'erro: ' + m });
+      (async () => { try { ${html} } catch (e) { send({ ok: false, detail: String(e.name + ': ' + e.message) }) } })();
+    <\/script></body>`
+    document.body.appendChild(frame)
+    setTimeout(() => {
+      window.removeEventListener('message', onMsg)
+      frame.remove()
+      resolve({ ok: false, detail: 'timeout (15s)' })
+    }, 15000)
+  })
+}
+
+document.getElementById('run').onclick = async function () {
+  this.disabled = true
+  rows.innerHTML = ''
+  results.length = 0
+  document.getElementById('verdict').className = 'verdict'
+  document.getElementById('note').textContent = 'permita o microfone quando o navegador pedir…'
+
+  // 0. Contexto seguro — pré-requisito de getUserMedia.
+  const t0 = add('Contexto seguro (HTTPS ou localhost)', '')
+  isSecureContext ? t0.pass(location.origin) : t0.fail('getUserMedia não existe fora de secure context')
+
+  // 1. O teste que decide tudo: microfone dentro do srcdoc, sem allow=.
+  const t1 = add('getUserMedia em srcdoc <b>sem</b> allow=', 'same-origin deveria herdar a permissão do topo')
+  const r1 = await probe(`
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const tracks = s.getAudioTracks().length;
+    s.getTracks().forEach(t => t.stop());
+    send({ ok: tracks > 0, detail: tracks + ' faixa(s) de áudio' });
+  `)
+  r1.ok ? t1.pass(r1.detail) : t1.fail(r1.detail)
+
+  // 2. O mesmo, com allow= explícito — é o que o widget já faz hoje.
+  const t2 = add('getUserMedia em srcdoc <b>com</b> allow="microphone"', '')
+  const r2 = await probe(`
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const tracks = s.getAudioTracks().length;
+    s.getTracks().forEach(t => t.stop());
+    send({ ok: tracks > 0, detail: tracks + ' faixa(s) de áudio' });
+  `, { allow: 'microphone' })
+  r2.ok ? t2.pass(r2.detail) : t2.fail(r2.detail)
+
+  // 3. Enumerar dispositivos — o webphone lista microfones nas configurações.
+  const t3 = add('enumerateDevices vê os dispositivos', 'sem isso a tela de áudio fica vazia')
+  const r3 = await probe(`
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    s.getTracks().forEach(t => t.stop());
+    const d = await navigator.mediaDevices.enumerateDevices();
+    const ins = d.filter(x => x.kind === 'audioinput');
+    send({ ok: ins.length > 0 && !!ins[0].label, detail: ins.length + ' entrada(s), rótulos ' + (ins[0] && ins[0].label ? 'visíveis' : 'ocultos') });
+  `, { allow: 'microphone' })
+  r3.ok ? t3.pass(r3.detail) : t3.fail(r3.detail)
+
+  // 4. Script do CDN dentro do srcdoc — é como o popup.js chegaria.
+  const t4 = add('carregar script do jsDelivr dentro do srcdoc', 'o bundle viria daqui')
+  const r4 = await probe(`
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = ${JSON.stringify(CDN)};
+      s.onload = res; s.onerror = () => rej(new Error('bloqueado'));
+      document.head.appendChild(s);
+    });
+    send({ ok: typeof Bravophone === 'object', detail: 'global exposta: ' + (typeof Bravophone) });
+  `)
+  r4.ok ? t4.pass(r4.detail) : t4.fail(r4.detail)
+
+  // 5. Fonte por URL absoluta do CDN — é o que o public_path reescrito produz.
+  const t5 = add('@font-face com URL absoluta do CDN', 'foi aqui que a Audiowide quebrou antes')
+  const r5 = await probe(`
+    const f = new FontFace('ProbeFont', 'url(' + ${JSON.stringify(CDN_FONT)} + ')');
+    await f.load();
+    document.fonts.add(f);
+    send({ ok: document.fonts.check('12px ProbeFont'), detail: 'carregada e disponível' });
+  `)
+  r5.ok ? t5.pass(r5.detail) : t5.fail(r5.detail)
+
+  // 6. localStorage — o chrome-shim inteiro depende dele.
+  const t6 = add('localStorage dentro do srcdoc', 'o shim usa para chrome.storage')
+  const r6 = await probe(`
+    localStorage.setItem('bp.probe', '1');
+    const v = localStorage.getItem('bp.probe');
+    localStorage.removeItem('bp.probe');
+    send({ ok: v === '1', detail: 'leitura e escrita ok' });
+  `)
+  r6.ok ? t6.pass(r6.detail) : t6.fail(r6.detail)
+
+  // 7. baseURI — chrome.runtime.getURL resolve a partir dele.
+  const t7 = add('document.baseURI resolve', 'usado por chrome.runtime.getURL')
+  const r7 = await probe(`
+    send({ ok: !!document.baseURI && document.baseURI !== 'about:srcdoc', detail: document.baseURI });
+  `)
+  r7.ok ? t7.pass(r7.detail) : t7.fail('baseURI = ' + r7.detail + ' — getURL precisaria de base explícita')
+
+  // 8. postMessage com origem verificável — a ponte valida ev.origin.
+  const t8 = add('postMessage com origem verificável', 'a ponte rejeita origem que não bate')
+  const r8 = await probe(`
+    send({ ok: origin === ${JSON.stringify(location.origin)}, detail: 'origin = ' + origin });
+  `)
+  r8.ok ? t8.pass(r8.detail) : t8.fail(r8.detail)
+
+  // 9. WebRTC — o transporte real do áudio.
+  const t9 = add('RTCPeerConnection disponível', 'o SIP roda sobre isto')
+  const r9 = await probe(`
+    const pc = new RTCPeerConnection();
+    const o = await pc.createOffer({ offerToReceiveAudio: true });
+    pc.close();
+    send({ ok: /m=audio/.test(o.sdp), detail: 'SDP de áudio gerado' });
+  `, { allow: 'microphone' })
+  r9.ok ? t9.pass(r9.detail) : t9.fail(r9.detail)
+
+  // Veredito
+  document.getElementById('note').textContent = ''
+  const mic = results.find(r => r.name.includes('sem</b> allow'))
+  const micAllow = results.find(r => r.name.includes('com</b> allow'))
+  const failed = results.filter(r => !r.ok)
+  const v = document.getElementById('verdict')
+
+  if ((mic && mic.ok) || (micAllow && micAllow.ok)) {
+    v.className = 'verdict show good'
+    v.innerHTML = '<b>O modelo é viável.</b> O microfone funciona em <code>srcdoc</code>' +
+      (mic && mic.ok ? ' mesmo sem <code>allow=</code> — a permissão é herdada do topo, como esperado num contexto same-origin.'
+                     : ', desde que o iframe declare <code>allow="microphone"</code>.') +
+      (failed.length ? '<br><br>Pendências: ' + failed.map(f => f.name.replace(/<[^>]+>/g, '')).join('; ') + '.' : '') +
+      '<br><br>Atenção: o site do integrador precisa estar em HTTPS e conceder o microfone uma vez — ' +
+      'a permissão é por origem <b>dele</b>, não sua.'
+  } else {
+    v.className = 'verdict show bad'
+    v.innerHTML = '<b>O modelo não se sustenta.</b> Sem microfone dentro do <code>srcdoc</code> ' +
+      'não há webphone. O caminho seria manter o iframe navegando para um domínio próprio.'
+  }
+  this.disabled = false
+}
+</script>
+</body>
+</html>
