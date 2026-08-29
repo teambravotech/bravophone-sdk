@@ -1,21 +1,43 @@
 # @bravophone/webphone
 
-Webphone BRAVOPHONE embutível em qualquer página web. Uma linha de `<script>` e o
-softphone aparece como uma janela flutuante arrastável, com as mesmas
-funcionalidades da extensão de navegador.
+Webphone BRAVOPHONE embutível em qualquer página web: o softphone aparece como
+uma janela flutuante arrastável, com as mesmas funcionalidades da extensão de
+navegador.
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.1"></script>
 <script>
-  Bravophone.init({ token: 'TOKEN_DO_USUARIO' })
+// Resolve a versão publicada e carrega o bundle dela.
+// Duas etapas de propósito: a consulta tem 5 min de cache, o bundle é
+// immutable. Assim as correções chegam em minutos, sem revalidar 30 kB a cada
+// visita — e sem os 7 dias de cache que a URL sem versão carrega.
+fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved')
+  .then((r) => r.json())
+  .then(({ version }) => {
+    const s = document.createElement('script')
+    s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
+    s.onload = () => Bravophone.init({ token: TOKEN_DO_USUARIO, mode: 'srcdoc' })
+    s.onerror = () => console.error('Bravophone: falha ao carregar do CDN')
+    document.head.appendChild(s)
+  })
 </script>
+```
+
+Cole **inline**, não como arquivo externo — um arquivo externo teria o mesmo
+problema de cache que este trecho existe para evitar.
+Detalhes em [Manter o cliente sempre atualizado](#manter-o-cliente-sempre-atualizado).
+
+Para travar numa versão (integração de terceiros, ou build com SRI):
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2.1/dist/bravophone.umd.js"></script>
+<script>Bravophone.init({ token: TOKEN_DO_USUARIO, mode: 'srcdoc' })</script>
 ```
 
 ```js
 // ou via npm
 import Bravophone from '@bravophone/webphone'
 
-Bravophone.init({ token, position: 'bottom-right' })
+Bravophone.init({ token, mode: 'srcdoc' })
 Bravophone.on('call:incoming', ({ number }) => console.log('ligação de', number))
 await Bravophone.call('11987654321')
 ```

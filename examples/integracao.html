@@ -8,10 +8,25 @@
 <!-- ===================================================================
      1. CARREGAR O SDK
 
-     Uma linha. Fixe a minor (@0.2) para que um major novo não mude o
-     comportamento da sua página sem aviso.
+     Duas etapas de propósito: a consulta de versão tem 5 min de cache e o
+     bundle é immutable. Assim as correções chegam em minutos, sem revalidar
+     30 kB a cada visita.
+
+     A URL sem versão (/npm/@bravophone/webphone) parece mais simples, mas
+     vem com 7 dias de cache NO NAVEGADOR do usuário: uma publicação não
+     alcança quem já carregou.
      =================================================================== -->
-<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2"></script>
+<script>
+fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved')
+  .then((r) => r.json())
+  .then(({ version }) => {
+    const s = document.createElement('script')
+    s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
+    s.onload = iniciar
+    s.onerror = () => console.error('Bravophone: falha ao carregar do CDN')
+    document.head.appendChild(s)
+  })
+</script>
 
 <style>
   body { font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -51,6 +66,7 @@
 <p id="estado">Iniciando…</p>
 
 <script>
+function iniciar() {
 // =====================================================================
 // 2. INICIAR
 //
@@ -127,6 +143,7 @@ Bravophone.on('call:ended', ({ number }) => {
 
 // Durante o desenvolvimento, veja tudo o que acontece:
 // Bravophone.on('*', (e) => console.log('[bravophone]', e.event, e.payload))
+}
 </script>
 </body>
 </html>

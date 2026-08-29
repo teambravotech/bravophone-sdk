@@ -5,19 +5,51 @@ referência completa: **não invente métodos, eventos ou opções que não este
 aqui.** Se algo que o usuário pede não existir na API, diga isso em vez de
 supor um nome plausível.
 
-Pacote: `@bravophone/webphone` · versão atual `0.2.0` · só browser, sem
+Pacote: `@bravophone/webphone` · versão atual `0.2.1` · só browser, sem
 dependências.
 
 ---
 
-## Integração mínima que funciona
+## Integração recomendada — use esta
+
+Cole **inline** no HTML. Não sugira um arquivo `.js` externo para este trecho:
+ele existe justamente para escapar do cache, e um arquivo externo o traria de
+volta.
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2"></script>
 <script>
-  Bravophone.init({ token: TOKEN_DO_USUARIO, mode: 'srcdoc' })
+fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved')
+  .then((r) => r.json())
+  .then(({ version }) => {
+    const s = document.createElement('script')
+    s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
+    s.onload = () => Bravophone.init({ token: TOKEN_DO_USUARIO, mode: 'srcdoc' })
+    s.onerror = () => console.error('Bravophone: falha ao carregar do CDN')
+    document.head.appendChild(s)
+  })
 </script>
 ```
+
+**Por que duas etapas, e não uma `<script src>` direta.** O CDN entrega a URL
+sem versão (`/npm/@bravophone/webphone`) e as faixas (`@0.2`) com
+`max-age=604800` — sete dias de cache **no navegador do usuário**. Uma
+publicação não alcança quem já carregou, e purgar o CDN não adianta: o cache
+está na máquina dele. Já a URL com versão exata é `immutable`.
+
+Resolver a versão primeiro junta o melhor dos dois: a consulta de metadados tem
+`max-age=300` (cinco minutos), e o bundle vem de um cache que nunca precisa ser
+revalidado.
+
+**Só sugira uma `<script src>` com versão fixa** quando o usuário pedir
+explicitamente para travar a versão — integração de terceiros, política de
+build, ou SRI. Nesse caso:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2.1/dist/bravophone.umd.js"></script>
+```
+
+Nunca sugira `/npm/@bravophone/webphone` sem versão: é o pior dos dois mundos —
+cache longo e sem garantia de estar atualizado.
 
 Via npm: `import Bravophone from '@bravophone/webphone'` (default export; não
 há named export).
@@ -26,7 +58,7 @@ O UMD expõe `window.Bravophone`. **Não** use `Bravophone.default`.
 
 ---
 
-## As sete coisas que mais dão errado
+## As oito coisas que mais dão errado
 
 1. **A página precisa ser HTTPS ou localhost.** `getUserMedia` não existe fora
    de contexto seguro; o webphone carrega e nunca captura áudio. O SDK avisa no
@@ -43,7 +75,10 @@ O UMD expõe `window.Bravophone`. **Não** use `Bravophone.default`.
    ignora as novas opções. Para trocar de configuração: `destroy()` e `init()`.
 6. **Não existe `call:failed`.** Uma chamada que não completa chega como
    `call:ended`.
-7. **O widget vive em Shadow DOM.** `document.querySelector('.bp-root')` não
+7. **Nunca use a URL do CDN sem versão.** `/npm/@bravophone/webphone` vem com
+   sete dias de cache no navegador; correções não chegam ao usuário. Use o
+   trecho de duas etapas acima.
+8. **O widget vive em Shadow DOM.** `document.querySelector('.bp-root')` não
    encontra nada, e o CSS da página não alcança o widget. Não tente estilizar
    por fora: use as opções de `init()`.
 
@@ -170,24 +205,32 @@ document.querySelectorAll('[data-fone]').forEach((el) => {
 })
 ```
 
-## Padrão: carregar por JavaScript
+## Padrão: carregar por JavaScript (SPA, Tag Manager)
 
-Quando não há como escrever a `<script>` no HTML (SPA, Tag Manager):
+Mesma estratégia de duas etapas, agora idempotente e com tratamento de erro:
 
 ```js
 function carregarBravophone() {
   if (window.Bravophone) return Promise.resolve(window.Bravophone)
   if (window.__bpCarregando) return window.__bpCarregando
-  window.__bpCarregando = new Promise((resolve, reject) => {
-    const s = document.createElement('script')
-    s.src = 'https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2'
-    s.async = true
-    s.onload = () => window.Bravophone
-      ? resolve(window.Bravophone)
-      : reject(new Error('script carregou mas a API não apareceu'))
-    s.onerror = () => reject(new Error('falha ao carregar (rede, bloqueador ou CSP)'))
-    document.head.appendChild(s)
-  })
+
+  window.__bpCarregando = fetch(
+    'https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved'
+  )
+    .then((r) => r.json())
+    .then(({ version }) => new Promise((ok, erro) => {
+      const s = document.createElement('script')
+      s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
+      s.async = true
+      s.onload = () => window.Bravophone
+        ? ok(window.Bravophone)
+        : erro(new Error('carregou mas a API não apareceu'))
+      s.onerror = () => erro(new Error('falha ao carregar (rede, bloqueador ou CSP)'))
+      document.head.appendChild(s)
+    }))
+
+  // Falha não pode ficar cacheada: a próxima chamada deve poder tentar de novo.
+  window.__bpCarregando.catch(() => { window.__bpCarregando = null })
   return window.__bpCarregando
 }
 ```

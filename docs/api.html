@@ -183,16 +183,42 @@ td { color: var(--ink-2); }
   O softphone BRAVOPHONE como uma janela flutuante em qualquer página web.
   Uma linha de <code>&lt;script&gt;</code>, sem dependências, 30&nbsp;kB.
 </p>
-<p class="versao">versão 0.2.0 · apenas navegador</p>
+<p class="versao">versão 0.2.1 · apenas navegador</p>
 
 <h2 id="instalar">Instalação</h2>
 
-<p>Por CDN — fixe a <em>minor</em> para que um major novo não altere sua página sem aviso:</p>
+<p>Cole este trecho <strong>inline</strong> na página. Ele resolve a versão publicada e carrega o bundle dela:</p>
 
-<pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2"&gt;&lt;/script&gt;
-&lt;script&gt;
-  <span class="c-key">Bravophone</span>.init({ token: TOKEN_DO_USUARIO, mode: <span class="c-str">'srcdoc'</span> })
+<pre><code>&lt;script&gt;
+fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved'</span>)
+  .then((r) =&gt; r.json())
+  .then(({ version }) =&gt; {
+    <span class="c-key">const</span> s = document.createElement(<span class="c-str">'script'</span>)
+    s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
+    s.onload  = () =&gt; Bravophone.init({ token: TOKEN_DO_USUARIO, mode: <span class="c-str">'srcdoc'</span> })
+    s.onerror = () =&gt; console.error(<span class="c-str">'Bravophone: falha ao carregar do CDN'</span>)
+    document.head.appendChild(s)
+  })
 &lt;/script&gt;</code></pre>
+
+<div class="nota atencao">
+  <p><span class="rot">Não use a URL sem versão.</span></p>
+  <p>
+    <code>/npm/@bravophone/webphone</code> parece mais simples, mas o CDN a
+    entrega com <code>max-age=604800</code> — <strong>sete dias de cache no
+    navegador do usuário</strong>. Uma correção publicada não alcança quem já
+    carregou, e purgar o CDN não ajuda: o cache está na máquina dele.
+  </p>
+  <p>
+    Resolver a versão primeiro custa uma requisição de ~1&nbsp;kB (com 5 min de
+    cache) e faz o bundle vir de uma URL <code>immutable</code> — atualização
+    rápida e cache perfeito ao mesmo tempo.
+  </p>
+</div>
+
+<p>Para travar numa versão — integração de terceiros, política de build ou SRI:</p>
+
+<pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2.1/dist/bravophone.umd.js"&gt;&lt;/script&gt;</code></pre>
 
 <p>Por npm:</p>
 
