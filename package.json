@@ -17,7 +17,8 @@
     "./style.css": "./dist/bravophone.css"
   },
   "files": [
-    "dist",
+    "dist/*.js",
+    "dist/*.cjs",
     "types",
     "README.md"
   ],

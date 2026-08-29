@@ -16,7 +16,10 @@ export default defineConfig({
     // precisaria escrever Bravophone.default.call(...) — armadilha silenciosa.
     rollupOptions: { output: { exports: 'default' } },
     minify: 'esbuild',
-    sourcemap: true,
+    // 'hidden' gera os .map (úteis para depurar aqui) mas NÃO escreve o
+    // comentário sourceMappingURL nos bundles. Como os .map ficam fora do
+    // tarball, a referência viraria um 404 no devtools do integrador.
+    sourcemap: 'hidden',
     target: 'es2018',
   },
 })
