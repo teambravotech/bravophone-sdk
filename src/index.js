@@ -90,7 +90,8 @@ const Bravophone = {
     listeners.clear()
   },
 
-  version: '0.1.0',
+  // Substituída em build time pelo valor do package.json (ver vite.config.js).
+  version: __BP_VERSION__,
 }
 
 // Uso via <script> puro: window.Bravophone.

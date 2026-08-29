@@ -342,7 +342,8 @@
 
   // Sinaliza pronto assim que o DOM do app existir.
   function announceReady() {
-    post({ type: 'ready', payload: { version: '0.1.0' } })
+    // Identifica o HOST, não o SDK: são artefatos com ciclos separados.
+    post({ type: 'ready', payload: { host: 'bravophone-embed' } })
   }
   if (document.readyState === 'complete') announceReady()
   else window.addEventListener('load', announceReady)

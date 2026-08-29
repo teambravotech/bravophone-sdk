@@ -64,6 +64,20 @@ console.log('\npacote — o que vai no tarball:')
   check('sem "type":"module" (senão o UMD volta a ser .cjs)', pkg.type === undefined, pkg.type)
 }
 
+console.log('\npacote — a versão é única:')
+{
+  // A versão estava escrita à mão no src/index.js e ficou para trás no bump
+  // para 0.1.1: o pacote publicado se identificava como 0.1.0. Agora ela é
+  // injetada do package.json em build time, e este teste guarda isso.
+  const umd = await readFile(join(ROOT, pkg.unpkg.replace(/^\.\//, '')), 'utf8')
+  const m = umd.match(/version:\s*"([0-9][^"]*)"/)
+  check('o bundle reporta a versão do package.json',
+    !!m && m[1] === pkg.version, m ? `bundle=${m[1]} package=${pkg.version}` : 'não encontrada')
+
+  const src = await readFile(join(ROOT, 'src/index.js'), 'utf8')
+  check('nenhuma versão escrita à mão no fonte', !/version:\s*'[0-9]/.test(src))
+}
+
 console.log('\npacote — metadados de publicação:')
 {
   check('escopo @bravophone', pkg.name.startsWith('@bravophone/'), pkg.name)
