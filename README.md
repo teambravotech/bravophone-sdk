@@ -263,7 +263,7 @@ exercitar o postMessage cross-origin de verdade, incluindo a validação de orig
 
 | Porta | Papel | Serve |
 |---|---|---|
-| 5173 | site do cliente | `examples/test.html`, carrega `dist/bravophone.umd.cjs` por `<script>`, como no CDN |
+| 5173 | site do cliente | `examples/test.html`, carrega `dist/bravophone.umd.js` por `<script>`, como no CDN |
 | 5174 | host do webphone | `host/mock.html`, com os headers `frame-ancestors` e `Permissions-Policy` de produção |
 
 ### Testar sem SIP nem backend

@@ -51,6 +51,9 @@ export function createWidget(options) {
     // 'hosted'  — o iframe navega para hostUrl (padrão)
     // 'srcdoc'  — o iframe roda na origem do site e busca o conteúdo no CDN
     mode = 'hosted',
+    // Base dos assets no modo srcdoc. Padrão: o CDN travado nesta versão.
+    // Serve para desenvolvimento (localhost) e para quem espelhar os assets.
+    hostBase,
     version,
     emit,
   } = options
@@ -103,7 +106,7 @@ export function createWidget(options) {
   })
   if (srcdoc) {
     frameEl.setAttribute('srcdoc',
-      buildSrcdoc({ version, parentOrigin: origin, token }))
+      buildSrcdoc({ version, parentOrigin: origin, token, base: hostBase }))
   } else {
     frameEl.setAttribute('src',
       buildSrc(new URL(hostUrl), { token, embed: '1', parent: location.origin }))

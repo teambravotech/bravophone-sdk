@@ -93,6 +93,10 @@ await serve({
     // Mesmos headers que a produção precisa emitir.
     'content-security-policy': "frame-ancestors 'self' http://localhost:5173;",
     'permissions-policy': 'microphone=(self)',
+    // No modo srcdoc o documento tem a origem do site (5173) e busca os
+    // assets aqui (5174): fontes cross-origin exigem CORS, e sem ele o
+    // @font-face falha em silêncio. O jsDelivr envia o mesmo header.
+    'access-control-allow-origin': '*',
   },
 })
 

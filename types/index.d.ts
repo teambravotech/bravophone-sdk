@@ -16,6 +16,13 @@ export interface BravophoneOptions {
    *   webphone carrega e não registra.
    */
   mode?: 'hosted' | 'srcdoc'
+  /**
+   * Só com `mode: 'srcdoc'`. De onde vêm os arquivos do webphone.
+   * Padrão: o CDN travado na versão deste pacote. Precisa terminar com `/`.
+   * Use para desenvolvimento (`http://localhost:5174/`) ou para servir os
+   * assets de um espelho próprio.
+   */
+  hostBase?: string
   /** Token de sessão do usuário, emitido pelo backend do integrador. */
   token?: string
   /** Canto inicial da janela. Padrão: 'bottom-right'. */

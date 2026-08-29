@@ -6,7 +6,7 @@
 // <script src> — ou seja, a linha de integração do README não funcionava, e
 // nada em Node acusava isso.
 
-import { readFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -77,7 +77,11 @@ console.log('\nhost — o que o modo srcdoc carrega:')
   for (const rel of precisa) check(`existe ${rel}`, existsSync(join(ROOT, rel)))
 }
 
-console.log('\nhost — a URL do CDN aponta para ESTA versão:')
+// --strict: usado no prepublishOnly. Sem ele, um host apontando para
+// localhost é modo de desenvolvimento e não deve reprovar a suíte.
+const STRICT = process.argv.includes('--strict')
+
+console.log('\nhost — para onde os assets apontam:')
 {
   // Se o public path apontar para outra versão, o pacote publicado busca
   // assets que podem não existir — e o sintoma só aparece em runtime, no
@@ -88,10 +92,17 @@ console.log('\nhost — a URL do CDN aponta para ESTA versão:')
   const m = bundle.match(/n\.p="([^"]*)"/)
   const esperado = `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/host/`
   check('public path presente no bundle', !!m, m && m[1])
-  check('public path bate com nome e versão do pacote',
-    !!m && m[1] === esperado, m ? `\n      achado:   ${m[1]}\n      esperado: ${esperado}` : '')
-  check('public path é https absoluto (srcdoc não resolve relativo)',
-    !!m && m[1].startsWith('https://'), m && m[1])
+
+  const dev = !!m && /^http:\/\/localhost/.test(m[1])
+  if (dev && !STRICT) {
+    console.log(`  · host em modo desenvolvimento (${m[1]})`)
+    console.log('    rode `npm run prepare:host` antes de publicar')
+  } else {
+    check('public path bate com nome e versão do pacote',
+      !!m && m[1] === esperado, m ? `\n      achado:   ${m[1]}\n      esperado: ${esperado}` : '')
+    check('public path é https absoluto (srcdoc não resolve relativo)',
+      !!m && m[1].startsWith('https://'), m && m[1])
+  }
 }
 
 console.log('\npacote — a versão é única:')
@@ -106,6 +117,22 @@ console.log('\npacote — a versão é única:')
 
   const src = await readFile(join(ROOT, 'src/index.js'), 'utf8')
   check('nenhuma versão escrita à mão no fonte', !/version:\s*'[0-9]/.test(src))
+}
+
+console.log('\nexemplos — as referências locais existem:')
+{
+  // Ao trocar o UMD de .cjs para .js, os exemplos continuaram pedindo o nome
+  // antigo e quebravam com 404. Nada em Node acusava — só o console do
+  // navegador. Este teste resolve cada src/href relativo contra o disco.
+  const dir = join(ROOT, 'examples')
+  for (const nome of (await readdir(dir)).filter((f) => f.endsWith('.html'))) {
+    const html = await readFile(join(dir, nome), 'utf8')
+    const refs = [...html.matchAll(/(?:src|href)="(\.\.?\/[^"]+)"/g)].map((m) => m[1])
+    for (const ref of refs) {
+      const alvo = resolve(dir, ref.split(/[?#]/)[0])
+      check(`${nome} → ${ref}`, existsSync(alvo))
+    }
+  }
 }
 
 console.log('\npacote — metadados de publicação:')

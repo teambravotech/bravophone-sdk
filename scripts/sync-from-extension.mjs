@@ -181,7 +181,9 @@ async function rewritePublicPath(publicPath) {
   // `--public-path=/embed/` chega como `C:/Program Files/Git/embed/`. Gravar
   // isso no bundle quebraria todos os assets em produção, e silenciosamente.
   const caminhoWeb = /^\/[\w\-./]*$/.test(publicPath)
-  const urlCompleta = /^https:\/\/[\w.-]+\/[\w\-./@]*$/.test(publicPath)
+  // http só para localhost: em produção o webphone exige contexto seguro.
+  const urlCompleta = /^https:\/\/[\w.-]+\/[\w\-./@]*$/.test(publicPath) ||
+    /^http:\/\/localhost(:\d+)?\/[\w\-./@]*$/.test(publicPath)
   if (!caminhoWeb && !urlCompleta) {
     console.error(`✗ public path inválido: "${publicPath}"`)
     console.error('  Use um caminho web (/embed/) ou uma URL https completa.')

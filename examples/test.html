@@ -45,7 +45,7 @@
 
 <!-- Exatamente como o integrador faria via CDN:
      <script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone"></script> -->
-<script src="../dist/bravophone.umd.cjs"></script>
+<script src="../dist/bravophone.umd.js"></script>
 
 <fieldset>
   <legend>Qual webphone carregar</legend>
@@ -159,6 +159,9 @@
     // No modo srcdoc o iframe não navega: o conteúdo vem do CDN, e o hostUrl
     // é ignorado.
     mode: useSrcdoc ? 'srcdoc' : 'hosted',
+    // Em desenvolvimento os assets vêm do host local, não do CDN — assim dá
+    // para testar o modo srcdoc sem publicar uma versão antes.
+    hostBase: useSrcdoc ? 'http://localhost:5174/' : undefined,
     hostUrl: 'http://localhost:5174/' + (useMock ? 'mock.html' : 'index.html'),
     token: document.getElementById('token').value,
     position: 'bottom-right',
