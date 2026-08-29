@@ -135,6 +135,21 @@ export const WIDGET_CSS = `
 /* Uma janela docada nao se redimensiona pelas bordas coladas na viewport. */
 .bp-root.bp-docked { border-radius: 0; }
 
+/* ---- destaque: "a janela esta aqui" ----
+   Disparado ao clicar na aba com o webphone ja aberto. Um halo que cresce e
+   some, no lugar de um shake: em interface, tremer significa erro ou acao
+   negada (senha errada), e aqui nada deu errado. */
+@keyframes bp-attention {
+  0%   { box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 0 0 0 rgba(124,108,245,.55); }
+  55%  { box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 0 0 12px rgba(124,108,245,0); }
+  100% { box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 0 0 0 rgba(124,108,245,0); }
+}
+.bp-root.bp-attention { animation: bp-attention .85s ease-out 2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-root.bp-attention { animation: none; outline: 2px solid #7c6cf5; outline-offset: 2px; }
+}
+
 /* ---- previa de encaixe (docking) ----
    Fantasma que mostra onde a janela vai parar antes de soltar. */
 .bp-preview {
@@ -152,7 +167,9 @@ export const WIDGET_CSS = `
 .bp-launcher {
   position: fixed;
   top: 50%;
-  z-index: 2147482999;
+  /* Acima da janela (2147483000): a aba nunca some, e uma janela docada na
+     mesma borda a esconderia. */
+  z-index: 2147483001;
   display: flex;
   align-items: center;
   gap: 0;

@@ -330,6 +330,15 @@ um major não quebre a página deles.
 
 ---
 
+## Documentação
+
+| Documento | Para quem |
+|---|---|
+| [`docs/api.html`](docs/api.html) | Referência completa da API — abra no navegador |
+| [`docs/PARA-IA.md`](docs/PARA-IA.md) | Contexto para um agente de IA implementar a integração |
+| [`examples/integracao.html`](examples/integracao.html) | Exemplo pronto para colar numa página |
+| [`examples/loader.js`](examples/loader.js) | Carregar o SDK por JavaScript (SPA, Tag Manager) |
+
 ## API
 
 ### `Bravophone.init(options)`
@@ -502,8 +511,12 @@ const off = Bravophone.on('call:incoming', (call) => { /* … */ })
 off()  // remove o listener
 ```
 
-`ready` · `state` · `call:incoming` · `call:answered` · `call:ended` · `call:failed` ·
-`open` · `close` · `error`. Use `'*'` para receber todos como `{ event, payload }`.
+`ready` · `state` · `call:dialing` · `call:incoming` · `call:answered` ·
+`call:ended` · `resize` · `reveal` · `open` · `close` · `error`.
+Use `'*'` para receber todos como `{ event, payload }`.
+
+Uma chamada que não completa chega como `call:ended`: o estado do bundle não
+distingue desligar de falhar.
 
 ---
 

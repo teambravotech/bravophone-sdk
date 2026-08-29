@@ -43,6 +43,12 @@ export function buildSrcdoc({ version, parentOrigin, token, base }) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Webphone BRAVOPHONE</title>
+<!-- CRÍTICO no modo srcdoc. O bundle referencia as imagens por caminho
+     RELATIVO (src="images/answer.png"), fora do public_path. Sem <base>,
+     elas resolvem contra a página do integrador — o documento herda o
+     baseURI do pai — e somem todas: logo, atender, desligar, mudo, hold,
+     transferir. Com <base>, resolvem contra o CDN. -->
+<base href="${b}">
 <link rel="stylesheet" href="${b}css/dark-theme.css">
 <link rel="stylesheet" href="${b}styles/theme-fixes.css">
 <style>

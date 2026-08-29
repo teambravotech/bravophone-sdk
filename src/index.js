@@ -60,6 +60,8 @@ const Bravophone = {
   show()   { requireInstance().show() },
   hide()   { requireInstance().hide() },
   toggle() { requireInstance().toggle() },
+  /** Abre a janela; se já estiver aberta, traz para a vista e destaca. */
+  reveal() { requireInstance().reveal() },
   minimize(force) { requireInstance().minimize(force) },
   move(x, y)        { requireInstance().move(x, y) },
   resize(w, h)      { requireInstance().resize(w, h) },

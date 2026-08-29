@@ -53,7 +53,7 @@
   <button id="useMock">mock (sem SIP)</button>
   <button id="useSrcdoc">srcdoc (assets do CDN)</button>
   <label style="margin-left:12px;font-size:13px">
-    <input type="checkbox" id="showBar"> mostrar barra de título
+    <input type="checkbox" id="showBar" checked> mostrar barra de título
   </label>
   <p class="hint">
     O <b>real</b> carrega os 932 KB do <code>popup.js</code> intactos — é o seu UI.
@@ -152,7 +152,7 @@
   const params = new URLSearchParams(location.search)
   const useMock = params.get('host') === 'mock'
   const useSrcdoc = params.get('host') === 'srcdoc'
-  const withBar = params.get('bar') === '1'
+  const withBar = params.get('bar') !== '0'
   document.getElementById('showBar').checked = withBar
 
   Bravophone.init({
@@ -167,7 +167,7 @@
     position: 'bottom-right',
     open: true,
     // 'none' (padrão) preserva 100% da UI: sem barra, arrasta pelo próprio app.
-    frame: withBar ? 'bar' : 'none',
+    frame: withBar ? undefined : 'none',
   })
   log((useSrcdoc ? 'srcdoc (CDN)' : useMock ? 'mock' : 'popup.js REAL') + ' · moldura: ' + (withBar ? 'barra' : 'nenhuma'))
 

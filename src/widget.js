@@ -38,9 +38,10 @@ export function createWidget(options) {
     open = false,
     launcher = true,
     title = 'BRAVOPHONE',
-    // 'none' preserva 100% da UI do webphone: sem barra de titulo, o arraste
-    // vem de dentro do iframe. 'bar' adiciona a barra com titulo e controles.
-    frame = 'none',
+    // 'bar' por padrão: título, indicador de estado e controles visíveis.
+    // 'none' preserva 100% da UI do webphone — sem barra, o arraste vem de
+    // dentro do iframe e só um botão de fechar aparece no hover.
+    frame = 'bar',
     // O que arrastar até a borda de cima faz. 'max' é o gesto universal;
     // troque para 'top-half' se preferir as metades verticais no topo.
     dockTop = 'max',
@@ -154,7 +155,9 @@ export function createWidget(options) {
     h('span', { class: 'bp-badge' }),
   ])
   launcherBtn.dataset.state = 'connecting'
-  launcherBtn.hidden = !launcher || open
+  // Fica visível mesmo com a janela aberta: é o ponto fixo de acesso, e some
+  // só quando o integrador desliga o launcher.
+  launcherBtn.hidden = !launcher
 
   shadow.append(preview, root, launcherBtn)
   document.body.appendChild(mount)
@@ -167,7 +170,9 @@ export function createWidget(options) {
     el: launcherBtn,
     side: launcherState.side,
     y: clampY(launcherState.y, 48),
-    onOpen: () => api.show(),
+    // A aba nunca some, então o clique tem dois papéis: abrir quando fechada,
+    // e localizar quando já aberta.
+    onOpen: () => api.reveal(),
   })
 
   const drag = makeDraggable({
@@ -201,7 +206,10 @@ export function createWidget(options) {
         launcherBtn.dataset.state = 'ringing'
       }
       if (name === 'call:answered') launcherBtn.dataset.state = 'incall'
-      if (name === 'call:ended' || name === 'call:failed') {
+      // Uma chamada que falha chega como 'call:ended': o estado do bundle não
+      // distingue desligar de não completar, e inventar a diferença aqui seria
+      // adivinhação.
+      if (name === 'call:ended') {
         delete launcherBtn.dataset.badge
         launcherBtn.dataset.state = 'ready'
       }
@@ -216,21 +224,50 @@ export function createWidget(options) {
   })
 
   let minimized = false
+  let revealTimer = null
 
   const api = {
     el: mount,
     bridge,
     show() {
       root.hidden = false
-      launcherBtn.hidden = true
       emit('open')
     },
     hide() {
       root.hidden = true
-      if (launcher) launcherBtn.hidden = false
       emit('close')
     },
     toggle() { root.hidden ? api.show() : api.hide() },
+
+    /**
+     * Traz a janela para a atenção do usuário.
+     * Fechada: abre. Aberta e fora de vista: traz de volta. Aberta e
+     * visível: um halo curto, para o olho encontrá-la.
+     */
+    reveal() {
+      if (root.hidden) { api.show(); return }
+
+      // Arrastada para fora da viewport, ou a janela do navegador encolheu.
+      const g = drag.geometry
+      const foraDeVista =
+        g.x + g.width < 40 || g.x > window.innerWidth - 40 ||
+        g.y > window.innerHeight - 40
+      if (foraDeVista) {
+        drag.set({
+          x: Math.round((window.innerWidth - g.width) / 2),
+          y: Math.round((window.innerHeight - g.height) / 2),
+        })
+      }
+
+      root.classList.remove('bp-attention')
+      // Reinicia a animação: sem forçar o reflow, remover e readicionar na
+      // mesma tarefa não reinicia nada.
+      void root.offsetWidth
+      root.classList.add('bp-attention')
+      clearTimeout(revealTimer)
+      revealTimer = setTimeout(() => root.classList.remove('bp-attention'), 1800)
+      emit('reveal')
+    },
     get isOpen() { return !root.hidden },
     minimize(force) {
       // Sem barra de título não há onde clicar para restaurar, então
@@ -247,6 +284,7 @@ export function createWidget(options) {
     setLauncherIcon(name) { icon.innerHTML = ICONS[name] || ICONS[DEFAULT_ICON] },
     get geometry() { return drag.geometry },
     destroy() {
+      clearTimeout(revealTimer)
       bridge.destroy()
       drag.destroy()
       launcherCtl.destroy()

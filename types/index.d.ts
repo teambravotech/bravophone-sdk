@@ -43,6 +43,11 @@ export interface BravophoneOptions {
    *   arraste acontece pelo próprio app. Só um botão de fechar no hover.
    * - `'bar'`: adiciona barra com título, indicador de estado, minimizar e fechar.
    */
+  /**
+   * Moldura da janela. Padrão: `'bar'` — título, estado e controles visíveis.
+   * `'none'` preserva 100% da UI do webphone: sem barra, o arraste acontece
+   * pelo próprio app e só um botão de fechar aparece no hover.
+   */
   frame?: 'none' | 'bar'
   /**
    * O que arrastar até a borda superior faz. Padrão: `'max'` (gesto universal).
@@ -99,10 +104,10 @@ export interface BravophoneEvents {
   'call:dialing': CallInfo
   'call:answered': CallInfo
   'call:ended': CallInfo
-  'call:failed': CallInfo & { reason?: string }
   resize: { width: number; height: number; dock: Exclude<DockZone, 'float'> | null }
   open: undefined
   close: undefined
+  reveal: undefined
   error: { message: string }
 }
 
@@ -111,8 +116,11 @@ export interface BravophoneInstance {
   show(): void
   hide(): void
   toggle(): void
+  /** Abre a janela; se já estiver aberta, traz para a vista e destaca. */
+  reveal(): void
   readonly isOpen: boolean
   minimize(force?: boolean): void
+  reveal(): void
   move(x: number, y: number): void
   resize(width: number, height: number): void
   dock(zone: DockZone): void

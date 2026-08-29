@@ -1,0 +1,486 @@
+<title>Bravophone Webphone SDK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+
+<style>
+/* Documentação de referência: consultada, não lida do começo ao fim.
+   Ground claro por padrão — texto técnico longo se lê melhor assim. */
+:root {
+  --paper:    #fbfbfd;
+  --card:     #ffffff;
+  --line:     #e6e6ee;
+  --line-2:   #f0f0f6;
+  --ink:      #16161d;
+  --ink-2:    #4a4a5a;
+  --ink-3:    #7c7c90;
+  --violet:   #5b4bd6;
+  --violet-2: #f0edfe;
+  --code-bg:  #f4f3fa;
+  --ok:       #0f7b52;
+  --warn:     #9a5b00;
+  --warn-bg:  #fdf6e7;
+  --bad:      #b3261e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:    #0f0f16;
+    --card:     #16161f;
+    --line:     #272733;
+    --line-2:   #1e1e29;
+    --ink:      #e9e9f2;
+    --ink-2:    #b0b0c2;
+    --ink-3:    #7f7f95;
+    --violet:   #a394ff;
+    --violet-2: #1e1a35;
+    --code-bg:  #1b1b26;
+    --ok:       #4ade80;
+    --warn:     #fbbf24;
+    --warn-bg:  #2a2210;
+    --bad:      #f87171;
+  }
+}
+:root[data-theme="dark"] {
+  --paper:    #0f0f16;
+  --card:     #16161f;
+  --line:     #272733;
+  --line-2:   #1e1e29;
+  --ink:      #e9e9f2;
+  --ink-2:    #b0b0c2;
+  --ink-3:    #7f7f95;
+  --violet:   #a394ff;
+  --violet-2: #1e1a35;
+  --code-bg:  #1b1b26;
+  --ok:       #4ade80;
+  --warn:     #fbbf24;
+  --warn-bg:  #2a2210;
+  --bad:      #f87171;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 16px/1.65 "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+code, pre, .mono { font-family: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* ---------- estrutura ---------- */
+.wrap { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 44px;
+        max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+@media (max-width: 860px) { .wrap { grid-template-columns: minmax(0,1fr); gap: 0; } }
+
+nav {
+  position: sticky; top: 0; align-self: start;
+  max-height: 100vh; overflow-y: auto;
+  padding: 34px 0 40px;
+}
+@media (max-width: 860px) { nav { position: static; max-height: none; padding-bottom: 8px; } }
+nav .grupo { font-size: 11px; font-weight: 700; text-transform: uppercase;
+             letter-spacing: .09em; color: var(--ink-3); margin: 20px 0 7px; }
+nav .grupo:first-child { margin-top: 0; }
+nav a { display: block; padding: 3px 0; font-size: 14px; color: var(--ink-2);
+        text-decoration: none; border-left: 2px solid transparent; padding-left: 10px;
+        margin-left: -12px; }
+nav a:hover { color: var(--violet); border-left-color: var(--violet); }
+
+main { padding: 34px 0 110px; min-width: 0; }
+
+/* ---------- tipografia ---------- */
+.eyebrow { font: 600 12px/1 "Source Code Pro", monospace; letter-spacing: .1em;
+           text-transform: uppercase; color: var(--violet); }
+h1 { font-size: 34px; font-weight: 700; letter-spacing: -.02em; margin: 10px 0 6px;
+     text-wrap: balance; }
+.lede { font-size: 18px; color: var(--ink-2); margin: 0 0 6px; max-width: 62ch; }
+.versao { font: 500 13px "Source Code Pro", monospace; color: var(--ink-3); }
+
+h2 { font-size: 22px; font-weight: 700; letter-spacing: -.01em;
+     margin: 52px 0 4px; padding-top: 14px; border-top: 1px solid var(--line);
+     scroll-margin-top: 20px; }
+h3 { font-size: 16px; font-weight: 600; margin: 30px 0 6px; scroll-margin-top: 20px; }
+h3 code { font-size: 15px; background: none; padding: 0; color: var(--violet); }
+p { max-width: 68ch; margin: 10px 0; }
+p, li { color: var(--ink-2); }
+h1 + .lede { color: var(--ink-2); }
+strong { color: var(--ink); font-weight: 600; }
+ul { max-width: 68ch; padding-left: 20px; }
+li { margin: 5px 0; }
+
+/* ---------- código ---------- */
+code { background: var(--code-bg); padding: 1.5px 5px; border-radius: 4px;
+       font-size: 13.5px; color: var(--ink); }
+pre { background: var(--code-bg); border: 1px solid var(--line);
+      border-radius: 9px; padding: 14px 16px; overflow-x: auto;
+      font-size: 13.5px; line-height: 1.7; margin: 14px 0; }
+pre code { background: none; padding: 0; font-size: inherit; }
+.c-key { color: var(--violet); font-weight: 500; }
+.c-str { color: var(--ok); }
+.c-com { color: var(--ink-3); font-style: italic; }
+
+/* ---------- tabelas ---------- */
+.tw { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line);
+      border-radius: 9px; background: var(--card); }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--line-2);
+         vertical-align: top; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+     color: var(--ink-3); font-weight: 700; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { white-space: nowrap; }
+td code { font-size: 13px; }
+td { color: var(--ink-2); }
+
+/* ---------- avisos ---------- */
+.nota {
+  border-left: 3px solid var(--violet); background: var(--violet-2);
+  padding: 12px 15px; border-radius: 0 8px 8px 0; margin: 16px 0;
+  font-size: 14.5px; max-width: 68ch;
+}
+.nota.atencao { border-left-color: var(--warn); background: var(--warn-bg); }
+.nota p { margin: 0; max-width: none; }
+.nota p + p { margin-top: 7px; }
+.nota .rot { font-weight: 700; color: var(--ink); }
+
+/* ---------- pílulas ---------- */
+.pill { display: inline-block; font: 600 10.5px/1 "Source Code Pro", monospace;
+        text-transform: uppercase; letter-spacing: .05em;
+        padding: 3px 7px; border-radius: 5px; vertical-align: 1px; }
+.pill-async { background: var(--violet-2); color: var(--violet); }
+.pill-sync { background: var(--line-2); color: var(--ink-3); }
+</style>
+
+<div class="wrap">
+
+<nav>
+  <div class="grupo">Começar</div>
+  <a href="#instalar">Instalação</a>
+  <a href="#init">init()</a>
+  <a href="#modos">Modos de carga</a>
+
+  <div class="grupo">Referência</div>
+  <a href="#telefonia">Telefonia</a>
+  <a href="#janela">Janela</a>
+  <a href="#aba">Aba lateral</a>
+  <a href="#eventos">Eventos</a>
+  <a href="#props">Propriedades</a>
+
+  <div class="grupo">Prática</div>
+  <a href="#receitas">Receitas</a>
+  <a href="#requisitos">Requisitos</a>
+  <a href="#diagnostico">Diagnóstico</a>
+</nav>
+
+<main>
+
+<span class="eyebrow">@bravophone/webphone</span>
+<h1>Webphone SDK</h1>
+<p class="lede">
+  O softphone BRAVOPHONE como uma janela flutuante em qualquer página web.
+  Uma linha de <code>&lt;script&gt;</code>, sem dependências, 30&nbsp;kB.
+</p>
+<p class="versao">versão 0.2.0 · apenas navegador</p>
+
+<h2 id="instalar">Instalação</h2>
+
+<p>Por CDN — fixe a <em>minor</em> para que um major novo não altere sua página sem aviso:</p>
+
+<pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2"&gt;&lt;/script&gt;
+&lt;script&gt;
+  <span class="c-key">Bravophone</span>.init({ token: TOKEN_DO_USUARIO, mode: <span class="c-str">'srcdoc'</span> })
+&lt;/script&gt;</code></pre>
+
+<p>Por npm:</p>
+
+<pre><code>npm install @bravophone/webphone</code></pre>
+<pre><code><span class="c-key">import</span> Bravophone <span class="c-key">from</span> <span class="c-str">'@bravophone/webphone'</span>   <span class="c-com">// default export</span></code></pre>
+
+<p>O build UMD expõe <code>window.Bravophone</code>. Não use <code>Bravophone.default</code>.</p>
+
+<h2 id="init">init(options)</h2>
+
+<p>
+  Chame uma vez, com o <code>&lt;body&gt;</code> já existindo. É idempotente:
+  chamar de novo devolve a mesma instância e <strong>ignora as novas opções</strong>.
+  Para trocar de configuração, use <code>destroy()</code> antes.
+</p>
+
+<div class="tw"><table>
+<thead><tr><th>Opção</th><th>Tipo</th><th>Padrão</th><th>Descrição</th></tr></thead>
+<tbody>
+<tr><td><code>token</code></td><td><code>string</code></td><td>—</td><td>Sessão do usuário, emitida pelo <strong>seu</strong> backend</td></tr>
+<tr><td><code>mode</code></td><td><code>'hosted' | 'srcdoc'</code></td><td><code>'hosted'</code></td><td>Como o webphone é carregado</td></tr>
+<tr><td><code>hostBase</code></td><td><code>string</code></td><td>CDN da versão</td><td>Só em <code>srcdoc</code>. Deve terminar em <code>/</code></td></tr>
+<tr><td><code>hostUrl</code></td><td><code>string</code></td><td>domínio oficial</td><td>Só em <code>hosted</code></td></tr>
+<tr><td><code>frame</code></td><td><code>'bar' | 'none'</code></td><td><code>'bar'</code></td><td><code>'none'</code> preserva 100% da UI do webphone</td></tr>
+<tr><td><code>position</code></td><td><code>'bottom-right' | …</code></td><td><code>'bottom-right'</code></td><td>Canto em que a janela nasce</td></tr>
+<tr><td><code>open</code></td><td><code>boolean</code></td><td><code>false</code></td><td><code>false</code> começa recolhido na aba</td></tr>
+<tr><td><code>launcher</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Exibir a aba lateral</td></tr>
+<tr><td><code>launcherSide</code></td><td><code>'right' | 'left'</code></td><td><code>'right'</code></td><td>Borda em que a aba cola</td></tr>
+<tr><td><code>launcherIcon</code></td><td><code>string</code></td><td><code>'phone-waves'</code></td><td><code>waveform</code>, <code>headset</code>, <code>chat-phone</code></td></tr>
+<tr><td><code>dockTop</code></td><td><code>'max' | 'top-half'</code></td><td><code>'max'</code></td><td>O que arrastar até o topo faz</td></tr>
+<tr><td><code>title</code></td><td><code>string</code></td><td><code>'BRAVOPHONE'</code></td><td>Só com <code>frame: 'bar'</code></td></tr>
+</tbody>
+</table></div>
+
+<div class="nota atencao">
+  <p><span class="rot">O token nunca é literal no HTML.</span></p>
+  <p>
+    Ele identifica um usuário. Gere no seu backend e injete no template, como
+    faria com qualquer credencial de sessão.
+  </p>
+</div>
+
+<h2 id="modos">Modos de carga</h2>
+
+<p>O webphone roda dentro de um iframe. O que muda entre os modos é <em>de onde</em> esse iframe vem — e a consequência é bem concreta.</p>
+
+<div class="tw"><table>
+<thead><tr><th></th><th><code>srcdoc</code></th><th><code>hosted</code></th></tr></thead>
+<tbody>
+<tr><td>Origem do iframe</td><td>a do seu site</td><td>domínio do Bravophone</td></tr>
+<tr><td>De onde vêm os arquivos</td><td>CDN, travados na versão</td><td>do host</td></tr>
+<tr><td>Iframe de terceiro</td><td>não</td><td>sim — sujeito a bloqueadores</td></tr>
+<tr><td>Login entre domínios</td><td>storage próprio</td><td>particionado por site</td></tr>
+<tr><td>CORS dos backends</td><td><strong>sua origem precisa estar liberada</strong></td><td>origem fixa, nada a fazer</td></tr>
+</tbody>
+</table></div>
+
+<div class="nota">
+  <p><span class="rot">Como escolher.</span></p>
+  <p>
+    Use <code>'srcdoc'</code> se a origem do seu site já estiver na allowlist de
+    CORS do Bravophone. Se não estiver, o webphone aparece na tela e não
+    registra — o navegador descarta as respostas. Nesse caso use
+    <code>'hosted'</code> até a liberação.
+  </p>
+</div>
+
+<h2 id="telefonia">Telefonia</h2>
+
+<p>Todos devolvem <code>Promise</code>. <span class="pill pill-async">async</span></p>
+
+<div class="tw"><table>
+<thead><tr><th>Método</th><th>Retorno</th><th>Notas</th></tr></thead>
+<tbody>
+<tr><td><code>call(number, meta?)</code></td><td><code>{ok, phone}</code></td><td>Número em formato livre</td></tr>
+<tr><td><code>answer()</code></td><td><code>{ok}</code></td><td>Atende a chamada entrante</td></tr>
+<tr><td><code>hangup()</code></td><td><code>{ok}</code></td><td>Encerra a chamada atual</td></tr>
+<tr><td><code>mute()</code></td><td><code>{ok}</code></td><td><strong>Alterna</strong> — não aceita argumento</td></tr>
+<tr><td><code>hold()</code></td><td><code>{ok}</code></td><td><strong>Alterna</strong> — não aceita argumento</td></tr>
+<tr><td><code>sendDTMF(tone)</code></td><td><code>{ok}</code></td><td>Um caractere: <code>0-9</code>, <code>*</code>, <code>#</code></td></tr>
+<tr><td><code>transfer(to)</code></td><td><code>{ok}</code></td><td>Ramal ou número de destino</td></tr>
+<tr><td><code>getStatus()</code></td><td><code>PhoneStatus</code></td><td>Estado atual da linha</td></tr>
+<tr><td><code>setAuth(token)</code></td><td><code>{ok}</code></td><td>Troca a sessão sem recarregar</td></tr>
+<tr><td><code>logout()</code></td><td><code>{ok}</code></td><td>Encerra a sessão</td></tr>
+</tbody>
+</table></div>
+
+<h3><code>call(number, meta?)</code></h3>
+
+<p>
+  O número aceita formato livre — <code>11987654321</code>,
+  <code>(11) 98765-4321</code>, com ou sem DDI. A normalização é a mesma da
+  extensão de navegador.
+</p>
+
+<pre><code><span class="c-key">await</span> Bravophone.call(<span class="c-str">'11987654321'</span>, {
+  name:    <span class="c-str">'Ana Ribeiro'</span>,      <span class="c-com">// aparece no card da chamada</span>
+  crm:     <span class="c-str">'Acme Ltda'</span>,        <span class="c-com">// rótulo da origem</span>
+  photo:   <span class="c-str">'https://…/foto.jpg'</span>, <span class="c-com">// avatar</span>
+  gateway: <span class="c-str">'meu-sistema'</span>,      <span class="c-com">// identifica a origem nos relatórios</span>
+  dealId:  <span class="c-str">'4821'</span>,
+})</code></pre>
+
+<div class="nota atencao">
+  <p><span class="rot">Trate a rejeição.</span></p>
+  <p>
+    <code>call()</code> rejeita com número inválido ou webphone ainda
+    carregando. Sem <code>.catch()</code>, o clique do usuário falha em
+    silêncio e ninguém descobre por quê.
+  </p>
+</div>
+
+<p><code>PhoneStatus</code> devolve <code>{ ready, inCall, phase, number, incoming, muted, held }</code>.</p>
+
+<h2 id="janela">Janela</h2>
+
+<div class="tw"><table>
+<thead><tr><th>Método</th><th>Descrição</th></tr></thead>
+<tbody>
+<tr><td><code>show()</code> / <code>hide()</code> / <code>toggle()</code></td><td>Exibe, recolhe, alterna</td></tr>
+<tr><td><code>reveal()</code></td><td>Abre; se já aberta, traz para a vista e destaca</td></tr>
+<tr><td><code>minimize(force?)</code></td><td>Colapsa para a barra de título</td></tr>
+<tr><td><code>move(x, y)</code></td><td>Posiciona em coordenadas da viewport</td></tr>
+<tr><td><code>resize(w, h)</code></td><td>Redimensiona, respeitando os limites</td></tr>
+<tr><td><code>dock(zone)</code></td><td>Encaixa numa região — ver abaixo</td></tr>
+<tr><td><code>destroy()</code></td><td>Remove o widget e desfaz os listeners</td></tr>
+</tbody>
+</table></div>
+
+<p>
+  Zonas de <code>dock()</code>: <code>'left'</code>, <code>'right'</code>,
+  <code>'left-half'</code>, <code>'right-half'</code>, <code>'top-half'</code>,
+  <code>'bottom-half'</code>, <code>'top'</code>, <code>'bottom'</code>,
+  <code>'max'</code>, <code>'float'</code>.
+</p>
+
+<p>
+  O usuário também encaixa arrastando: as laterais dão altura cheia, a borda de
+  baixo dá a metade inferior, o topo maximiza e os cantos dão meia tela. Uma
+  prévia mostra o resultado antes de soltar. Redimensionando, chegar perto de
+  uma borda completa até ela.
+</p>
+
+<h2 id="aba">Aba lateral</h2>
+
+<p>
+  Com a janela recolhida, o webphone fica acessível por uma aba colada na
+  lateral — arrastável na vertical, com a posição preservada entre sessões. O
+  ícone reflete o estado da linha e pulsa em vermelho numa chamada entrante.
+</p>
+
+<div class="tw"><table>
+<thead><tr><th>Método</th><th>Descrição</th></tr></thead>
+<tbody>
+<tr><td><code>setLauncherSide('right' | 'left')</code></td><td>Troca a borda em runtime</td></tr>
+<tr><td><code>setLauncherIcon(nome)</code></td><td><code>phone-waves</code>, <code>waveform</code>, <code>headset</code>, <code>chat-phone</code></td></tr>
+</tbody>
+</table></div>
+
+<h2 id="eventos">Eventos</h2>
+
+<pre><code><span class="c-key">const</span> off = Bravophone.on(<span class="c-str">'call:incoming'</span>, ({ number }) =&gt; {
+  <span class="c-com">// abrir a ficha do cliente, por exemplo</span>
+})
+
+off()   <span class="c-com">// remove o listener — útil ao desmontar um componente</span></code></pre>
+
+<div class="tw"><table>
+<thead><tr><th>Evento</th><th>Payload</th><th>Quando</th></tr></thead>
+<tbody>
+<tr><td><code>ready</code></td><td><code>{ version }</code></td><td>A ponte conectou; aceita comandos</td></tr>
+<tr><td><code>state</code></td><td><code>{ state }</code></td><td><code>connecting</code>, <code>ready</code>, <code>error</code></td></tr>
+<tr><td><code>call:dialing</code></td><td><code>CallInfo</code></td><td>Chamada de saída iniciada</td></tr>
+<tr><td><code>call:incoming</code></td><td><code>CallInfo</code></td><td>Entrante — a janela se abre sozinha</td></tr>
+<tr><td><code>call:answered</code></td><td><code>CallInfo</code></td><td>Atendida</td></tr>
+<tr><td><code>call:ended</code></td><td><code>CallInfo</code></td><td>Encerrada</td></tr>
+<tr><td><code>resize</code></td><td><code>{ width, height, dock }</code></td><td>Redimensionada ou encaixada</td></tr>
+<tr><td><code>open</code> / <code>close</code></td><td>—</td><td>Janela exibida ou recolhida</td></tr>
+<tr><td><code>reveal</code></td><td>—</td><td><code>reveal()</code> foi chamado</td></tr>
+<tr><td><code>error</code></td><td><code>{ message }</code></td><td>Falha na ponte ou no carregamento</td></tr>
+</tbody>
+</table></div>
+
+<p><code>CallInfo</code>: <code>{ id, number, direction }</code>, com <code>direction</code> em <code>'inbound'</code> ou <code>'outbound'</code>.</p>
+
+<div class="nota">
+  <p><span class="rot">Não existe <code>call:failed</code>.</span></p>
+  <p>
+    Uma chamada que não completa chega como <code>call:ended</code> — o estado
+    interno do webphone não distingue desligar de falhar.
+  </p>
+</div>
+
+<p>Para depurar, <code>on('*', ({ event, payload }) =&gt; …)</code> recebe tudo. Evite deixar em produção.</p>
+
+<h2 id="props">Propriedades</h2>
+
+<div class="tw"><table>
+<thead><tr><th>Propriedade</th><th>Tipo</th><th>Descrição</th></tr></thead>
+<tbody>
+<tr><td><code>version</code></td><td><code>string</code></td><td>Versão do SDK carregado</td></tr>
+<tr><td><code>isOpen</code></td><td><code>boolean</code></td><td>A janela está visível</td></tr>
+<tr><td><code>geometry</code></td><td><code>object | null</code></td><td><code>{x, y, width, height, dock}</code>; <code>null</code> antes do <code>init</code></td></tr>
+</tbody>
+</table></div>
+
+<h2 id="receitas">Receitas</h2>
+
+<h3>Click-to-call numa lista</h3>
+
+<pre><code>document.querySelectorAll(<span class="c-str">'[data-fone]'</span>).forEach((el) =&gt; {
+  el.addEventListener(<span class="c-str">'click'</span>, () =&gt; {
+    Bravophone.call(el.dataset.fone, {
+      name: el.dataset.nome,
+      crm:  el.dataset.empresa,
+      gateway: <span class="c-str">'meu-sistema'</span>,
+    }).<span class="c-key">catch</span>((e) =&gt; alert(<span class="c-str">'Não foi possível ligar: '</span> + e.message))
+  })
+})</code></pre>
+
+<h3>Registrar o atendimento ao fim da chamada</h3>
+
+<pre><code>Bravophone.on(<span class="c-str">'call:ended'</span>, ({ number, direction }) =&gt; {
+  fetch(<span class="c-str">'/api/atendimentos'</span>, {
+    method: <span class="c-str">'POST'</span>,
+    headers: { <span class="c-str">'Content-Type'</span>: <span class="c-str">'application/json'</span> },
+    body: JSON.stringify({ number, direction }),
+  })
+})</code></pre>
+
+<h3>Carregar por JavaScript</h3>
+
+<p>Quando não há como escrever a <code>&lt;script&gt;</code> no HTML — SPA, Tag Manager:</p>
+
+<pre><code><span class="c-key">function</span> carregar() {
+  <span class="c-key">if</span> (window.Bravophone) <span class="c-key">return</span> Promise.resolve(window.Bravophone)
+  <span class="c-key">if</span> (window.__bpCarregando) <span class="c-key">return</span> window.__bpCarregando
+  window.__bpCarregando = <span class="c-key">new</span> Promise((ok, erro) =&gt; {
+    <span class="c-key">const</span> s = document.createElement(<span class="c-str">'script'</span>)
+    s.src = <span class="c-str">'https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2'</span>
+    s.async = <span class="c-key">true</span>
+    s.onload  = () =&gt; window.Bravophone ? ok(window.Bravophone)
+      : erro(<span class="c-key">new</span> Error(<span class="c-str">'carregou mas a API não apareceu'</span>))
+    s.onerror = () =&gt; erro(<span class="c-key">new</span> Error(<span class="c-str">'falhou (rede, bloqueador ou CSP)'</span>))
+    document.head.appendChild(s)
+  })
+  <span class="c-key">return</span> window.__bpCarregando
+}</code></pre>
+
+<h2 id="requisitos">Requisitos da sua página</h2>
+
+<ul>
+  <li><strong>HTTPS</strong> ou <code>localhost</code>. <code>getUserMedia</code> não existe fora de contexto seguro — sem isso o webphone carrega e nunca captura áudio.</li>
+  <li>Se houver <strong>CSP</strong>, liberar <code>cdn.jsdelivr.net</code> em <code>script-src</code>, <code>style-src</code> e <code>font-src</code>. A maioria dos sites não precisa mexer.</li>
+  <li>Navegadores com WebRTC e Shadow DOM: Chrome/Edge 88+, Firefox 90+, Safari 14+.</li>
+</ul>
+
+<div class="nota">
+  <p><span class="rot">O microfone é concedido à sua origem.</span></p>
+  <p>
+    No modo <code>srcdoc</code> o usuário autoriza o microfone para o
+    <em>seu</em> domínio, não para o Bravophone — uma vez por site. A favor:
+    a permissão fica no domínio que ele já conhece.
+  </p>
+</div>
+
+<h2 id="diagnostico">Diagnóstico</h2>
+
+<p>Quando algo não funciona, siga nesta ordem — cada passo elimina uma camada:</p>
+
+<div class="tw"><table>
+<thead><tr><th>Verificação</th><th>Se falhar</th></tr></thead>
+<tbody>
+<tr><td><code>window.Bravophone</code> existe?</td><td>O script não carregou: rede, CSP ou bloqueador</td></tr>
+<tr><td>O evento <code>ready</code> disparou?</td><td>A ponte não conectou com o webphone</td></tr>
+<tr><td><code>state</code> veio <code>'error'</code>?</td><td>Registro SIP: token inválido, ou origem fora do CORS</td></tr>
+<tr><td>A UI aparece sem imagens?</td><td>Os assets não resolveram — confira o <code>hostBase</code></td></tr>
+</tbody>
+</table></div>
+
+<div class="nota">
+  <p><span class="rot">Os erros do webphone ficam noutro console.</span></p>
+  <p>
+    Ele roda dentro de um iframe. Nas devtools, troque o contexto do console
+    para o do frame — o console da página principal não mostra nada do que
+    acontece lá dentro.
+  </p>
+</div>
+
+</main>
+</div>
