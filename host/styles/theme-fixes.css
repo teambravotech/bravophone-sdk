@@ -1,0 +1,92 @@
+/* theme-fixes.css — complementa o dark-theme.css da extensão.
+ *
+ * POR QUE ESTE ARQUIVO EXISTE (e não é uma edição do dark-theme.css):
+ * o dark-theme.css vem da extensão e é reescrito a cada `npm run sync`.
+ * Qualquer correção feita lá seria perdida no próximo sync. Este arquivo é
+ * nosso, carrega depois, e sobrevive.
+ *
+ * O QUE ELE CORRIGE: o dark-theme.css é uma allowlist de classes Tailwind
+ * escrita à mão. Toda classe que ficou de fora manteve a cor original do
+ * Tailwind — feita para fundo branco — e sumiu sobre o fundo escuro.
+ * As classes abaixo foram encontradas por `npm run audit:theme`, que cruza o
+ * que o bundle usa com o que o tema cobre e mede o contraste WCAG.
+ *
+ * Estas correções valem igualmente para a extensão: portá-las para o
+ * css/dark-theme.css de lá conserta o mesmo bug no produto original.
+ */
+
+/* ---------------------------------------------------------------------------
+ * TEXTO INVISÍVEL — contraste medido contra #171b28 (--bp-panel)
+ * ------------------------------------------------------------------------- */
+
+/* 1.03:1 — literalmente ilegível. Aparece em títulos de modal. */
+#app .text-gray-900 { color: var(--bp-text) !important; }
+
+/* 1.22:1 — idem. Usado em textos de confirmação, como o modal de sair. */
+#app .text-black { color: var(--bp-text) !important; }
+
+/* 2.56:1 — 10 ocorrências, o campeão: cabeçalhos de collapse nas
+   configurações. Vira accent para acompanhar text-blue-500/600, que o
+   dark-theme.css já converte em verde — manter azul aqui deixaria dois
+   tratamentos diferentes para a mesma cor de origem. */
+#app .text-blue-700 { color: var(--bp-accent) !important; }
+
+/* Mesma família, fora da allowlist original. */
+#app .text-blue-800,
+#app .text-blue-900 { color: var(--bp-accent) !important; }
+#app .text-green-700,
+#app .text-green-800 { color: var(--bp-accent) !important; }
+#app .text-red-700,
+#app .text-red-800 { color: var(--bp-danger) !important; }
+#app .text-amber-600,
+#app .text-amber-800 { color: #f5b342 !important; }
+#app .text-gray-950 { color: var(--bp-text) !important; }
+#app .text-slate-600,
+#app .text-slate-700,
+#app .text-slate-800,
+#app .text-slate-900 { color: var(--bp-text) !important; }
+
+/* ---------------------------------------------------------------------------
+ * FUNDOS CLAROS NÃO CONVERTIDOS
+ * O texto herda a cor clara do tema, então um fundo claro deixado para trás
+ * produz claro-sobre-claro.
+ * ------------------------------------------------------------------------- */
+
+/* Superfície neutra: vira painel, como bg-gray-50/100 já fazem. */
+#app .bg-slate-100,
+#app .bg-slate-50 { background-color: var(--bp-panel-alt) !important; }
+#app .bg-gray-25 { background-color: var(--bp-panel-alt) !important; }
+
+/* Badges e indicadores coloridos: aqui o fundo claro é intencional (um pill
+   amarelo, um ponto verde). A correção não é escurecer o fundo — é garantir
+   texto escuro em cima dele. */
+#app .bg-yellow-400,
+#app .bg-yellow-300,
+#app .bg-green-400,
+#app .bg-green-300,
+#app .bg-amber-400 { color: var(--bp-bg) !important; }
+
+/* ---------------------------------------------------------------------------
+ * BORDAS — não causam invisibilidade, mas as claras "brilham" no escuro
+ * ------------------------------------------------------------------------- */
+#app .border-gray-300,
+#app .border-gray-400,
+#app .border-slate-200,
+#app .border-slate-300 { border-color: var(--bp-border) !important; }
+
+/* ---------------------------------------------------------------------------
+ * FORA DE #app — modais e dropdowns em <Teleport to="body">
+ *
+ * Todo o dark-theme.css é prefixado com `#app`. Um modal teleportado para o
+ * body escapa desse prefixo e fica sem tema nenhum. Repetimos aqui o essencial
+ * sem o prefixo, restrito às classes que só aparecem em overlay.
+ * ------------------------------------------------------------------------- */
+body > .fixed .bg-white,
+body > [class*="modal"] .bg-white { background-color: var(--bp-panel) !important; }
+body > .fixed .text-gray-900,
+body > .fixed .text-gray-800,
+body > .fixed .text-black,
+body > [class*="modal"] .text-gray-900,
+body > [class*="modal"] .text-black { color: var(--bp-text) !important; }
+body > .fixed .text-gray-600,
+body > .fixed .text-gray-500 { color: var(--bp-text-dim) !important; }

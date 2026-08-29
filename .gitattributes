@@ -1,0 +1,13 @@
+# Normaliza quebras de linha: LF no repositório, nativo no working tree.
+* text=auto eol=lf
+
+# Binários — nunca normalizar.
+*.png binary
+*.jpg binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+
+# Ruído no diff de PR.
+package-lock.json linguist-generated=true -diff

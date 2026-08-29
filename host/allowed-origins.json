@@ -1,0 +1,8 @@
+{
+  "_comment": "Origens autorizadas a embutir o webphone. O servidor usa esta lista para emitir Content-Security-Policy: frame-ancestors e o Access-Control-Allow-Origin da API. Mesma disciplina da autorização por origem que a extensão já usa.",
+  "origins": [
+    "http://localhost:5173",
+    "http://localhost:8080",
+    "https://app.exemplo.com.br"
+  ]
+}

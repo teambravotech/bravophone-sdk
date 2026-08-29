@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bravophone — ícones da aba</title>
+<style>
+  :root { color-scheme: light dark; --bg:#f6f7fb; --fg:#111827; --muted:#6b7280; --card:#fff; --line:#e5e7eb }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f1117; --fg:#e5e7eb; --muted:#9ca3af; --card:#171a23; --line:#2a2f3d }
+  }
+  body { font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+         background: var(--bg); color: var(--fg); margin: 0; padding: 36px 24px 80px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .7px;
+       color: var(--muted); margin: 32px 0 12px; font-weight: 700; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--card);
+          border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  th, td { padding: 14px 10px; text-align: center; border-bottom: 1px solid var(--line); }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
+       color: var(--muted); font-weight: 700; }
+  th:first-child, td:first-child { text-align: left; padding-left: 18px; width: 190px; }
+  tr:last-child td { border-bottom: 0; }
+  .name { font-weight: 600; font-size: 14px; }
+  .desc { color: var(--muted); font-size: 12px; font-weight: 400; }
+
+  /* Réplica exata da aba real, para julgar em contexto. */
+  .tab {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 48px; padding: 0 11px;
+    background: #6c5ce7; color: #fff;
+    border-radius: 14px 0 0 14px;
+    box-shadow: 0 4px 16px rgba(76,58,190,.42);
+  }
+  .tab .bp-launcher-icon { position: relative; width: 22px; height: 22px; display: grid; place-items: center; }
+  .grip { width: 10px; height: 16px; opacity: .9; color: rgba(255,255,255,.9); }
+  .grip svg { display: block; }
+
+  .pick { margin-top: 10px; }
+  button { padding: 7px 13px; margin: 3px 6px 3px 0; font: inherit; font-size: 13px;
+           cursor: pointer; border: 1px solid var(--line); border-radius: 7px;
+           background: var(--card); color: var(--fg); }
+  button:hover { border-color: #6c5ce7; }
+  code { background: rgba(127,127,127,.14); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+  .note { color: var(--muted); font-size: 13px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Ícones da aba de abertura</h1>
+<p class="sub">
+  Cada linha é um desenho; cada coluna, um estado da linha. É a aba real, no tamanho
+  real — as animações são as mesmas que rodam em produção.
+</p>
+
+<table id="grid">
+  <thead>
+    <tr>
+      <th>Desenho</th>
+      <th>Conectando</th>
+      <th>Registrado</th>
+      <th>Tocando</th>
+      <th>Em chamada</th>
+      <th>Sem linha</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h2>Testar na aba de verdade</h2>
+<div class="pick" id="pick"></div>
+<p class="note">
+  Troca o ícone do widget ao vivo. Use os botões de estado para ver as animações:
+</p>
+<div>
+  <button data-state="connecting">Conectando</button>
+  <button data-state="ready">Registrado</button>
+  <button data-state="ringing">Tocando</button>
+  <button data-state="incall">Em chamada</button>
+  <button data-state="error">Sem linha</button>
+</div>
+
+</div>
+
+<script type="module">
+  import { ICONS, ICON_STATE_CSS, GRIP_ICON } from '../src/icons.js'
+
+  const META = {
+    'phone-waves': ['Handset + ondas', 'Reconhecível na hora. As ondas pulsam quando toca.'],
+    'waveform':    ['Equalizador', 'Moderno e distintivo. As barras dançam em chamada.'],
+    'headset':     ['Headset', 'Fala de atendimento — o uso real do produto.'],
+    'chat-phone':  ['Handset em bolha', 'Mais “produto” que “telefonia”.'],
+  }
+  const STATES = ['connecting', 'ready', 'ringing', 'incall', 'error']
+
+  // Injeta o CSS de estado real, para a galeria animar igual à produção.
+  document.head.appendChild(Object.assign(document.createElement('style'),
+    { textContent: ICON_STATE_CSS.replaceAll('.bp-launcher[', '.tab[').replaceAll('.bp-launcher ', '.tab ').replaceAll('.bp-launcher:', '.tab:') }))
+
+  const tbody = document.querySelector('#grid tbody')
+  for (const [key, svg] of Object.entries(ICONS)) {
+    const [name, desc] = META[key] ?? [key, '']
+    const tr = document.createElement('tr')
+    tr.innerHTML = `<td><div class="name">${name}</div><div class="desc">${desc}</div>
+      <div class="desc"><code>${key}</code></div></td>` +
+      STATES.map((st) => `<td>
+        <span class="tab" data-state="${st}">
+          <span class="grip">${GRIP_ICON}</span>
+          <span class="bp-launcher-icon">${svg}</span>
+        </span></td>`).join('')
+    tbody.appendChild(tr)
+  }
+
+  // Controles que agem no widget real, se esta página estiver aberta junto dele.
+  const pick = document.getElementById('pick')
+  for (const key of Object.keys(ICONS)) {
+    const b = document.createElement('button')
+    b.textContent = META[key]?.[0] ?? key
+    b.onclick = () => window.parent?.Bravophone?.setLauncherIcon?.(key) ??
+      window.Bravophone?.setLauncherIcon?.(key)
+    pick.appendChild(b)
+  }
+  document.querySelectorAll('[data-state]').forEach((b) => {
+    if (b.tagName !== 'BUTTON') return
+    b.onclick = () => {
+      const el = document.querySelector('[data-bravophone]')?.shadowRoot?.querySelector('.bp-launcher')
+      if (el) el.dataset.state = b.dataset.state
+    }
+  })
+</script>
+</body>
+</html>

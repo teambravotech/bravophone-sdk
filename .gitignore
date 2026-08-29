@@ -1,0 +1,19 @@
+node_modules/
+dist/
+host/dist/
+
+# Copiados da extensão pelo `npm run sync` — layout de URL igual ao dela,
+# porque o bundle resolve /fonts/* a partir da raiz do site.
+host/popup.js
+host/js/
+host/css/
+host/images/
+host/fonts/
+host/_locales/
+host/favicon.ico
+host/index.html
+
+# Gerado pelo sync a partir de _locales/ da extensão (derivado, não fonte).
+host/shim/messages.js
+*.log
+.DS_Store

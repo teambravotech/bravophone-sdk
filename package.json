@@ -1,0 +1,50 @@
+{
+  "name": "@bravophone/webphone",
+  "version": "0.1.0",
+  "description": "Webphone BRAVOPHONE embutível em qualquer página web. Renderiza uma janela flutuante arrastável com todas as funcionalidades do softphone.",
+  "type": "module",
+  "main": "./dist/bravophone.umd.cjs",
+  "module": "./dist/bravophone.js",
+  "types": "./types/index.d.ts",
+  "unpkg": "./dist/bravophone.umd.cjs",
+  "jsdelivr": "./dist/bravophone.umd.cjs",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./dist/bravophone.js",
+      "require": "./dist/bravophone.umd.cjs"
+    },
+    "./style.css": "./dist/bravophone.css"
+  },
+  "files": [
+    "dist",
+    "types",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "sync": "node scripts/sync-from-extension.mjs && node scripts/audit-theme.mjs",
+    "dev": "node scripts/dev-server.mjs",
+    "build": "vite build",
+    "build:host": "npm run sync && vite build --config vite.host.config.js",
+    "test": "node scripts/smoke-shim.mjs && node scripts/smoke-geometry.mjs && node scripts/smoke-launcher.mjs",
+    "start": "node scripts/dev-server.mjs",
+    "audit:theme": "node scripts/audit-theme.mjs"
+  },
+  "keywords": [
+    "webphone",
+    "softphone",
+    "sip",
+    "webrtc",
+    "voip",
+    "bravophone",
+    "widget"
+  ],
+  "license": "UNLICENSED",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

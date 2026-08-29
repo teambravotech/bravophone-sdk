@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Webphone BRAVOPHONE (mock)</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1e1e2d; color: #e6e6f0;
+               font: 13px/1.5 system-ui, sans-serif; overflow: hidden; }
+  .wrap { height: 100%; display: flex; flex-direction: column; padding: 14px; box-sizing: border-box; gap: 10px; }
+  h1 { font-size: 13px; margin: 0; color: #9ca3af; font-weight: 600; letter-spacing: .4px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px;
+           background: #374151; color: #d1d5db; }
+  #state { padding: 10px; border-radius: 8px; background: #15151f; font-weight: 600; }
+  #state[data-s="ready"]   { color: #22c55e; }
+  #state[data-s="ringing"] { color: #f59e0b; }
+  #state[data-s="incall"]  { color: #38bdf8; }
+  input, button { font: inherit; padding: 7px 10px; border-radius: 6px; border: 1px solid #374151;
+                  background: #15151f; color: #e6e6f0; }
+  button { cursor: pointer; background: #2563eb; border-color: #2563eb; }
+  button:hover { background: #1d4ed8; }
+  button.ghost { background: #15151f; border-color: #374151; }
+  .row { display: flex; gap: 6px; }
+  .row input { flex: 1; min-width: 0; }
+  #log { flex: 1 1 auto; min-height: 0; overflow: auto; background: #0d0d14; color: #86efac;
+         padding: 8px; border-radius: 6px; font: 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; }
+  .kv { font-size: 11px; color: #6b7280; word-break: break-all; }
+  .kv b { color: #9ca3af; font-weight: 600; }
+</style>
+
+<!-- Mesma ordem do index.html de produção. A única troca é o bundle real
+     (libwebphone.js + popup.js) pelo mock-webphone.js. -->
+<script src="./shim/chrome-shim.js"></script>
+<script src="./mock-webphone.js"></script>
+<script defer src="./shim/guest-bridge.js"></script>
+</head>
+<body>
+<div class="wrap" id="app">
+  <h1>WEBPHONE <span class="badge">mock</span></h1>
+  <div id="state" data-s="ready">iniciando…</div>
+
+  <div class="row">
+    <input id="inNum" value="1133334444" placeholder="número">
+    <button id="incoming">Simular entrante</button>
+  </div>
+  <div class="row">
+    <button id="hangup" class="ghost" style="flex:1">Desligar</button>
+  </div>
+
+  <div class="kv"><b>vxToken no storage:</b> <span id="token">…</span></div>
+  <div id="log"></div>
+</div>
+</body>
+</html>

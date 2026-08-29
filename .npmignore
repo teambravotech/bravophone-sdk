@@ -1,0 +1,4 @@
+host/
+scripts/
+examples/
+vite*.config.js

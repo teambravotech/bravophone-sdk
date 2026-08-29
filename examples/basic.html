@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bravophone SDK — exemplo</title>
+<style>
+  body { font: 15px/1.6 system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; }
+  h1 { font-size: 20px; }
+  button { padding: 8px 14px; margin: 4px 4px 4px 0; font-size: 14px; cursor: pointer; }
+  input { padding: 8px; font-size: 14px; width: 220px; }
+  #log { background: #111; color: #0f0; padding: 12px; height: 200px; overflow: auto;
+         font: 12px/1.5 ui-monospace, monospace; border-radius: 6px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Bravophone SDK — exemplo básico</h1>
+
+<p>
+  <input id="num" placeholder="11987654321" value="11987654321">
+  <button id="call">Ligar</button>
+  <button id="hangup">Desligar</button>
+</p>
+<p>
+  <button id="toggle">Abrir/fechar janela</button>
+  <button id="status">Status</button>
+  <button id="destroy">Destruir</button>
+</p>
+
+<h2 style="font-size:15px">Eventos</h2>
+<div id="log"></div>
+
+<script type="module">
+  // Em produção:
+  //   import Bravophone from '@bravophone/webphone'
+  // ou via CDN:
+  //   <script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone"><\/script>
+  import Bravophone from '../src/index.js'
+
+  const log = (...a) => {
+    document.getElementById('log').textContent +=
+      new Date().toLocaleTimeString() + '  ' + a.map(x =>
+        typeof x === 'string' ? x : JSON.stringify(x)).join(' ') + '\n'
+    document.getElementById('log').scrollTop = 1e9
+  }
+
+  Bravophone.init({
+    // Aponte para o seu host durante o desenvolvimento:
+    hostUrl: 'http://localhost:5174/',
+    token: localStorage.getItem('demo-token') || undefined,
+    position: 'bottom-right',
+    open: true,
+  })
+
+  Bravophone.on('*', ({ event, payload }) => log(event, payload ?? ''))
+
+  document.getElementById('call').onclick = () =>
+    Bravophone.call(document.getElementById('num').value).catch(e => log('erro:', e.message))
+  document.getElementById('hangup').onclick = () =>
+    Bravophone.hangup().catch(e => log('erro:', e.message))
+  document.getElementById('toggle').onclick = () => Bravophone.toggle()
+  document.getElementById('status').onclick = () =>
+    Bravophone.getStatus().then(s => log('status', s)).catch(e => log('erro:', e.message))
+  document.getElementById('destroy').onclick = () => Bravophone.destroy()
+</script>
+</body>
+</html>

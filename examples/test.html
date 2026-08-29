@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bravophone SDK — teste local</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+         max-width: 780px; margin: 0 auto; padding: 32px 20px 120px; }
+  h1 { font-size: 21px; margin: 0 0 4px; }
+  .sub { color: #6b7280; font-size: 13px; margin: 0 0 24px; }
+  fieldset { border: 1px solid #d1d5db; border-radius: 10px; padding: 14px 16px; margin: 0 0 16px; }
+  legend { font-size: 12px; font-weight: 700; text-transform: uppercase;
+           letter-spacing: .6px; color: #6b7280; padding: 0 6px; }
+  button { padding: 7px 13px; margin: 3px 3px 3px 0; font-size: 14px; cursor: pointer;
+           border: 1px solid #d1d5db; border-radius: 7px; background: #fff; }
+  button:hover { background: #f3f4f6; }
+  button.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+  button.primary:hover { background: #1d4ed8; }
+  input { padding: 7px 10px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 7px; }
+  #log { background: #0d0d14; color: #86efac; padding: 12px; height: 230px; overflow: auto;
+         font: 12px/1.55 ui-monospace, SFMono-Regular, monospace; border-radius: 8px;
+         white-space: pre-wrap; }
+  .hint { font-size: 12px; color: #6b7280; margin: 8px 0 0; }
+  code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #111827; color: #e5e7eb; }
+    fieldset { border-color: #374151; }
+    button { background: #1f2937; border-color: #374151; color: #e5e7eb; }
+    button:hover { background: #374151; }
+    input { background: #1f2937; border-color: #374151; color: #e5e7eb; }
+    code { background: #1f2937; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Bravophone SDK — teste local</h1>
+<p class="sub">
+  Esta página é o "site do cliente". Carrega o build UMD de <code>dist/</code> por
+  <code>&lt;script&gt;</code>, igual ao uso por CDN. O webphone roda num
+  <b>iframe de outra origem</b> (porta 5174), então o teste é cross-origin de verdade.
+</p>
+
+<!-- Exatamente como o integrador faria via CDN:
+     <script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone"></script> -->
+<script src="../dist/bravophone.umd.cjs"></script>
+
+<fieldset>
+  <legend>Qual webphone carregar</legend>
+  <button id="useReal" class="primary">popup.js REAL (seu UI)</button>
+  <button id="useMock">mock (sem SIP)</button>
+  <label style="margin-left:12px;font-size:13px">
+    <input type="checkbox" id="showBar"> mostrar barra de título
+  </label>
+  <p class="hint">
+    O <b>real</b> carrega os 932 KB do <code>popup.js</code> intactos — é o seu UI.
+    Precisa de rede/CORS para logar; sem isso a tela renderiza mas não registra.
+    O <b>mock</b> não depende de nada.
+  </p>
+</fieldset>
+
+<fieldset>
+  <legend>Telefonia</legend>
+  <input id="num" value="11987654321" placeholder="número">
+  <button id="call" class="primary">Ligar</button>
+  <button id="answer">Atender</button>
+  <button id="hangup">Desligar</button>
+  <br>
+  <button id="mute">Mute (toggle)</button>
+  <button id="hold">Hold (toggle)</button>
+  <button id="dtmf">DTMF 5</button>
+  <button id="transfer">Transferir</button>
+  <button id="status">Status</button>
+</fieldset>
+
+<fieldset>
+  <legend>Janela</legend>
+  <button id="show">Abrir</button>
+  <button id="hide">Fechar</button>
+  <button id="toggle">Toggle</button>
+  <button id="min">Minimizar</button>
+  <button id="center">Centralizar</button>
+  <button id="big">900×720 (histórico largo)</button>
+  <button id="destroy">Destruir</button>
+  <button id="sideRight">Aba à direita</button>
+  <button id="sideLeft">Aba à esquerda</button>
+  <br>
+  <button id="icoPhone">◗ Handset+ondas</button>
+  <button id="icoWave">▥ Equalizador</button>
+  <button id="icoHead">◠ Headset</button>
+  <button id="icoChat">◍ Bolha</button>
+  <a href="icons.html" style="font-size:13px;margin-left:8px">ver todos os estados →</a>
+  <p class="hint">Sem moldura, <b>arraste pelo próprio webphone</b> (qualquer área que
+     não seja botão/campo). Redimensione por <b>qualquer borda ou canto</b>.
+     A posição persiste ao recarregar.<br>
+     Feche a janela para ver a <b>aba lateral</b>: passe o mouse para revelar a alça
+     de pontinhos, arraste-a na vertical, ou clique para reabrir.</p>
+</fieldset>
+
+<fieldset>
+  <legend>Encaixe (dock)</legend>
+  <button id="dockLeft">◧ Esquerda</button>
+  <button id="dockRight">◨ Direita</button>
+  <button id="dockLeftHalf">◐ Meia esquerda</button>
+  <button id="dockRightHalf">◑ Meia direita</button>
+  <button id="dockTopHalf">⬒ Metade de cima</button>
+  <button id="dockBottomHalf">⬓ Metade de baixo</button>
+  <button id="dockMax">⛶ Maximizar</button>
+  <button id="dockFloat">⤢ Flutuante</button>
+  <p class="hint">
+    <b>Arrastando</b>, o perímetro inteiro encaixa: laterais = altura cheia;
+    <b>borda de baixo = metade inferior</b>; topo = maximizar (ou metade superior,
+    com <code>dockTop:'top-half'</code>); os quatro cantos = meia tela.
+    A prévia azul mostra o encaixe antes de soltar; arraste de volta para o meio
+    para desencaixar.<br>
+    <b>Redimensionando:</b> ao chegar a ~32px de uma borda, a janela completa sozinha
+    até ela.
+  </p>
+</fieldset>
+
+<fieldset>
+  <legend>Sessão</legend>
+  <input id="token" value="tok_demo_123" placeholder="token">
+  <button id="auth">setAuth</button>
+  <button id="logout">logout</button>
+  <p class="hint">Confira no painel do mock se o <code>vxToken</code> chegou no storage.</p>
+</fieldset>
+
+<fieldset>
+  <legend>Eventos recebidos</legend>
+  <div id="log"></div>
+  <button id="clear" style="margin-top:8px">Limpar</button>
+</fieldset>
+
+<script>
+  const logEl = document.getElementById('log')
+  const log = (...a) => {
+    logEl.textContent += new Date().toLocaleTimeString() + '  ' +
+      a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' ') + '\n'
+    logEl.scrollTop = 1e9
+  }
+
+  if (typeof Bravophone === 'undefined') {
+    log('✗ Bravophone não carregou. Rode "npm run build" antes.')
+    throw new Error('build ausente')
+  }
+  log('SDK v' + Bravophone.version + ' carregado (window.Bravophone)')
+
+  const params = new URLSearchParams(location.search)
+  const useMock = params.get('host') === 'mock'
+  const withBar = params.get('bar') === '1'
+  document.getElementById('showBar').checked = withBar
+
+  Bravophone.init({
+    hostUrl: 'http://localhost:5174/' + (useMock ? 'mock.html' : 'index.html'),
+    token: document.getElementById('token').value,
+    position: 'bottom-right',
+    open: true,
+    // 'none' (padrão) preserva 100% da UI: sem barra, arrasta pelo próprio app.
+    frame: withBar ? 'bar' : 'none',
+  })
+  log((useMock ? 'mock' : 'popup.js REAL') + ' · moldura: ' + (withBar ? 'barra' : 'nenhuma'))
+
+  const reload = (host, bar) => {
+    location.search = '?host=' + host + '&bar=' + (bar ? '1' : '0')
+  }
+  document.getElementById('useReal').onclick = () => reload('real', withBar)
+  document.getElementById('useMock').onclick = () => reload('mock', withBar)
+  document.getElementById('showBar').onchange = (e) =>
+    reload(useMock ? 'mock' : 'real', e.target.checked)
+
+  // '*' recebe todos os eventos como { event, payload }
+  Bravophone.on('*', ({ event, payload }) => log('◆ ' + event, payload ?? ''))
+
+  const safe = (label, fn) => () =>
+    Promise.resolve().then(fn)
+      .then(r => r !== undefined && log('  ' + label + ' →', r))
+      .catch(e => log('  ✗ ' + label + ': ' + e.message))
+
+  const $ = (id) => document.getElementById(id)
+  const num = () => $('num').value
+
+  $('call').onclick     = safe('call',     () => Bravophone.call(num(), { source: 'test-page' }))
+  $('answer').onclick   = safe('answer',   () => Bravophone.answer())
+  $('hangup').onclick   = safe('hangup',   () => Bravophone.hangup())
+  $('mute').onclick     = safe('mute',     () => Bravophone.mute())
+  $('hold').onclick     = safe('hold',     () => Bravophone.hold())
+  $('dtmf').onclick     = safe('dtmf',     () => Bravophone.sendDTMF('5'))
+  $('transfer').onclick = safe('transfer', () => Bravophone.transfer('2000'))
+  $('status').onclick   = safe('status',   () => Bravophone.getStatus())
+  $('auth').onclick     = safe('auth',     () => Bravophone.setAuth($('token').value))
+  $('logout').onclick   = safe('logout',   () => Bravophone.logout())
+
+  $('show').onclick   = () => Bravophone.show()
+  $('hide').onclick   = () => Bravophone.hide()
+  $('toggle').onclick = () => Bravophone.toggle()
+  $('min').onclick    = () => Bravophone.minimize()
+  $('center').onclick = () => Bravophone.move(
+    Math.round((innerWidth - 380) / 2), Math.round((innerHeight - 640) / 2))
+  $('big').onclick    = () => Bravophone.resize(900, 720)
+
+  const docks = { dockLeft: 'left', dockRight: 'right', dockLeftHalf: 'left-half',
+                  dockRightHalf: 'right-half', dockTopHalf: 'top-half',
+                  dockBottomHalf: 'bottom-half', dockMax: 'max', dockFloat: 'float' }
+  Object.entries(docks).forEach(([id, zone]) => {
+    $(id).onclick = () => { Bravophone.dock(zone); log('dock →', zone) }
+  })
+  $('destroy').onclick = () => { Bravophone.destroy(); log('widget destruído') }
+  $('sideRight').onclick = () => Bravophone.setLauncherSide('right')
+  $('sideLeft').onclick = () => Bravophone.setLauncherSide('left')
+  const icons = { icoPhone: 'phone-waves', icoWave: 'waveform',
+                  icoHead: 'headset', icoChat: 'chat-phone' }
+  Object.entries(icons).forEach(([id, name]) => {
+    $(id).onclick = () => { Bravophone.setLauncherIcon(name); log('ícone →', name) }
+  })
+  $('clear').onclick  = () => { logEl.textContent = '' }
+</script>
+</body>
+</html>
