@@ -1,8 +1,21 @@
 export type LauncherIcon = 'phone-waves' | 'waveform' | 'headset' | 'chat-phone'
 
 export interface BravophoneOptions {
-  /** Origem do webphone hospedado. Padrão: https://webphone.bravophone.com/embed/ */
+  /** Origem do webphone hospedado. Só usado com `mode: 'hosted'`. */
   hostUrl?: string
+  /**
+   * Como o webphone é carregado. Padrão: `'hosted'`.
+   *
+   * - `'hosted'`: o iframe navega para `hostUrl`. Todos os requests saem de uma
+   *   origem fixa, então o CORS dos backends não cresce com o número de
+   *   clientes. É um iframe de terceiro, sujeito a bloqueadores e a storage
+   *   particionado.
+   * - `'srcdoc'`: o iframe roda na origem do próprio site e busca o webphone no
+   *   CDN. Não é iframe de terceiro e não há partição de storage — mas a origem
+   *   do integrador precisa estar na allowlist de CORS dos backends, senão o
+   *   webphone carrega e não registra.
+   */
+  mode?: 'hosted' | 'srcdoc'
   /** Token de sessão do usuário, emitido pelo backend do integrador. */
   token?: string
   /** Canto inicial da janela. Padrão: 'bottom-right'. */

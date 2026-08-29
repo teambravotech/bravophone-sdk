@@ -27,7 +27,13 @@ const Bravophone = {
    * @param {string} [opts.token]    Token de sessão do usuário (SSO do integrador).
    * @param {'bottom-right'|'bottom-left'|'top-right'|'top-left'} [opts.position]
    * @param {boolean} [opts.open]     Abrir já visível (padrão: false, só o launcher).
-   * @param {boolean} [opts.launcher] Exibir o botão flutuante (padrão: true).
+   * @param {boolean} [opts.launcher] Exibir a aba de abertura (padrão: true).
+   * @param {'hosted'|'srcdoc'} [opts.mode]
+   *   'hosted' (padrão): o iframe navega para `hostUrl`. Uma origem fixa para
+   *   o CORS dos backends, mas é um iframe de terceiro.
+   *   'srcdoc': o iframe roda na origem do próprio site e busca o webphone no
+   *   CDN. Some o iframe de terceiro — em troca, a origem do integrador
+   *   precisa estar na allowlist de CORS dos backends.
    */
   init(opts = {}) {
     if (instance) return instance
@@ -39,7 +45,14 @@ const Bravophone = {
       // evita um bug reportado como "o microfone não funciona".
       console.warn('[Bravophone] Contexto inseguro: o microfone exige HTTPS ou localhost.')
     }
-    instance = createWidget({ hostUrl: DEFAULT_HOST, ...opts, emit })
+    // A versão vai junto: no modo srcdoc é ela que trava a URL dos assets no
+    // CDN, garantindo que SDK e webphone nunca fiquem em versões diferentes.
+    instance = createWidget({
+      hostUrl: DEFAULT_HOST,
+      version: Bravophone.version,
+      ...opts,
+      emit,
+    })
     return instance
   },
 

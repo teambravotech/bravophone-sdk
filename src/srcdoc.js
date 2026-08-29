@@ -1,0 +1,77 @@
+// Modo self-hosted: o iframe roda na origem do próprio site, e o conteúdo do
+// webphone vem do CDN.
+//
+// Por que existe: no modo hospedado o iframe navega para
+// webphone.bravophone.com, o que exige manter esse domínio e sujeita o widget
+// às restrições de iframe de terceiros — bloqueadores de privacidade, política
+// corporativa, storage particionado. Com `srcdoc` o documento é same-origin
+// com o site do integrador e nada disso se aplica.
+//
+// O que isso NÃO resolve: o `Origin` dos requests passa a ser o do cliente,
+// então os backends precisam ter essa origem na allowlist de CORS. Sem isso o
+// webphone carrega mas não registra.
+//
+// Validado em navegador (examples/srcdoc-validation.html): getUserMedia
+// funciona sem `allow=`, `localStorage` funciona, `document.baseURI` resolve
+// para a página pai e `@font-face` com URL absoluta do CDN carrega.
+
+const CDN = 'https://cdn.jsdelivr.net/npm'
+
+/** Base dos assets do host, travada na versão do próprio pacote. */
+export function hostBase(version, pkg = '@bravophone/webphone') {
+  return `${CDN}/${pkg}@${version}/host/`
+}
+
+/**
+ * Monta o documento do webphone para rodar dentro de um iframe srcdoc.
+ *
+ * A ordem dos scripts é a mesma do host hospedado e não é negociável: as
+ * mensagens precisam existir antes do shim, e o shim antes de qualquer código
+ * que toque em `chrome.*` durante a avaliação do bundle.
+ */
+export function buildSrcdoc({ version, parentOrigin, token, base }) {
+  const b = base || hostBase(version)
+
+  // O srcdoc é HTML dentro de um atributo: aspas duplas quebrariam o atributo.
+  // Serializamos os valores como JSON e usamos aspas simples no HTML.
+  const cfg = JSON.stringify({ parentOrigin, token: token || null })
+    .replace(/</g, '\\u003c')
+
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Webphone BRAVOPHONE</title>
+<link rel="stylesheet" href="${b}css/dark-theme.css">
+<link rel="stylesheet" href="${b}styles/theme-fixes.css">
+<style>
+  html, body { margin: 0; height: 100%; background: #10131c; overflow: hidden; }
+  #app { height: 100%; }
+</style>
+<script>
+(function () {
+  var cfg = ${cfg};
+  // O guest-bridge lê daqui: em srcdoc não há query string para carregar a
+  // origem do pai.
+  window.__bpParentOrigin = cfg.parentOrigin;
+  if (cfg.token) {
+    // Grava onde o bundle procura, antes dele avaliar, para a sessão já subir
+    // autenticada em vez de piscar a tela de login.
+    try { localStorage.setItem('bp.local.vxToken', JSON.stringify(cfg.token)); } catch (e) {}
+  }
+})();
+<\/script>
+<script src="${b}shim/messages.js"><\/script>
+<script src="${b}shim/chrome-shim.js"><\/script>
+<script src="${b}js/libwebphone.js"><\/script>
+<script src="${b}js/bravophone-route-selector.js"><\/script>
+<script defer src="${b}popup.js"><\/script>
+<script defer src="${b}shim/guest-bridge.js"><\/script>
+</head>
+<body>
+<noscript><strong>O webphone precisa de JavaScript habilitado.</strong></noscript>
+<div id="app"></div>
+</body>
+</html>`
+}

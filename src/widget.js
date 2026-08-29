@@ -3,6 +3,7 @@ import { makeDraggable, loadGeometry, clamp } from './draggable.js'
 import { createBridge } from './bridge.js'
 import { makeLauncher, loadLauncherState, clampY } from './launcher.js'
 import { ICONS, DEFAULT_ICON, GRIP_ICON } from './icons.js'
+import { buildSrcdoc } from './srcdoc.js'
 
 const DEFAULTS = {
   // 380x640 é a geometria da janela nativa da extensão — o layout do
@@ -47,11 +48,17 @@ export function createWidget(options) {
     launcherSide = 'right',
     // Desenho da aba: 'phone-waves' | 'waveform' | 'headset' | 'chat-phone'
     launcherIcon = DEFAULT_ICON,
+    // 'hosted'  — o iframe navega para hostUrl (padrão)
+    // 'srcdoc'  — o iframe roda na origem do site e busca o conteúdo no CDN
+    mode = 'hosted',
+    version,
     emit,
   } = options
 
-  const url = new URL(hostUrl)
-  const origin = url.origin
+  const srcdoc = mode === 'srcdoc'
+  // Em srcdoc o documento herda a origem do site, então é com ela que a ponte
+  // valida as mensagens — não com a do hostUrl.
+  const origin = srcdoc ? window.location.origin : new URL(hostUrl).origin
 
   // O widget inteiro vive num Shadow DOM: o CSS da página do cliente não
   // alcança o widget, e o CSS do widget não alcança a página.
@@ -89,10 +96,18 @@ export function createWidget(options) {
   // Sem isso o webphone carrega mas nunca consegue capturar áudio.
   const frameEl = h('iframe', {
     class: 'bp-frame',
-    src: buildSrc(url, { token, embed: '1', parent: location.origin }),
+    // allow= é obrigatório no modo hospedado (cross-origin). Em srcdoc o
+    // microfone já é herdado do topo, mas declarar não custa e documenta.
     allow: 'microphone; autoplay; clipboard-write; speaker-selection',
     title: 'Webphone BRAVOPHONE',
   })
+  if (srcdoc) {
+    frameEl.setAttribute('srcdoc',
+      buildSrcdoc({ version, parentOrigin: origin, token }))
+  } else {
+    frameEl.setAttribute('src',
+      buildSrc(new URL(hostUrl), { token, embed: '1', parent: location.origin }))
+  }
 
   // 8 alças: as laterais são o que resolve o histórico espremido.
   const DIRS = ['n', 's', 'w', 'e', 'nw', 'ne', 'sw', 'se']

@@ -18,11 +18,14 @@
   var PROTOCOL = 'bravophone/v1'
   var parentOrigin = null
 
-  // A origem do pai chega por query string e é validada contra a allowlist
-  // do servidor (ver host/allowed-origins.json). Nunca confiar só nisto.
+  // A origem do pai chega de dois jeitos, conforme o modo:
+  //   · hospedado  — query string (?parent=...), pois o iframe navega
+  //   · srcdoc     — variável injetada, pois não há URL própria para carregar
+  // Nos dois casos o servidor ainda valida a origem pela allowlist; isto aqui
+  // sozinho nunca é garantia de nada.
   try {
-    var params = new URLSearchParams(location.search)
-    parentOrigin = params.get('parent')
+    parentOrigin = window.__bpParentOrigin ||
+      new URLSearchParams(location.search).get('parent')
   } catch (_) {}
 
   if (!parentOrigin || window.parent === window) {

@@ -178,8 +178,15 @@ Bravophone-SDK/
 for atualizada:
 
 ```bash
-npm run sync    # copia popup.js, libwebphone.js, css, fonts… (ignora .bak-*)
+npm run sync          # host servido de um domínio próprio (public path "/")
+npm run prepare:host  # host servido do CDN — é o que vai no pacote publicado
 ```
+
+O `prepare:host` reescreve o `public_path` do bundle para
+`cdn.jsdelivr.net/npm/@bravophone/webphone@<versão>/host/`. **Rode-o depois de
+cada bump de versão e antes de publicar**: se a URL apontar para outra versão,
+o pacote busca assets que podem não existir. O `npm test` recusa esse
+descompasso.
 
 O script recusa rodar se um asset obrigatório sumir, em vez de gerar um host quebrado
 silenciosamente.
@@ -330,7 +337,8 @@ um major não quebre a página deles.
 | Opção | Tipo | Padrão | Descrição |
 |---|---|---|---|
 | `token` | `string` | — | Token de sessão emitido pelo seu backend |
-| `hostUrl` | `string` | `https://webphone.bravophone.com/embed/` | Origem do webphone |
+| `mode` | `'hosted' \| 'srcdoc'` | `'hosted'` | Como o webphone é carregado — ver abaixo |
+| `hostUrl` | `string` | `https://webphone.bravophone.com/` | Origem do webphone (só no modo `hosted`) |
 | `position` | `string` | `'bottom-right'` | Canto inicial |
 | `open` | `boolean` | `false` | Abrir já visível |
 | `launcher` | `boolean` | `true` | Exibir a aba lateral de abertura |
@@ -360,6 +368,44 @@ Use `frame: 'bar'` se preferir a barra com título, indicador de estado e contro
 
 **Janela** — `show()` · `hide()` · `toggle()` · `minimize(force?)` · `move(x, y)` ·
 `resize(w, h)` · `dock(zone)` · `destroy()` · `isOpen` · `geometry`
+
+### Dois modos de carregar o webphone
+
+```js
+Bravophone.init({ token })                     // hospedado (padrão)
+Bravophone.init({ token, mode: 'srcdoc' })     // na origem do próprio site
+```
+
+| | `hosted` (padrão) | `srcdoc` |
+|---|---|---|
+| Onde o iframe roda | `webphone.bravophone.com` | origem do próprio site |
+| De onde vêm os arquivos | do host | do CDN, travados nesta versão |
+| CORS dos backends | uma origem fixa, não cresce | **uma entrada por integrador** |
+| Iframe de terceiro | sim — sujeito a bloqueador e política | não |
+| Storage particionado | sim (login por site do cliente) | não |
+| Você precisa manter | o domínio do host | nada |
+
+**Antes de oferecer o `srcdoc` a um cliente, a origem dele precisa estar na
+allowlist de CORS de `api.bravophone.com`, `reports.teambravotech.com` e
+`devices.wavoip.com`.** Sem isso o webphone carrega, aparece na tela e não
+registra — o navegador descarta as respostas. Isso é trabalho no **nosso**
+backend: o integrador não tem como liberar CORS de um servidor que não é dele.
+
+Há requests com `withCredentials`, então `Access-Control-Allow-Origin: *` não
+serve: a resposta precisa ecoar a origem exata mais
+`Access-Control-Allow-Credentials: true`. O caminho sustentável é a allowlist
+sair de banco, para entrar um cliente ser um registro e não um deploy em três
+serviços.
+
+Do lado do integrador, o único requisito é o CSP admitir `cdn.jsdelivr.net` em
+`script-src`, `style-src` e `font-src` — a maioria dos sites não tem CSP
+restritivo e não precisa fazer nada.
+
+O que foi verificado em navegador (`examples/srcdoc-validation.html`):
+`getUserMedia` funciona dentro do `srcdoc` **sem `allow=`**, a permissão é
+herdada do topo, `enumerateDevices` traz os rótulos, `localStorage` funciona,
+`document.baseURI` resolve para a página pai e `@font-face` com URL absoluta do
+CDN carrega.
 
 ### A aba de abertura
 

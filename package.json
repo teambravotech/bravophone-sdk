@@ -1,6 +1,6 @@
 {
   "name": "@bravophone/webphone",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Webphone BRAVOPHONE embutível em qualquer página web. Renderiza uma janela flutuante arrastável com todas as funcionalidades do softphone.",
   "main": "./dist/bravophone.umd.js",
   "module": "./dist/bravophone.mjs",
@@ -17,6 +17,7 @@
   "files": [
     "dist/*.js",
     "dist/*.mjs",
+    "host",
     "types",
     "README.md"
   ],
@@ -29,7 +30,8 @@
     "test": "node scripts/smoke-shim.mjs && node scripts/smoke-geometry.mjs && node scripts/smoke-launcher.mjs && node scripts/smoke-package.mjs",
     "start": "node scripts/dev-server.mjs",
     "audit:theme": "node scripts/audit-theme.mjs",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "prepare:host": "node scripts/sync-from-extension.mjs --cdn"
   },
   "keywords": [
     "webphone",

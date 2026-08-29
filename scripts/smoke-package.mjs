@@ -58,10 +58,40 @@ console.log('\npacote — o que vai no tarball:')
   check('inclui dist', files.some((f) => f.startsWith('dist')))
   check('inclui types', files.includes('types'))
   check('inclui README.md', files.includes('README.md'))
-  check('NÃO inclui host/ (3,6 MB da extensão)', !files.some((f) => f.startsWith('host')))
+  // O host viaja junto de propósito: uma versão só para SDK e webphone,
+  // sem matriz de compatibilidade entre dois pacotes.
+  check('inclui host/ (o modo srcdoc o busca no CDN)', files.includes('host'))
   check('NÃO inclui os sourcemaps', !files.some((f) => f.includes('.map')))
   // Com "type":"module" o Vite emitiria .cjs para o UMD, reintroduzindo o bug.
   check('sem "type":"module" (senão o UMD volta a ser .cjs)', pkg.type === undefined, pkg.type)
+}
+
+console.log('\nhost — o que o modo srcdoc carrega:')
+{
+  const precisa = [
+    'host/popup.js', 'host/js/libwebphone.js', 'host/js/bravophone-route-selector.js',
+    'host/css/dark-theme.css', 'host/styles/theme-fixes.css',
+    'host/shim/chrome-shim.js', 'host/shim/guest-bridge.js', 'host/shim/messages.js',
+    'host/fonts/Audiowide-Regular.ttf', 'host/fonts/Seguiemj.ttf',
+  ]
+  for (const rel of precisa) check(`existe ${rel}`, existsSync(join(ROOT, rel)))
+}
+
+console.log('\nhost — a URL do CDN aponta para ESTA versão:')
+{
+  // Se o public path apontar para outra versão, o pacote publicado busca
+  // assets que podem não existir — e o sintoma só aparece em runtime, no
+  // navegador do cliente, como fonte e ícones faltando.
+  const bundle = existsSync(join(ROOT, 'host/popup.js'))
+    ? await readFile(join(ROOT, 'host/popup.js'), 'utf8')
+    : ''
+  const m = bundle.match(/n\.p="([^"]*)"/)
+  const esperado = `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/host/`
+  check('public path presente no bundle', !!m, m && m[1])
+  check('public path bate com nome e versão do pacote',
+    !!m && m[1] === esperado, m ? `\n      achado:   ${m[1]}\n      esperado: ${esperado}` : '')
+  check('public path é https absoluto (srcdoc não resolve relativo)',
+    !!m && m[1].startsWith('https://'), m && m[1])
 }
 
 console.log('\npacote — a versão é única:')

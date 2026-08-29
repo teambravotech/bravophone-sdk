@@ -55,7 +55,15 @@ const MUST_RESOLVE = ['fonts/Audiowide-Regular.ttf', 'fonts/Seguiemj.ttf']
 const skipBackups = (src) => !/\.bak-[\w-]+$/.test(src)
 
 async function main() {
-  const publicPath = (process.argv.find((a) => a.startsWith('--public-path=')) || '').split('=')[1]
+  let publicPath = (process.argv.find((a) => a.startsWith('--public-path=')) || '').split('=')[1]
+
+  // --cdn: aponta os assets para o CDN desta mesma versão do pacote. É o que
+  // permite o modo srcdoc — o iframe roda na origem do cliente, mas as fontes
+  // e o resto vêm do jsDelivr, não da raiz do site dele.
+  if (process.argv.includes('--cdn')) {
+    const pkg = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'))
+    publicPath = `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/host/`
+  }
 
   if (!existsSync(EXT)) {
     console.error(`✗ Extensão não encontrada em: ${EXT}`)
@@ -172,10 +180,12 @@ async function rewritePublicPath(publicPath) {
   // O Git Bash no Windows converte argumentos que parecem caminho POSIX:
   // `--public-path=/embed/` chega como `C:/Program Files/Git/embed/`. Gravar
   // isso no bundle quebraria todos os assets em produção, e silenciosamente.
-  if (!/^\/[\w\-./]*$/.test(publicPath)) {
+  const caminhoWeb = /^\/[\w\-./]*$/.test(publicPath)
+  const urlCompleta = /^https:\/\/[\w.-]+\/[\w\-./@]*$/.test(publicPath)
+  if (!caminhoWeb && !urlCompleta) {
     console.error(`✗ public path inválido: "${publicPath}"`)
-    console.error('  Deve ser um caminho web absoluto, ex.: /embed/')
-    console.error('  No Git Bash use: MSYS_NO_PATHCONV=1 npm run sync -- --public-path=/embed/')
+    console.error('  Use um caminho web (/embed/) ou uma URL https completa.')
+    console.error('  No Git Bash: MSYS_NO_PATHCONV=1 npm run sync -- --public-path=/embed/')
     process.exit(1)
   }
   if (!publicPath.endsWith('/')) {
