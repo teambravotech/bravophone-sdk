@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Exemplo de integração — Bravophone</title>
+
+<!-- ===================================================================
+     1. CARREGAR O SDK
+
+     Uma linha. Fixe a minor (@0.2) para que um major novo não mude o
+     comportamento da sua página sem aviso.
+     =================================================================== -->
+<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2"></script>
+
+<style>
+  body { font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+         max-width: 720px; margin: 0 auto; padding: 40px 20px 120px; }
+  h1 { font-size: 22px; margin: 0 0 24px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; }
+  .tel { background: none; border: 0; padding: 0; font: inherit; color: #2563eb;
+         cursor: pointer; text-decoration: underline; }
+  .tel:hover { color: #1d4ed8; }
+  #estado { font-size: 13px; color: #6b7280; margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<h1>Meus contatos</h1>
+
+<table>
+  <thead><tr><th>Nome</th><th>Empresa</th><th>Telefone</th></tr></thead>
+  <tbody>
+    <!-- O número no data-* é o que o SDK vai discar. Formato livre:
+         a normalização é a mesma da extensão. -->
+    <tr>
+      <td>Ana Ribeiro</td><td>Acme Ltda</td>
+      <td><button class="tel" data-fone="11987654321" data-nome="Ana Ribeiro"
+                  data-empresa="Acme Ltda">(11) 98765-4321</button></td>
+    </tr>
+    <tr>
+      <td>Bruno Costa</td><td>Contoso SA</td>
+      <td><button class="tel" data-fone="4133334444" data-nome="Bruno Costa"
+                  data-empresa="Contoso SA">(41) 3333-4444</button></td>
+    </tr>
+  </tbody>
+</table>
+
+<p id="estado">Iniciando…</p>
+
+<script>
+// =====================================================================
+// 2. INICIAR
+//
+// Chame uma vez, depois que o <body> existir. Chamadas repetidas
+// devolvem a mesma instância, então não há risco de montar dois widgets.
+// =====================================================================
+Bravophone.init({
+  // Token de sessão do usuário logado, emitido pelo SEU backend.
+  // Nunca coloque credencial fixa no HTML: gere por usuário e injete no
+  // template, como você faria com um token de API.
+  token: 'COLOQUE_AQUI_O_TOKEN_DO_USUARIO',
+
+  // 'srcdoc' roda o webphone na origem da sua própria página. Não é um
+  // iframe de terceiro, então bloqueadores e políticas corporativas não
+  // o derrubam, e a sessão não sofre com storage particionado.
+  mode: 'srcdoc',
+
+  // Onde a janela nasce, e se ela já abre visível.
+  position: 'bottom-right',
+  open: false,        // false = só a aba lateral; o usuário abre clicando
+  launcherSide: 'right',
+})
+
+// =====================================================================
+// 3. DISCAR
+//
+// call() aceita o número em formato livre. O segundo argumento é
+// opcional e alimenta o card da chamada no webphone — vale a pena
+// preencher: é o que dá contexto para quem atende.
+// =====================================================================
+document.querySelectorAll('.tel').forEach((botao) => {
+  botao.addEventListener('click', () => {
+    Bravophone.call(botao.dataset.fone, {
+      name: botao.dataset.nome,
+      crm: botao.dataset.empresa,
+      gateway: 'meu-sistema',       // identifica a origem nos relatórios
+      // photo: 'https://.../foto.jpg',   // vira o avatar da chamada
+    }).catch((erro) => {
+      // Um número inválido ou o webphone ainda carregando caem aqui.
+      alert('Não foi possível ligar: ' + erro.message)
+    })
+  })
+})
+
+// =====================================================================
+// 4. REAGIR AO QUE ACONTECE
+//
+// on() devolve uma função que remove o listener, útil em SPA quando o
+// componente é desmontado.
+// =====================================================================
+const estado = document.getElementById('estado')
+
+Bravophone.on('ready', () => { estado.textContent = 'Webphone pronto.' })
+
+Bravophone.on('state', ({ state }) => {
+  if (state === 'ready') estado.textContent = 'Ramal registrado.'
+  if (state === 'error') estado.textContent = 'Sem linha — verifique a conexão.'
+})
+
+Bravophone.on('call:incoming', ({ number }) => {
+  // A janela se abre sozinha numa chamada entrante; aqui você pode, por
+  // exemplo, buscar o cliente pelo número e abrir a ficha dele.
+  estado.textContent = 'Chamada recebida de ' + number
+})
+
+Bravophone.on('call:answered', ({ number }) => {
+  estado.textContent = 'Em chamada com ' + number
+})
+
+Bravophone.on('call:ended', ({ number }) => {
+  estado.textContent = 'Chamada encerrada' + (number ? ' — ' + number : '')
+  // Bom lugar para registrar o atendimento no seu sistema.
+})
+
+// Durante o desenvolvimento, veja tudo o que acontece:
+// Bravophone.on('*', (e) => console.log('[bravophone]', e.event, e.payload))
+</script>
+</body>
+</html>
