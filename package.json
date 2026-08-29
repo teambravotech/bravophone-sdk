@@ -29,7 +29,8 @@
     "build:host": "npm run sync && vite build --config vite.host.config.js",
     "test": "node scripts/smoke-shim.mjs && node scripts/smoke-geometry.mjs && node scripts/smoke-launcher.mjs",
     "start": "node scripts/dev-server.mjs",
-    "audit:theme": "node scripts/audit-theme.mjs"
+    "audit:theme": "node scripts/audit-theme.mjs",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "webphone",
@@ -46,5 +47,18 @@
   },
   "devDependencies": {
     "vite": "^5.4.0"
-  }
+  },
+  "author": "BravoTech",
+  "homepage": "https://github.com/teambravotech/bravophone-sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/teambravotech/bravophone-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/teambravotech/bravophone-sdk/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "browser": "./dist/bravophone.umd.cjs"
 }
