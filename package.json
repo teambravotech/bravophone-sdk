@@ -31,7 +31,9 @@
     "start": "node scripts/dev-server.mjs",
     "audit:theme": "node scripts/audit-theme.mjs",
     "prepublishOnly": "npm run build && npm test",
-    "prepare:host": "node scripts/sync-from-extension.mjs --cdn"
+    "prepare:host": "node scripts/sync-from-extension.mjs --cdn",
+    "purge": "node scripts/purge-cdn.mjs",
+    "postpublish": "node scripts/purge-cdn.mjs"
   },
   "keywords": [
     "webphone",

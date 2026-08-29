@@ -255,6 +255,7 @@ carrega (o mock em `?host=mock` continua funcionando).
 | `npm start` | Sobe as duas origens locais (5173 site, 5174 host) |
 | `npm test` | 100 asserções: shim, geometria da janela e aba de abertura |
 | `npm run audit:theme` | Procura texto invisível no tema escuro |
+| `npm run purge` | Limpa o cache do CDN nas URLs sem versão fixa (roda sozinho após o publish) |
 
 Abra **http://localhost:5173/**.
 
@@ -329,6 +330,46 @@ Recomende aos integradores a versão travada — `@bravophone/webphone@0.1` — 
 um major não quebre a página deles.
 
 ---
+
+## Manter o cliente sempre atualizado
+
+A intuição diz para usar a URL sem versão. **É a pior escolha para isso**, e os
+headers do CDN mostram por quê:
+
+```
+sem versão / @0.2   →  max-age=604800   (7 dias no navegador do usuário)
+@0.2.1 exata        →  immutable        (eterno, mas fixo)
+```
+
+A URL sem versão é entregue com sete dias de cache **na máquina de quem
+acessa**. Publicar uma correção não alcança essa pessoa: `npm run purge` limpa
+as bordas do CDN, não o cache que já está no navegador dela.
+
+O caminho que resolve é [`examples/loader-latest.js`](examples/loader-latest.js),
+que separa as duas coisas:
+
+1. pergunta ao CDN qual é a versão atual — resposta com **5 min** de cache;
+2. carrega o bundle daquela versão **exata** — URL imutável, cache eterno.
+
+Uma publicação chega em até cinco minutos, e o arquivo pesado vem de um cache
+que nunca precisa ser revalidado. O custo é uma requisição de ~1 kB antes do
+bundle, quase sempre servida do cache.
+
+```js
+const { version } = await (await fetch(
+  'https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved'
+)).json()
+
+const s = document.createElement('script')
+s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
+document.head.appendChild(s)
+```
+
+Cole isso **inline** na página, não como arquivo externo — um arquivo externo
+teria o mesmo problema de cache que estamos evitando.
+
+Os assets do webphone acompanham automaticamente: o `public_path` é gravado com
+a versão do pacote, então carregar o SDK 0.2.1 carrega o host 0.2.1.
 
 ## Documentação
 
