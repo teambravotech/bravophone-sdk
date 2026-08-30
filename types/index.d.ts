@@ -10,6 +10,25 @@ export interface BravophoneSession {
   ramal?: string
   clienteId?: string
   ramaisUrl?: string
+  /**
+   * O ramal SIP, como vem do `/api/voxfree/login`. **Obrigatório para
+   * registrar**: o `checkToken` do webphone exige as duas metades — o
+   * `vxToken` da sessão E um `extension` com `username` e `password`. Só a
+   * sessão deixa o app parado na tela de login.
+   *
+   * Onde ele fica: o SDK o envia apenas pela ponte (postMessage) e o aplica
+   * no store em memória do webphone. Nunca entra no HTML do iframe nem no
+   * localStorage — a credencial SIP não fica legível no DOM da sua página.
+   */
+  extension?: {
+    username: string
+    password: string
+    server?: string
+    authID?: string
+    displayName?: string
+    label?: string
+    [k: string]: unknown
+  }
 }
 
 export interface BravophoneOptions {

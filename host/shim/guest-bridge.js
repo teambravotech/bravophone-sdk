@@ -152,9 +152,22 @@
       }
       Object.keys(dados).forEach(function (k) { if (dados[k] === null) delete dados[k] })
 
-      return new Promise(function (resolve) {
+      return new Promise(function (resolve, reject) {
         chrome.storage.local.set(dados, function () {
-          resolve({ ok: true, chaves: Object.keys(dados).length })
+          // O ramal NÃO vai para o storage: o bundle o mantém apenas no store
+          // Vuex (mutation addExtension), em memória. E o checkToken exige as
+          // DUAS metades — `vxToken` da sessão E `extension` com username e
+          // password. Só a sessão deixa o app na tela de login.
+          if (!s.extension) return resolve({ ok: true, extension: false })
+
+          waitFor(findStore, 20000).then(function (store) {
+            // Depois da sessão gravada, de propósito: a mutation relê o
+            // storage para decidir se está logado.
+            store.commit('addExtension', s.extension)
+            resolve({ ok: true, extension: true })
+          }).catch(function (err) {
+            reject(new Error('sessão gravada, mas o ramal não pôde ser aplicado: ' + err.message))
+          })
         })
       })
     },

@@ -68,11 +68,10 @@ O UMD expõe `window.Bravophone`. **Não** use `Bravophone.default`.
 1. **A página precisa ser HTTPS ou localhost.** `getUserMedia` não existe fora
    de contexto seguro; o webphone carrega e nunca captura áudio. O SDK avisa no
    console, não lança.
-2. **Passe a SESSÃO inteira, não só o token.** O `/api/voxfree/login` devolve
-   `{ vxToken, expiresIn, sip, tenant, ramal, clienteId, ramaisUrl }` — repasse
-   o objeto como está em `init({ session })`. Só o `vxToken` faz o webphone
-   carregar e **não registrar**: sem `sip` e `ramal` não há o que registrar, e
-   o RouteSelector avisa "faça login pelo webphone".
+2. **Passe a resposta do `/api/voxfree/login` INTEIRA**, incluindo o
+   `extension`, em `init({ session })`. Estar logado exige duas metades: o
+   `vxToken` e um `extension` com `username` e `password`. Faltando qualquer
+   uma, o webphone carrega e fica na tela de login.
    Nunca escreva a sessão literal no HTML — injete no template, por usuário.
 3. **`mute()` e `hold()` não aceitam argumento.** São *toggle*. `mute(true)`
    não faz o que parece: o argumento é ignorado.

@@ -80,5 +80,35 @@ console.log('\nsessão — o bundle do host realmente lê estas chaves:')
   }
 }
 
+console.log('\nramal SIP — a segunda metade que o checkToken exige:')
+{
+  // Estar logado exige DUAS coisas: o vxToken da sessão e um `extension` com
+  // username e password. Só a sessão deixa o app na tela de login, e a
+  // mensagem que aparece manda "fazer login pelo webphone" — justamente o que
+  // a auto-autenticação existe para evitar.
+  const bridge = await readFile(join(ROOT, 'host/shim/guest-bridge.js'), 'utf8')
+  check('auth aplica o extension no store', /commit\('addExtension'/.test(bridge))
+  check('aplica DEPOIS de gravar a sessão',
+    bridge.indexOf('storage.local.set(dados') < bridge.indexOf("commit('addExtension'"))
+
+  // A credencial SIP no HTML do srcdoc ficaria legível no DOM da página do
+  // integrador. Ela viaja só por postMessage.
+  const html = buildSrcdoc({
+    version: '0', parentOrigin: 'https://x.com',
+    session: { ...SESSAO, extension: { username: 'u', password: 'SENHA-SIP' } },
+  })
+  check('a senha SIP não entra no HTML do srcdoc', !html.includes('SENHA-SIP'))
+  check('a sessão do proxy continua pré-gravada', html.includes('bravophoneVxToken'))
+
+  const popup = join(ROOT, 'host/popup.js')
+  if (existsSync(popup)) {
+    const js = await readFile(popup, 'utf8')
+    // Se o bundle deixar de exigir as duas metades, este teste avisa que a
+    // complexidade aqui pode ser removida.
+    check('o bundle ainda exige extension.username e .password',
+      js.includes('!this.extension.password') || js.includes('!e.password'))
+  }
+}
+
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)

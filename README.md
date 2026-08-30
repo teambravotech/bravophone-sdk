@@ -430,9 +430,19 @@ Bravophone.init({
     tenant:     '…',
     clienteId:  '…',
     ramaisUrl:  '…',
+
+    // A segunda metade: sem ela o app fica na tela de login, mesmo com o
+    // vxToken válido. O checkToken do webphone exige as duas.
+    extension: { username: '…', password: '…', server: '…' },
   },
 })
 ```
+
+**Onde a credencial SIP fica.** O `extension` viaja apenas pela ponte
+(`postMessage`) e é aplicado no store em memória do webphone. Ele **não** entra
+no HTML do iframe nem no `localStorage` — a senha não fica legível no DOM da sua
+página. As outras sete chaves são pré-gravadas no storage, porque é de lá que o
+bundle as lê.
 
 O SDK grava essas chaves onde o bundle as procura, **antes** dele avaliar — a
 sessão já sobe autenticada, sem piscar a tela de login.

@@ -25,6 +25,9 @@ export function hostBase(version, pkg = '@bravophone/webphone') {
 /**
  * Monta o documento do webphone para rodar dentro de um iframe srcdoc.
  *
+ * A pré-gravação cobre a sessão do proxy (as sete chaves do bpSaveSession).
+ * O ramal SIP não entra aqui — ver o comentário em `semRamal`.
+ *
  * A ordem dos scripts é a mesma do host hospedado e não é negociável: as
  * mensagens precisam existir antes do shim, e o shim antes de qualquer código
  * que toque em `chrome.*` durante a avaliação do bundle.
@@ -34,7 +37,12 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
 
   // O srcdoc é HTML dentro de um atributo: aspas duplas quebrariam o atributo.
   // Serializamos os valores como JSON e usamos aspas simples no HTML.
-  const cfg = JSON.stringify({ parentOrigin, session: session || null })
+  // O ramal (session.extension) fica DE FORA do srcdoc de propósito: o HTML
+  // vira um atributo no DOM da página do integrador, legível por qualquer
+  // script dela. A credencial SIP viaja só pela ponte, por postMessage, e
+  // termina no store em memória do iframe — nunca no DOM nem no localStorage.
+  const semRamal = session ? { ...session, extension: undefined } : null
+  const cfg = JSON.stringify({ parentOrigin, session: semRamal })
     .replace(/</g, '\\u003c')
 
   return `<!doctype html>
