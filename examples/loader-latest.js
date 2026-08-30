@@ -72,7 +72,10 @@ async function resolverVersao(timeout) {
   try {
     const controle = new AbortController()
     const t = setTimeout(() => controle.abort(), Math.min(timeout, 4000))
-    const resp = await fetch(META, { signal: controle.signal })
+    // no-store: a consulta é pequena e precisa ser fresca. Com o cache
+    // padrão ela vive 5 min no navegador, e uma publicação recém-saída não
+    // aparece até expirar.
+    const resp = await fetch(META, { signal: controle.signal, cache: 'no-store' })
     clearTimeout(t)
     if (!resp.ok) return null
     const dados = await resp.json()

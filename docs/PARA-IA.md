@@ -18,7 +18,12 @@ volta.
 
 ```html
 <script>
-fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved')
+// cache:'no-store' na CONSULTA (~1 kB): sem ele, a resposta fica até 5 min
+// no navegador e uma publicação recém-saída não aparece — foi o que exigiu
+// Ctrl+Shift+R nos testes. O bundle continua vindo de cache immutable, então
+// o custo é uma requisição pequena por carregamento, não 30 kB.
+fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved',
+      { cache: 'no-store' })
   .then((r) => r.json())
   .then(({ version }) => {
     const s = document.createElement('script')

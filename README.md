@@ -10,7 +10,12 @@ navegador.
 // Duas etapas de propósito: a consulta tem 5 min de cache, o bundle é
 // immutable. Assim as correções chegam em minutos, sem revalidar 30 kB a cada
 // visita — e sem os 7 dias de cache que a URL sem versão carrega.
-fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved')
+// cache:'no-store' na CONSULTA (~1 kB): sem ele, a resposta fica até 5 min
+// no navegador e uma publicação recém-saída não aparece — foi o que exigiu
+// Ctrl+Shift+R nos testes. O bundle continua vindo de cache immutable, então
+// o custo é uma requisição pequena por carregamento, não 30 kB.
+fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved',
+      { cache: 'no-store' })
   .then((r) => r.json())
   .then(({ version }) => {
     const s = document.createElement('script')
@@ -389,6 +394,24 @@ document.head.appendChild(s)
 
 Cole isso **inline** na página, não como arquivo externo — um arquivo externo
 teria o mesmo problema de cache que estamos evitando.
+
+### Se uma publicação não aparecer
+
+Três caches diferentes, do mais provável ao menos:
+
+| O que está velho | Como saber | Solução |
+|---|---|---|
+| **A consulta de versão** | `Bravophone.version` mostra a anterior | Já resolvido: o snippet usa `cache: 'no-store'` |
+| **A página do integrador** | o próprio snippet mudou e não teve efeito | Não sirva o HTML com `max-age` longo |
+| **O bundle** | — | Não acontece: a URL é versionada e `immutable` |
+
+Durante o desenvolvimento, `Ctrl+Shift+R` limpa os três de uma vez — foi o que
+funcionou nos primeiros testes. Em produção não há como pedir isso ao usuário,
+e é por isso que o `no-store` está na consulta: sem ele, quem carregou a página
+nos últimos cinco minutos continua na versão anterior.
+
+Se ainda assim algo ficar para trás, `npm run purge` limpa as bordas do CDN —
+mas lembre que ele não alcança o navegador de ninguém.
 
 Os assets do webphone acompanham automaticamente: o `public_path` é gravado com
 a versão do pacote, então carregar o SDK 0.2.1 carrega o host 0.2.1.
