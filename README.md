@@ -100,7 +100,7 @@ Testei mentalmente as duas rotas; o iframe ganha em quatro frentes de uma vez:
 1. **CSS.** O bundle traz Tailwind + `dark-theme.css` globais. Injetado na página do
    cliente, ele quebraria o site do cliente — e o CSS do cliente quebraria o webphone.
 2. **CORS, e este é o argumento decisivo.** Dentro do iframe, todo request para
-   `api.bravophone.com`, `reports.teambravotech.com` e `devices.wavoip.com` sai com
+   `pabx.teambravotech.com` e `devices.wavoip.com` sai com
    `Origin: https://webphone.bravophone.com` — **uma origem só, fixa**. Sem iframe,
    cada cliente novo exigiria liberar mais uma origem no CORS de três backends. Com
    iframe, a lista de origens do backend nunca cresce.
@@ -331,7 +331,7 @@ sync, ou versione por query string); `index.html` sempre com `no-cache`.
 
 ### 2. Backends — CORS
 
-Liberar **uma única origem** em `api.bravophone.com`, `reports.teambravotech.com` e
+Liberar **uma única origem** em `api.bravophone.com`, `pabx.teambravotech.com` e
 `devices.wavoip.com`:
 
 ```
@@ -458,7 +458,7 @@ Bravophone.init({ token, mode: 'srcdoc' })     // na origem do próprio site
 | Você precisa manter | o domínio do host | nada |
 
 **Antes de oferecer o `srcdoc` a um cliente, a origem dele precisa estar na
-allowlist de CORS de `api.bravophone.com`, `reports.teambravotech.com` e
+allowlist de CORS de `api.bravophone.com`, `pabx.teambravotech.com` e
 `devices.wavoip.com`.** Sem isso o webphone carrega, aparece na tela e não
 registra — o navegador descarta as respostas. Isso é trabalho no **nosso**
 backend: o integrador não tem como liberar CORS de um servidor que não é dele.
