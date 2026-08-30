@@ -1,5 +1,17 @@
 export type LauncherIcon = 'phone-waves' | 'waveform' | 'headset' | 'chat-phone'
 
+/** Resposta do `/api/voxfree/login`, repassada como está. */
+export interface BravophoneSession {
+  vxToken: string
+  /** Segundos até expirar; vira `bravophoneVxTokenExpiresAt`. */
+  expiresIn?: number
+  sip?: string
+  tenant?: string
+  ramal?: string
+  clienteId?: string
+  ramaisUrl?: string
+}
+
 export interface BravophoneOptions {
   /** Origem do webphone hospedado. Só usado com `mode: 'hosted'`. */
   hostUrl?: string
@@ -23,7 +35,16 @@ export interface BravophoneOptions {
    * assets de um espelho próprio.
    */
   hostBase?: string
-  /** Token de sessão do usuário, emitido pelo backend do integrador. */
+  /**
+   * Sessão do `/api/voxfree/login`, repassada inteira. É o caminho correto:
+   * o webphone precisa de `sip` e `ramal` para registrar.
+   */
+  session?: BravophoneSession
+  /**
+   * Atalho para `{ vxToken: token }`. **Sozinho não basta** — sem `sip` e
+   * `ramal` o webphone carrega, não registra, e o RouteSelector avisa
+   * "faça login pelo webphone".
+   */
   token?: string
   /** Canto inicial da janela. Padrão: 'bottom-right'. */
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
@@ -155,7 +176,7 @@ export interface BravophoneAPI {
   sendDTMF(tone: string): Promise<{ ok: true }>
   transfer(to: string): Promise<{ ok: true }>
   getStatus(): Promise<PhoneStatus>
-  setAuth(token: string): Promise<{ ok: true }>
+  setAuth(session: BravophoneSession | string): Promise<{ ok: true }>
   logout(): Promise<{ ok: true }>
 
   on<K extends keyof BravophoneEvents>(

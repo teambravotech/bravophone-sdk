@@ -28,7 +28,7 @@ fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved',
   .then(({ version }) => {
     const s = document.createElement('script')
     s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
-    s.onload = () => Bravophone.init({ token: TOKEN_DO_USUARIO, mode: 'srcdoc' })
+    s.onload = () => Bravophone.init({ session: SESSAO_DO_LOGIN })
     s.onerror = () => console.error('Bravophone: falha ao carregar do CDN')
     document.head.appendChild(s)
   })
@@ -68,9 +68,12 @@ O UMD expõe `window.Bravophone`. **Não** use `Bravophone.default`.
 1. **A página precisa ser HTTPS ou localhost.** `getUserMedia` não existe fora
    de contexto seguro; o webphone carrega e nunca captura áudio. O SDK avisa no
    console, não lança.
-2. **O token vem do backend do integrador, por usuário.** Nunca escreva um
-   token literal no HTML de exemplo — use um placeholder e diga que ele deve
-   ser injetado no template.
+2. **Passe a SESSÃO inteira, não só o token.** O `/api/voxfree/login` devolve
+   `{ vxToken, expiresIn, sip, tenant, ramal, clienteId, ramaisUrl }` — repasse
+   o objeto como está em `init({ session })`. Só o `vxToken` faz o webphone
+   carregar e **não registrar**: sem `sip` e `ramal` não há o que registrar, e
+   o RouteSelector avisa "faça login pelo webphone".
+   Nunca escreva a sessão literal no HTML — injete no template, por usuário.
 3. **`mute()` e `hold()` não aceitam argumento.** São *toggle*. `mute(true)`
    não faz o que parece: o argumento é ignorado.
 4. **`call()` devolve Promise e pode rejeitar** (número inválido, webphone

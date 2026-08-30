@@ -29,12 +29,12 @@ export function hostBase(version, pkg = '@bravophone/webphone') {
  * mensagens precisam existir antes do shim, e o shim antes de qualquer código
  * que toque em `chrome.*` durante a avaliação do bundle.
  */
-export function buildSrcdoc({ version, parentOrigin, token, base }) {
+export function buildSrcdoc({ version, parentOrigin, session, base }) {
   const b = base || hostBase(version)
 
   // O srcdoc é HTML dentro de um atributo: aspas duplas quebrariam o atributo.
   // Serializamos os valores como JSON e usamos aspas simples no HTML.
-  const cfg = JSON.stringify({ parentOrigin, token: token || null })
+  const cfg = JSON.stringify({ parentOrigin, session: session || null })
     .replace(/</g, '\\u003c')
 
   return `<!doctype html>
@@ -61,10 +61,29 @@ export function buildSrcdoc({ version, parentOrigin, token, base }) {
   // O guest-bridge lê daqui: em srcdoc não há query string para carregar a
   // origem do pai.
   window.__bpParentOrigin = cfg.parentOrigin;
-  if (cfg.token) {
-    // Grava onde o bundle procura, antes dele avaliar, para a sessão já subir
-    // autenticada em vez de piscar a tela de login.
-    try { localStorage.setItem('bp.local.vxToken', JSON.stringify(cfg.token)); } catch (e) {}
+  // Grava a sessão onde o bundle procura, ANTES dele avaliar, para já subir
+  // autenticado em vez de piscar a tela de login.
+  //
+  // As chaves e o prefixo não são escolha nossa: 'bp.local.' é como o
+  // chrome-shim mapeia chrome.storage.local, e os nomes vêm do bpSaveSession
+  // do bundle. Um token sozinho NÃO basta — sem sip e ramal o webphone não
+  // tem o que registrar, e o RouteSelector avisa "faça login pelo webphone".
+  if (cfg.session) {
+    var s = cfg.session;
+    var mapa = {
+      bravophoneVxToken: s.vxToken || null,
+      bravophoneVxTokenExpiresAt: s.expiresIn ? Date.now() + 1000 * Number(s.expiresIn) : null,
+      bravophoneSip: s.sip || null,
+      bravophoneTenant: s.tenant || null,
+      bravophoneRamal: s.ramal || null,
+      bravophoneClienteId: s.clienteId || null,
+      bravophoneRamaisUrl: s.ramaisUrl || null
+    };
+    try {
+      for (var k in mapa) {
+        if (mapa[k] !== null) localStorage.setItem('bp.local.' + k, JSON.stringify(mapa[k]));
+      }
+    } catch (e) {}
   }
 })();
 <\/script>

@@ -34,6 +34,7 @@ export function createWidget(options) {
   const {
     hostUrl,
     token,
+    session,
     position = 'bottom-right',
     open = false,
     launcher = true,
@@ -109,7 +110,10 @@ export function createWidget(options) {
   })
   if (srcdoc) {
     frameEl.setAttribute('srcdoc',
-      buildSrcdoc({ version, parentOrigin: origin, token, base: hostBase }))
+      buildSrcdoc({ version, parentOrigin: origin, base: hostBase,
+        // token sozinho vira uma sessão mínima; sem sip/ramal o webphone
+        // carrega mas não registra.
+        session: session || (token ? { vxToken: token } : null) }))
   } else {
     frameEl.setAttribute('src',
       buildSrc(new URL(hostUrl), { token, embed: '1', parent: location.origin }))
@@ -195,7 +199,11 @@ export function createWidget(options) {
       if (name === 'ready') {
         status.dataset.state = 'ready'
         launcherBtn.dataset.state = 'ready'
-        if (token) bridge.call('auth', { token }).catch(() => {})
+        // Reenvia pela ponte: no modo hospedado não há pré-gravação, e no
+        // srcdoc isto confirma o que já foi gravado.
+        if (session || token) {
+          bridge.call('auth', { session: session || { vxToken: token } }).catch(() => {})
+        }
       }
       if (name === 'state') {
         const st = payload?.state ?? 'ready'

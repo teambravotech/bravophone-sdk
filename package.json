@@ -1,6 +1,6 @@
 {
   "name": "@bravophone/webphone",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Webphone BRAVOPHONE embutível em qualquer página web. Renderiza uma janela flutuante arrastável com todas as funcionalidades do softphone.",
   "main": "./dist/bravophone.umd.js",
   "module": "./dist/bravophone.mjs",
@@ -27,7 +27,7 @@
     "dev": "node scripts/dev-server.mjs",
     "build": "vite build",
     "build:host": "npm run sync && vite build --config vite.host.config.js",
-    "test": "node scripts/smoke-shim.mjs && node scripts/smoke-geometry.mjs && node scripts/smoke-launcher.mjs && node scripts/smoke-package.mjs",
+    "test": "node scripts/smoke-shim.mjs && node scripts/smoke-geometry.mjs && node scripts/smoke-launcher.mjs && node scripts/smoke-sessao.mjs && node scripts/smoke-package.mjs",
     "start": "node scripts/dev-server.mjs",
     "audit:theme": "node scripts/audit-theme.mjs",
     "prepublishOnly": "npm run build && npm test",

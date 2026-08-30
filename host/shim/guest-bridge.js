@@ -134,21 +134,37 @@
 
   // --- comandos aceitos do site hospedeiro ---
   var commands = {
+    // As chaves saem do bpSaveSession do bundle — é ele quem define os nomes.
+    // Gravar 'vxToken' não serve para nada: ninguém lê essa chave.
     auth: function (p) {
-      // Sessão do integrador: grava onde o bundle já procura o token.
-      if (!p || !p.token) throw new Error('token ausente')
+      var s = (p && p.session) || (p && p.token ? { vxToken: p.token } : null)
+      if (!s || !s.vxToken) throw new Error('sessão ausente (precisa ao menos de vxToken)')
+
+      var dados = {
+        bravophoneVxToken: s.vxToken,
+        bravophoneVxTokenExpiresAt: s.expiresIn
+          ? Date.now() + 1000 * Number(s.expiresIn) : null,
+        bravophoneSip: s.sip || null,
+        bravophoneTenant: s.tenant || null,
+        bravophoneRamal: s.ramal || null,
+        bravophoneClienteId: s.clienteId || null,
+        bravophoneRamaisUrl: s.ramaisUrl || null,
+      }
+      Object.keys(dados).forEach(function (k) { if (dados[k] === null) delete dados[k] })
+
       return new Promise(function (resolve) {
-        chrome.storage.local.set({ vxToken: p.token }, function () {
-          chrome.storage.sync.set({ vxToken: p.token }, function () { resolve({ ok: true }) })
+        chrome.storage.local.set(dados, function () {
+          resolve({ ok: true, chaves: Object.keys(dados).length })
         })
       })
     },
 
     logout: function () {
+      var CHAVES = ['bravophoneVxToken', 'bravophoneVxTokenExpiresAt', 'bravophoneSip',
+                    'bravophoneTenant', 'bravophoneRamal', 'bravophoneClienteId',
+                    'bravophoneRamaisUrl']
       return new Promise(function (resolve) {
-        chrome.storage.local.remove(['vxToken'], function () {
-          chrome.storage.sync.remove(['vxToken'], function () { resolve({ ok: true }) })
-        })
+        chrome.storage.local.remove(CHAVES, function () { resolve({ ok: true }) })
       })
     },
 

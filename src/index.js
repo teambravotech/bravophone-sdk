@@ -27,7 +27,11 @@ const Bravophone = {
    * Monta o webphone na página.
    * @param {object} opts
    * @param {string} [opts.hostUrl]  Origem do webphone hospedado.
-   * @param {string} [opts.token]    Token de sessão do usuário (SSO do integrador).
+   * @param {object} [opts.session]  Sessão do /api/voxfree/login — o objeto
+   *   inteiro: { vxToken, expiresIn, sip, tenant, ramal, clienteId, ramaisUrl }.
+   *   É o que o webphone precisa para registrar sem passar pela tela de login.
+   * @param {string} [opts.token]    Atalho para `{ vxToken }`. Sozinho não
+   *   basta: sem sip e ramal o webphone carrega mas não registra.
    * @param {'bottom-right'|'bottom-left'|'top-right'|'top-left'} [opts.position]
    * @param {boolean} [opts.open]     Abrir já visível (padrão: false, só o launcher).
    * @param {boolean} [opts.launcher] Exibir a aba de abertura (padrão: true).
@@ -94,7 +98,11 @@ const Bravophone = {
   sendDTMF(tone)      { return requireInstance().bridge.call('dtmf', { tone }) },
   transfer(to)        { return requireInstance().bridge.call('transfer', { to }) },
   getStatus()         { return requireInstance().bridge.call('status') },
-  setAuth(token)      { return requireInstance().bridge.call('auth', { token }) },
+  /** Aceita a sessão completa do login, ou só o vxToken (insuficiente sozinho). */
+  setAuth(sessao) {
+    const session = typeof sessao === 'string' ? { vxToken: sessao } : sessao
+    return requireInstance().bridge.call('auth', { session })
+  },
   logout()            { return requireInstance().bridge.call('logout') },
 
   // ---- Eventos ----

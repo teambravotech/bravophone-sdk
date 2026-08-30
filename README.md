@@ -20,7 +20,7 @@ fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved',
   .then(({ version }) => {
     const s = document.createElement('script')
     s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
-    s.onload = () => Bravophone.init({ token: TOKEN_DO_USUARIO })
+    s.onload = () => Bravophone.init({ session: SESSAO_DO_LOGIN })
     s.onerror = () => console.error('Bravophone: falha ao carregar do CDN')
     document.head.appendChild(s)
   })
@@ -415,6 +415,31 @@ mas lembre que ele não alcança o navegador de ninguém.
 
 Os assets do webphone acompanham automaticamente: o `public_path` é gravado com
 a versão do pacote, então carregar o SDK 0.2.1 carrega o host 0.2.1.
+
+## A sessão que o webphone espera
+
+`init()` recebe a resposta do `/api/voxfree/login` inteira:
+
+```js
+Bravophone.init({
+  session: {
+    vxToken:    '…',   // obrigatório
+    expiresIn:  3600,  // segundos
+    sip:        '…',   // sem isto o webphone não registra
+    ramal:      '…',   // idem
+    tenant:     '…',
+    clienteId:  '…',
+    ramaisUrl:  '…',
+  },
+})
+```
+
+O SDK grava essas chaves onde o bundle as procura, **antes** dele avaliar — a
+sessão já sobe autenticada, sem piscar a tela de login.
+
+`token: '…'` continua aceito como atalho para `{ vxToken }`, mas **sozinho não
+basta**: o webphone carrega, não registra, e o RouteSelector avisa "faça login
+pelo webphone" — justamente o que a auto-autenticação existe para evitar.
 
 ## Documentação
 
