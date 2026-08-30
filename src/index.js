@@ -1,6 +1,9 @@
 import { createWidget } from './widget.js'
 
-const DEFAULT_HOST = 'https://webphone.bravophone.com/embed/'
+// Sem default: o modo 'hosted' exige que o integrador diga qual é o host.
+// Um default apontando para um domínio não publicado falha em DNS e o erro
+// aparece longe da causa.
+const DEFAULT_HOST = ''
 
 let instance = null
 const listeners = new Map()
@@ -47,6 +50,11 @@ const Bravophone = {
     }
     // A versão vai junto: no modo srcdoc é ela que trava a URL dos assets no
     // CDN, garantindo que SDK e webphone nunca fiquem em versões diferentes.
+    if (opts.mode === 'hosted' && !opts.hostUrl) {
+      throw new Error(
+        "Bravophone: mode 'hosted' exige hostUrl. Use mode 'srcdoc' (padrão) " +
+        'para carregar o webphone do CDN sem depender de um host próprio.')
+    }
     instance = createWidget({
       hostUrl: DEFAULT_HOST,
       version: Bravophone.version,

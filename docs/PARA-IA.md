@@ -91,7 +91,7 @@ Chame uma vez, com o `<body>` já existindo. Devolve a instância.
 | Opção | Tipo | Padrão | Observação |
 |---|---|---|---|
 | `token` | `string` | — | Sessão do usuário, emitida pelo backend do integrador |
-| `mode` | `'hosted' \| 'srcdoc'` | `'hosted'` | Ver abaixo — quase sempre `'srcdoc'` |
+| `mode` | `'srcdoc' \| 'hosted'` | `'srcdoc'` | `'hosted'` exige `hostUrl` e um host publicado |
 | `hostBase` | `string` | CDN desta versão | Só em `srcdoc`. Deve terminar em `/` |
 | `hostUrl` | `string` | domínio oficial | Só em `hosted` |
 | `frame` | `'bar' \| 'none'` | `'bar'` | `'none'` = sem barra de título |

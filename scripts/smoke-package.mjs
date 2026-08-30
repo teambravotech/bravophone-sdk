@@ -105,6 +105,18 @@ console.log('\nhost — para onde os assets apontam:')
   }
 }
 
+console.log('\npadrão — não depende de host externo:')
+{
+  // O padrão era mode:'hosted', apontando para webphone.bravophone.com — um
+  // domínio que não existe em DNS. Quem fizesse init({token}) sem informar o
+  // modo batia em NXDOMAIN, antes de qualquer preflight de CORS.
+  const umd = await readFile(join(ROOT, pkg.unpkg.replace(/^\.\//, '')), 'utf8')
+  const m = umd.match(/mode:[A-Za-z$_]*="([a-z]+)"/)
+  check('modo padrão é srcdoc', !!m && m[1] === 'srcdoc', m && m[1])
+  check('nenhum host bravophone.com embutido', !/webphone\.bravophone\.com/.test(umd))
+  check('o srcdoc busca no CDN', /cdn\.jsdelivr\.net/.test(umd))
+}
+
 console.log('\npacote — a versão é única:')
 {
   // A versão estava escrita à mão no src/index.js e ficou para trás no bump

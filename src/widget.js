@@ -49,9 +49,11 @@ export function createWidget(options) {
     launcherSide = 'right',
     // Desenho da aba: 'phone-waves' | 'waveform' | 'headset' | 'chat-phone'
     launcherIcon = DEFAULT_ICON,
-    // 'hosted'  — o iframe navega para hostUrl (padrão)
-    // 'srcdoc'  — o iframe roda na origem do site e busca o conteúdo no CDN
-    mode = 'hosted',
+    // 'srcdoc' é o padrão porque é o modo que funciona sem infraestrutura
+    // nossa: o webphone vem do CDN, travado nesta versão. 'hosted' navega
+    // para hostUrl e depende de um domínio publicado — se ele não existir,
+    // o iframe falha em DNS antes de qualquer outra coisa.
+    mode = 'srcdoc',
     // Base dos assets no modo srcdoc. Padrão: o CDN travado nesta versão.
     // Serve para desenvolvimento (localhost) e para quem espelhar os assets.
     hostBase,

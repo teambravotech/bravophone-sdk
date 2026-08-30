@@ -15,7 +15,7 @@ fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved')
   .then(({ version }) => {
     const s = document.createElement('script')
     s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
-    s.onload = () => Bravophone.init({ token: TOKEN_DO_USUARIO, mode: 'srcdoc' })
+    s.onload = () => Bravophone.init({ token: TOKEN_DO_USUARIO })
     s.onerror = () => console.error('Bravophone: falha ao carregar do CDN')
     document.head.appendChild(s)
   })
@@ -29,15 +29,15 @@ Detalhes em [Manter o cliente sempre atualizado](#manter-o-cliente-sempre-atuali
 Para travar numa versão (integração de terceiros, ou build com SRI):
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2.1/dist/bravophone.umd.js"></script>
-<script>Bravophone.init({ token: TOKEN_DO_USUARIO, mode: 'srcdoc' })</script>
+<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.3.0/dist/bravophone.umd.js"></script>
+<script>Bravophone.init({ token: TOKEN_DO_USUARIO })</script>
 ```
 
 ```js
 // ou via npm
 import Bravophone from '@bravophone/webphone'
 
-Bravophone.init({ token, mode: 'srcdoc' })
+Bravophone.init({ token })
 Bravophone.on('call:incoming', ({ number }) => console.log('ligação de', number))
 await Bravophone.call('11987654321')
 ```
@@ -77,9 +77,9 @@ todas — é o [`host/shim/chrome-shim.js`](host/shim/chrome-shim.js).
 │   │  Shadow DOM · janela arrastável    │                    │
 │   │  API pública · ponte postMessage   │                    │
 │   │                                    │                    │
-│   │   ┌─ <iframe> ──────────────────┐  │                    │
-│   │   │  origem FIXA:               │  │                    │
-│   │   │  webphone.bravophone.com    │  │                    │
+│   │   ┌─ <iframe srcdoc> ───────────┐  │                    │
+│   │   │  origem: a do próprio site  │  │                    │
+│   │   │  arquivos: CDN (jsDelivr)   │  │                    │
 │   │   │                             │  │                    │
 │   │   │  chrome-shim.js             │  │                    │
 │   │   │  libwebphone.js   (604 KB)  │  │                    │
@@ -409,7 +409,7 @@ a versão do pacote, então carregar o SDK 0.2.1 carrega o host 0.2.1.
 | Opção | Tipo | Padrão | Descrição |
 |---|---|---|---|
 | `token` | `string` | — | Token de sessão emitido pelo seu backend |
-| `mode` | `'hosted' \| 'srcdoc'` | `'hosted'` | Como o webphone é carregado — ver abaixo |
+| `mode` | `'srcdoc' \| 'hosted'` | `'srcdoc'` | Como o webphone é carregado — ver abaixo |
 | `hostUrl` | `string` | `https://webphone.bravophone.com/` | Origem do webphone (só no modo `hosted`) |
 | `position` | `string` | `'bottom-right'` | Canto inicial |
 | `open` | `boolean` | `false` | Abrir já visível |
@@ -448,7 +448,7 @@ Bravophone.init({ token })                     // hospedado (padrão)
 Bravophone.init({ token, mode: 'srcdoc' })     // na origem do próprio site
 ```
 
-| | `hosted` (padrão) | `srcdoc` |
+| | `srcdoc` (padrão) | `hosted` |
 |---|---|---|
 | Onde o iframe roda | `webphone.bravophone.com` | origem do próprio site |
 | De onde vêm os arquivos | do host | do CDN, travados nesta versão |

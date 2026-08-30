@@ -1,6 +1,6 @@
 {
   "name": "@bravophone/webphone",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Webphone BRAVOPHONE embutível em qualquer página web. Renderiza uma janela flutuante arrastável com todas as funcionalidades do softphone.",
   "main": "./dist/bravophone.umd.js",
   "module": "./dist/bravophone.mjs",
