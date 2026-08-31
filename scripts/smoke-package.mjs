@@ -157,5 +157,91 @@ console.log('\npacote — metadados de publicação:')
     /build/.test(pkg.scripts?.prepublishOnly || '') && /test/.test(pkg.scripts?.prepublishOnly || ''))
 }
 
+console.log('\naviso de sem ramal — os dois arquivos andam juntos:')
+{
+  // O mesmo código vive na extensão (js/bravophone-sem-ramal.js) e no SDK
+  // (host/shim/guest-bridge.js). São arquivos separados por necessidade, e já
+  // foram editados em paralelo mais de uma vez — quando um dos dois fica para
+  // trás, o aviso sai com outra cara em um dos produtos.
+  const daExtensao = await readFile(
+    resolve(ROOT, '..', 'Bravophone', 'js', 'bravophone-sem-ramal.js'), 'utf8')
+  const doSdk = await readFile(join(ROOT, 'host/shim/guest-bridge.js'), 'utf8')
+
+  const recorte = (fonte) => {
+    const i = fonte.indexOf('.bp-aviso-ramal{')
+    const j = fonte.indexOf('document.head.appendChild(css)', i)
+    return i < 0 || j < 0 ? null : fonte.slice(i, j)
+  }
+  const a = recorte(daExtensao)
+  const b = recorte(doSdk)
+  check('o bloco de estilo existe nos dois', !!a && !!b)
+  check('e é idêntico', a === b,
+    a === b ? '' : `extensão ${a?.length} chars, sdk ${b?.length}`)
+
+  for (const [nome, fonte] of [['extensão', daExtensao], ['sdk', doSdk]]) {
+    // Cartão, não faixa sangrada: é o que o deixa parecido com o resto do app.
+    check(`${nome}: o aviso é um cartão recuado`,
+      /left:8px;top:8px/.test(fonte) && /border-radius:10px/.test(fonte))
+    // Reserva espaço encolhendo o shell por dentro. Inserir o cartão na lista
+    // de filhos que o Vue diffa fazia o webphone desmontar, e o
+    // `unmounted(){location.reload()}` dele recarregava a página em loop.
+    check(`${nome}: reserva espaço sem entrar na árvore do Vue`,
+      /body\.bp-sem-ramal \.webphone-shell-main/.test(fonte) &&
+      !/insertBefore\(avisoEl/.test(fonte))
+    check(`${nome}: e mede a altura real do aviso`,
+      /--bp-aviso-altura/.test(fonte) && /offsetHeight/.test(fonte))
+    // Uma linha só, sem botão: o portal continua acessível pela aba Ajustes.
+    check(`${nome}: é inline, sem pílula de portal`,
+      !/bp-aviso-link/.test(fonte) && /align-items:center/.test(fonte))
+    // O container de toast é fixo em top:1em e ficava atrás do cartão, levando
+    // junto os outros avisos do app (microfone, por exemplo).
+    check(`${nome}: desce os toasts do bundle em vez de escondê-los`,
+      /Vue-Toastification__container\[class\*="top-"\]/.test(fonte))
+    // Os toasts vinham com o tema de fábrica do Vue-Toastification: retângulos
+    // chapados, texto branco de 16px em Lato, 326px de largura mínima.
+    check(`${nome}: os toasts usam a linguagem do app`,
+      /bp-estilo-toasts/.test(fonte) &&
+      ['error', 'warning', 'success', 'info'].every(
+        (t) => fonte.includes(`'${t}'`)))
+    check(`${nome}: e cabem num painel estreito`,
+      /min-width:0!important/.test(fonte))
+    // O shell é flex-row: sem prender à coluna do discador, os avisos passam
+    // por cima do painel de recentes que fica ao lado.
+    check(`${nome}: avisos param na divisa da coluna do discador`,
+      /--bp-painel-larg/.test(fonte) && /webphone-shell-main/.test(fonte) &&
+      !/right:8px/.test(fonte))
+    // O toast do bundle diz a mesma coisa; sem escondê-lo ficavam dois avisos.
+    check(`${nome}: esconde o toast duplicado do bundle`,
+      /Vue-Toastification__toast/.test(fonte))
+    // O tema marca display com !important; style inline simples não esconde.
+    check(`${nome}: esconde com !important, que é o que funciona aqui`,
+      /setProperty\('display', 'none', 'important'\)/.test(fonte))
+  }
+}
+
+console.log('\nas duas páginas do host carregam o mesmo:')
+{
+  // Há dois pontos de entrada — host/index.html (modo hosted) e o documento do
+  // buildSrcdoc — e eles precisam listar os MESMOS scripts na MESMA ordem.
+  // Quando o index.html ficou para trás, faltando o bravophone-input.js, cada
+  // tecla digitada entrava duas vezes: sem aquele arquivo ninguém desligava o
+  // atalho de teclado do guest-bridge, que somava ao listener do bundle.
+  const { buildSrcdoc } = await import('../src/srcdoc.js')
+  const scripts = (html) =>
+    [...html.matchAll(/<script[^>]*src="[^"]*?([^/"]+\.js)"/g)].map((m) => m[1])
+
+  const doIndex = scripts(await readFile(join(ROOT, 'host/index.html'), 'utf8'))
+  const doSrcdoc = scripts(buildSrcdoc({ version: '0', parentOrigin: 'https://x' }))
+
+  check('host/index.html tem scripts', doIndex.length > 0)
+  check('a lista é a mesma, na mesma ordem',
+    doIndex.join(' > ') === doSrcdoc.join(' > '),
+    `index: ${doIndex.join(', ')} | srcdoc: ${doSrcdoc.join(', ')}`)
+  check('o campo de discagem vem antes do popup.js',
+    doIndex.indexOf('bravophone-input.js') >= 0 &&
+    doIndex.indexOf('bravophone-input.js') < doIndex.indexOf('popup.js'),
+    doIndex.join(', '))
+}
+
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)

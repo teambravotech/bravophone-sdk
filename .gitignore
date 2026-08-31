@@ -17,3 +17,4 @@ host/index.html
 host/shim/messages.js
 *.log
 .DS_Store
+examples/_teste-sem-ramal.html

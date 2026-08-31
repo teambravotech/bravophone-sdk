@@ -4,6 +4,7 @@ import { createBridge } from './bridge.js'
 import { makeLauncher, loadLauncherState, clampY } from './launcher.js'
 import { ICONS, DEFAULT_ICON, GRIP_ICON } from './icons.js'
 import { buildSrcdoc } from './srcdoc.js'
+import { acompanharRamal } from './ramal.js'
 
 const DEFAULTS = {
   // 380x640 é a geometria da janela nativa da extensão — o layout do
@@ -58,6 +59,9 @@ export function createWidget(options) {
     // Base dos assets no modo srcdoc. Padrão: o CDN travado nesta versão.
     // Serve para desenvolvimento (localhost) e para quem espelhar os assets.
     hostBase,
+    // Base da API, para acompanhar mudanças de ramal. Sem ela o SDK não
+    // consulta nada — o estado fica o do login e só muda com novo login.
+    apiBase,
     version,
     emit,
   } = options
@@ -204,6 +208,24 @@ export function createWidget(options) {
         if (session || token) {
           bridge.call('auth', { session: session || { vxToken: token } }).catch(() => {})
         }
+
+        // O ramal pode ser atribuído ou trocado sem novo login. Só faz
+        // sentido acompanhar se soubermos para onde perguntar.
+        const tokenApi = session?.vxToken || token
+        if (apiBase && tokenApi && !ramalWatcher) {
+          ramalWatcher = acompanharRamal({
+            apiBase,
+            token: tokenApi,
+            onConsulta: (buscando) => {
+              bridge.call('extensionStatus', { buscando }).catch(() => {})
+            },
+            onMudanca: (status) => {
+              bridge.call('extensionStatus', { status }).catch(() => {})
+              emit('extension', status)
+            },
+            onErroSessao: () => emit('state', { state: 'error' }),
+          })
+        }
       }
       if (name === 'state') {
         const st = payload?.state ?? 'ready'
@@ -235,6 +257,7 @@ export function createWidget(options) {
 
   let minimized = false
   let revealTimer = null
+  let ramalWatcher = null
 
   const api = {
     el: mount,
@@ -295,6 +318,7 @@ export function createWidget(options) {
     get geometry() { return drag.geometry },
     destroy() {
       clearTimeout(revealTimer)
+      ramalWatcher?.parar()
       bridge.destroy()
       drag.destroy()
       launcherCtl.destroy()

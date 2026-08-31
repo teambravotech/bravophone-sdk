@@ -42,7 +42,14 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
   // script dela. A credencial SIP viaja só pela ponte, por postMessage, e
   // termina no store em memória do iframe — nunca no DOM nem no localStorage.
   const semRamal = session ? { ...session, extension: undefined } : null
+
+  // Tudo em ASCII. O srcdoc viaja como atributo do documento pai, e o charset
+  // não sobrevive de forma confiável a essa passagem — acentos chegavam
+  // quebrados ("atribu?do a este usu?rio"). Escapando para \uXXXX, o HTML fica
+  // ASCII puro e o texto é reconstruído pelo parser de JSON, sem depender de
+  // encoding em nenhum ponto do caminho.
   const cfg = JSON.stringify({ parentOrigin, session: semRamal })
+    .replace(/[-￿]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'))
     .replace(/</g, '\\u003c')
 
   return `<!doctype html>
@@ -99,7 +106,13 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
 <script src="${b}shim/chrome-shim.js"><\/script>
 <script src="${b}js/libwebphone.js"><\/script>
 <script src="${b}js/bravophone-route-selector.js"><\/script>
+<!-- ANTES do popup.js de proposito: o campo precisa observar
+     chrome.runtime.onMessage e o construtor do libwebphone antes de
+     o app registrar o listener e instanciar o webphone. -->
+<script defer src="${b}js/bravophone-input.js"><\/script>
+<script defer src="${b}js/bravophone-presenca.js"><\/script>
 <script defer src="${b}popup.js"><\/script>
+<script defer src="${b}js/bravophone-sem-ramal.js"><\/script>
 <script defer src="${b}shim/guest-bridge.js"><\/script>
 </head>
 <body>

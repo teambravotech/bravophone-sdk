@@ -55,6 +55,13 @@ export interface BravophoneOptions {
    */
   hostBase?: string
   /**
+   * Base da API (ex.: `https://pabx.teambravotech.com`). Com ela, o SDK
+   * acompanha o ramal do usuário: se um for atribuído ou trocado no painel,
+   * o webphone reage sem novo login. Sem ela, o estado é o do momento do
+   * login e só muda com outro login.
+   */
+  apiBase?: string
+  /**
    * Sessão do `/api/voxfree/login`, repassada inteira. É o caminho correto:
    * o webphone precisa de `sip` e `ramal` para registrar.
    */
@@ -145,6 +152,13 @@ export interface BravophoneEvents {
   'call:answered': CallInfo
   'call:ended': CallInfo
   resize: { width: number; height: number; dock: Exclude<DockZone, 'float'> | null }
+  /** O ramal do usuário mudou de estado — ver `reason`. */
+  extension: {
+    hasExtension: boolean
+    reason: 'ok' | 'no_extension_assigned' | 'extension_invalid'
+      | 'relogin_required' | 'credentials_not_available'
+    message: string | null
+  }
   open: undefined
   close: undefined
   reveal: undefined

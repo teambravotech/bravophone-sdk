@@ -40,6 +40,11 @@ const ASSETS = [
   { from: 'js/libwebphone.js', to: 'js/libwebphone.js', required: true },
   { from: 'js/bravophone-route-selector.js', to: 'js/bravophone-route-selector.js', required: true },
   { from: 'js/bravophone-noise-suppressor.js', to: 'js/bravophone-noise-suppressor.js', required: false },
+  // Aviso de "sem ramal": vive na extensão e é reaproveitado pelo host.
+  { from: 'js/bravophone-sem-ramal.js', to: 'js/bravophone-sem-ramal.js', required: false },
+  // Campo de discagem reformulado: vive na extensão e o host reaproveita.
+  { from: 'js/bravophone-input.js', to: 'js/bravophone-input.js', required: false },
+  { from: 'js/bravophone-presenca.js', to: 'js/bravophone-presenca.js', required: false },
   { from: 'js/noise', to: 'js/noise', required: false },
   { from: 'css', to: 'css', required: true },
   { from: 'images', to: 'images', required: false },
@@ -110,6 +115,8 @@ async function main() {
 
   if (publicPath) await rewritePublicPath(publicPath)
 
+  if (process.argv.includes('--sem-ramal')) await permitirLoginSemRamal()
+
   await writeFile(join(HOST, 'index.html'), buildHtml(), 'utf8')
   console.log('  ✓ host/index.html gerado')
   console.log(`\n✓ ${copied} assets sincronizados em host/`)
@@ -170,6 +177,49 @@ window.__bpLocales = ${JSON.stringify(locales)};
 `
   await writeFile(out, js, 'utf8')
   console.log(`  ✓ shim/messages.js  (${names.join(', ')} · ${total} mensagens)`)
+}
+
+/**
+ * Permite entrar sem ramal SIP atribuído.
+ *
+ * O bundle exige as duas metades para considerar o usuário logado:
+ *
+ *     const bpLogged = bpTemExt && !!s.vxToken
+ *
+ * Sem ramal, `bpTemExt` é falso e o app fica na tela de login — mesmo com a
+ * sessão válida. Este patch faz o login depender só da sessão.
+ *
+ * É seguro porque o bundle já se protege: o `new libwebphone()` só acontece
+ * dentro de `if (extension.username && extension.password)`, e os 16
+ * handlers `webphone.on` vivem nesse mesmo bloco. Sem credencial o objeto
+ * não é criado, `startUserAgent()` cai no `this.webphone && …` e nada tenta
+ * registrar.
+ *
+ * O aviso "sem ramal" é responsabilidade do SDK, na moldura do widget.
+ */
+async function permitirLoginSemRamal() {
+  const file = join(HOST, 'popup.js')
+  const js = await readFile(file, 'utf8')
+  const alvo = 'const bpLogged=bpTemExt&&!!s.vxToken'
+  const jaAplicado = 'const bpLogged=!!s.vxToken'
+  const n = js.split(alvo).length - 1
+
+  // A extensão já pode trazer o patch de fábrica — é o caso desde que ele foi
+  // aplicado lá. Nada a fazer, e isso não é erro.
+  if (n === 0 && js.includes(jaAplicado)) {
+    console.log('  · login sem ramal já vem aplicado na extensão')
+    return
+  }
+
+  // Duas: o checkToken e a mutation addExtension. Outro número significa que o
+  // bundle mudou, e aplicar às cegas seria adivinhação.
+  if (n !== 2) {
+    console.error(`✗ esperava 2 ocorrências de "${alvo}", achei ${n}.`)
+    console.error('  O bundle mudou: revise o patch de login sem ramal.')
+    process.exit(1)
+  }
+  await writeFile(file, js.replaceAll(alvo, 'const bpLogged=!!s.vxToken'), 'utf8')
+  console.log('  ✓ login sem ramal habilitado (2 pontos)')
 }
 
 /**
@@ -234,7 +284,13 @@ function buildHtml() {
 <script src="./shim/chrome-shim.js"></script>
 <script src="./js/libwebphone.js"></script>
 <script src="./js/bravophone-route-selector.js"></script>
+<!-- ANTES do popup.js de proposito: o campo precisa observar
+     chrome.runtime.onMessage e o construtor do libwebphone antes de o app
+     registrar o listener e instanciar o webphone. -->
+<script defer src="./js/bravophone-input.js"></script>
+<script defer src="./js/bravophone-presenca.js"></script>
 <script defer src="./popup.js"></script>
+<script defer src="./js/bravophone-sem-ramal.js"></script>
 <!-- guest-bridge roda depois do app montar (defer preserva a ordem). -->
 <script defer src="./shim/guest-bridge.js"></script>
 </head>
