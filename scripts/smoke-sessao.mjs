@@ -110,5 +110,31 @@ console.log('\nramal SIP — a segunda metade que o checkToken exige:')
   }
 }
 
+console.log('\nramal — a ausência de credencial não é prova de ausência de ramal:')
+{
+  // A dedução antiga acusava "nenhum ramal atribuído" para quem TEM ramal:
+  // o integrador pode não ter as credenciais SIP em mãos, e no modo srcdoc
+  // elas são removidas do payload de propósito. Só a API sabe.
+  const ponte = await readFile(join(ROOT, 'host/shim/guest-bridge.js'), 'utf8')
+
+  check('não deduz mais pela presença do extension',
+    !/hasExtension: !!s\.extension/.test(ponte))
+  check('o extensionStatus do login continua sendo obedecido',
+    /if \(s\.extensionStatus\) aplicarStatusRamal\(s\.extensionStatus\)/.test(ponte))
+  // A evidência é assimétrica: extension presente PROVA que há ramal.
+  check('e extension presente esconde o aviso',
+    /else if \(s\.extension\) esconderAvisoSemRamal\(\)/.test(ponte))
+
+  // Ficar calado só é seguro porque alguém vai perguntar: sem apiBase não
+  // havia consulta nenhuma, e o estado ficava o do login para sempre.
+  const widget = await readFile(join(ROOT, 'src/widget.js'), 'utf8')
+  check('apiBase tem padrão de produção',
+    /apiBase = 'https:\/\/pabx\.teambravotech\.com'/.test(widget))
+
+  const ramal = await readFile(join(ROOT, 'src/ramal.js'), 'utf8')
+  check('e a primeira consulta é imediata, não no próximo ciclo',
+    /\n  consultar\(\)\n  agendar\(\)/.test(ramal))
+}
+
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)

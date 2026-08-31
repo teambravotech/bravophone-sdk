@@ -111,6 +111,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
      o app registrar o listener e instanciar o webphone. -->
 <script defer src="${b}js/bravophone-input.js"><\/script>
 <script defer src="${b}js/bravophone-presenca.js"><\/script>
+<script defer src="${b}js/bravophone-audio.js"><\/script>
 <script defer src="${b}popup.js"><\/script>
 <script defer src="${b}js/bravophone-sem-ramal.js"><\/script>
 <script defer src="${b}shim/guest-bridge.js"><\/script>

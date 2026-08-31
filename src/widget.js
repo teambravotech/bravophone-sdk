@@ -59,9 +59,13 @@ export function createWidget(options) {
     // Base dos assets no modo srcdoc. Padrão: o CDN travado nesta versão.
     // Serve para desenvolvimento (localhost) e para quem espelhar os assets.
     hostBase,
-    // Base da API, para acompanhar mudanças de ramal. Sem ela o SDK não
-    // consulta nada — o estado fica o do login e só muda com novo login.
-    apiBase,
+    // Base da API, para acompanhar mudanças de ramal.
+    //
+    // TEM PADRÃO de propósito. Sem consulta, o webphone dependia do que viesse
+    // no login para saber se há ramal — e quando não vinha nada, alguém tinha
+    // de adivinhar. Era a adivinhação que acusava "sem ramal" quem tinha.
+    // Com a consulta sempre de pé, a resposta certa chega sozinha.
+    apiBase = 'https://pabx.teambravotech.com',
     version,
     emit,
   } = options

@@ -243,5 +243,34 @@ console.log('\nas duas páginas do host carregam o mesmo:')
     doIndex.join(', '))
 }
 
+console.log('\nnenhum dos nossos arquivos derruba o app:')
+{
+  // O shell inteiro está atrás de `isLogged`:
+  //     t.isLogged ? webphone-shell : the-login
+  // e o componente do webphone tem `unmounted(){ document.location.reload() }`.
+  // Qualquer commit nosso que desligue essa flag vira recarga; e como o motivo
+  // do commit sobrevive à recarga, vira recarga em LOOP. Já aconteceu: o
+  // heartbeat tomava 401 e mandava para o login.
+  const NOSSOS = [
+    ['extensão', '../Bravophone/js'],
+    ['sdk', 'host/js'],
+  ]
+  const PROIBIDOS = ['setIsLogged', 'clearToken', 'clearUser', 'clearExtension']
+
+  for (const [nome, dir] of NOSSOS) {
+    const base = resolve(ROOT, dir)
+    if (!existsSync(base)) continue
+    for (const arq of await readdir(base)) {
+      if (!arq.startsWith('bravophone-') || !arq.endsWith('.js')) continue
+      const fonte = await readFile(join(base, arq), 'utf8')
+      // Procura a CHAMADA de commit, não a menção em comentário.
+      const achados = PROIBIDOS.filter(
+        (m) => new RegExp(`commit\\s*\\(\\s*['"\`]${m}`).test(fonte))
+      check(`${nome}/${arq} não desliga a sessão`,
+        achados.length === 0, achados.join(', '))
+    }
+  }
+}
+
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)

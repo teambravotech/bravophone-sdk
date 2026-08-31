@@ -315,18 +315,22 @@ console.log('\npresença — resiliência:')
   check('sem token não bate', b.enviados.length === 0, b.enviados.length)
 }
 
-console.log('\npresença — 401 encerra a sessão:')
+console.log('\npresença — 401 para o canal, e não o webphone:')
 {
   const a = montarAmbiente({ status: 401 })
   await espera()
-  check('mandou para o login',
-    a.commits.some(([k, v]) => k === 'setIsLogged' && v === false),
-    JSON.stringify(a.commits))
+
+  // Comitar setIsLogged(false) desmonta o shell inteiro, porque ele está atrás
+  // dessa flag — e o componente do webphone tem unmounted(){ location.reload() }.
+  // Recarrega, bate de novo, toma 401 de novo: foi o loop de recargas no
+  // primeiro load. Este canal é observabilidade; ele para, não derruba nada.
+  check('NÃO derruba a sessão do app',
+    !a.commits.some(([k]) => k === 'setIsLogged'), JSON.stringify(a.commits))
 
   const antes = a.enviados.length
   ;(a.docLis.visibilitychange || []).forEach((fn) => fn())
   await espera()
-  check('e parou de bater', a.enviados.length === antes, `${antes} → ${a.enviados.length}`)
+  check('mas para de bater', a.enviados.length === antes, `${antes} → ${a.enviados.length}`)
 }
 
 console.log('\npresença — headset plugado não espera o próximo ciclo:')

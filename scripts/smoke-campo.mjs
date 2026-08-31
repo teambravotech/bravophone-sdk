@@ -185,7 +185,15 @@ async function montarAmbiente({ comWebphone = true } = {}) {
     visibilityState: 'visible',
     hasFocus: () => true,
     head: { appendChild() {} },
-    body: {},
+    body: {
+      appendChild: (n) => n,
+      classList: {
+        _c: new Set(),
+        add(c) { this._c.add(c) }, remove(c) { this._c.delete(c) },
+        contains(c) { return this._c.has(c) },
+      },
+      style: { setProperty() {}, removeProperty() {} },
+    },
     createElement(tag) {
       const n = criarNo(tag)
       if (tag === 'div') {

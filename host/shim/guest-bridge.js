@@ -302,9 +302,19 @@
           // Vuex (mutation addExtension), em memória. E o checkToken exige as
           // DUAS metades — `vxToken` da sessão E `extension` com username e
           // password. Só a sessão deixa o app na tela de login.
-          // O status vem do login; sem ele, deduz pela presença do extension.
-          aplicarStatusRamal(s.extensionStatus ||
-            { hasExtension: !!s.extension, reason: s.extension ? 'ok' : 'no_extension_assigned' })
+          // A AUSÊNCIA de `extension` NÃO é prova de que não há ramal.
+          //
+          // Deduzir daí era o que acusava "nenhum ramal atribuído" para quem
+          // tem ramal: o integrador pode não ter as credenciais SIP em mãos, e
+          // no modo srcdoc elas são removidas do payload de propósito (o HTML
+          // vira atributo no DOM da página dele). Só a API sabe, e o SDK já
+          // pergunta — a resposta chega na primeira consulta.
+          //
+          // A evidência é assimétrica: `extensionStatus` é resposta direta, e
+          // `extension` presente é prova POSITIVA de que há ramal. Nenhum dos
+          // dois presente não prova nada, então não avisamos nada.
+          if (s.extensionStatus) aplicarStatusRamal(s.extensionStatus)
+          else if (s.extension) esconderAvisoSemRamal()
 
           if (!s.extension) return resolve({ ok: true, extension: false })
 
