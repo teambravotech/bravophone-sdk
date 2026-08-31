@@ -46,6 +46,7 @@ const ASSETS = [
   { from: 'js/bravophone-input.js', to: 'js/bravophone-input.js', required: false },
   { from: 'js/bravophone-presenca.js', to: 'js/bravophone-presenca.js', required: false },
   { from: 'js/bravophone-audio.js', to: 'js/bravophone-audio.js', required: false },
+  { from: 'js/bravophone-janela.js', to: 'js/bravophone-janela.js', required: false },
   { from: 'js/noise', to: 'js/noise', required: false },
   { from: 'css', to: 'css', required: true },
   { from: 'images', to: 'images', required: false },
@@ -291,6 +292,7 @@ function buildHtml() {
 <script defer src="./js/bravophone-input.js"></script>
 <script defer src="./js/bravophone-presenca.js"></script>
 <script defer src="./js/bravophone-audio.js"></script>
+<script defer src="./js/bravophone-janela.js"></script>
 <script defer src="./popup.js"></script>
 <script defer src="./js/bravophone-sem-ramal.js"></script>
 <!-- guest-bridge roda depois do app montar (defer preserva a ordem). -->

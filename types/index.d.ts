@@ -110,6 +110,14 @@ export interface CallInfo {
   direction: 'inbound' | 'outbound' | null
 }
 
+export interface BravophoneRoute {
+  id: string
+  name: string
+  /** Prefixo do tronco, somado ao destino do INVITE. '' quando não há. */
+  prefix?: string | null
+  kind?: string
+}
+
 export interface PhoneStatus {
   /** O app terminou de montar e aceita comandos. */
   ready: boolean
@@ -209,6 +217,20 @@ export interface BravophoneAPI {
   sendDTMF(tone: string): Promise<{ ok: true }>
   transfer(to: string): Promise<{ ok: true }>
   getStatus(): Promise<PhoneStatus>
+
+  /** Escreve no campo sem discar — para a pessoa conferir antes de ligar. */
+  setDial(number: string): Promise<{ ok: true; number: string }>
+  clearDial(): Promise<{ ok: true }>
+
+  /**
+   * Troncos disponíveis e qual está em uso.
+   *
+   * A rota decide por qual provedora a ligação sai, e o prefixo dela entra
+   * no destino do INVITE.
+   */
+  getRoutes(): Promise<{ routes: BravophoneRoute[]; selected: BravophoneRoute | null; prefix: string }>
+  /** Troca a provedora pela qual as próximas ligações saem. */
+  setRoute(id: string): Promise<{ ok: true; selected: BravophoneRoute | null; prefix: string }>
   setAuth(session: BravophoneSession | string): Promise<{ ok: true }>
   logout(): Promise<{ ok: true }>
 

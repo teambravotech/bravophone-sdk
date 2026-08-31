@@ -98,6 +98,13 @@ const Bravophone = {
   sendDTMF(tone)      { return requireInstance().bridge.call('dtmf', { tone }) },
   transfer(to)        { return requireInstance().bridge.call('transfer', { to }) },
   getStatus()         { return requireInstance().bridge.call('status') },
+  /** Escreve no campo sem discar — para o usuário conferir antes. */
+  setDial(number)     { return requireInstance().bridge.call('setDial', { number }) },
+  clearDial()         { return requireInstance().bridge.call('clearDial') },
+  /** Troncos disponíveis e qual está em uso. */
+  getRoutes()         { return requireInstance().bridge.call('routes') },
+  /** Troca a provedora pela qual as próximas ligações saem. */
+  setRoute(id)        { return requireInstance().bridge.call('setRoute', { id }) },
   /** Aceita a sessão completa do login, ou só o vxToken (insuficiente sozinho). */
   setAuth(sessao) {
     const session = typeof sessao === 'string' ? { vxToken: sessao } : sessao

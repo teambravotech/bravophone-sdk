@@ -441,6 +441,70 @@
         .then(function () { return { ok: true, to: destino } })
     },
 
+    /**
+     * Escreve no campo SEM discar.
+     *
+     * `call` disca na hora; nem todo fluxo quer isso. Vindo de um CRM, muitas
+     * vezes o certo e deixar o numero na tela para a pessoa conferir antes.
+     */
+    setDial: function (p) {
+      var texto = p && (p.number != null ? p.number : p.phone)
+      if (texto == null) throw new Error('numero ausente')
+      var preencher = window.__bpInputPreencher
+      if (typeof preencher !== 'function') {
+        throw new Error('campo de discagem indisponivel nesta tela')
+      }
+      if (!preencher(texto)) throw new Error('campo de discagem nao esta montado')
+      return { ok: true, number: String(texto) }
+    },
+
+    /**
+     * As rotas (troncos) disponiveis e qual esta em uso.
+     *
+     * A rota decide por qual provedora a ligacao sai, e o prefixo dela entra
+     * no destino do INVITE. Esperamos o whenReady: sem a lista carregada nao
+     * ha rota selecionada, e discar antes disso sai pelo tronco errado.
+     */
+    routes: function () {
+      var R = window.BravoPhoneRoutes
+      if (!R || typeof R.getRoutes !== 'function') {
+        throw new Error('seletor de rotas indisponivel')
+      }
+      var pronto = typeof R.whenReady === 'function' ? R.whenReady() : Promise.resolve()
+      return Promise.resolve(pronto).then(function () {
+        return {
+          routes: R.getRoutes(),
+          selected: R.getSelected ? R.getSelected() : null,
+          prefix: R.getPrefix ? R.getPrefix() : '',
+        }
+      })
+    },
+
+    /** Troca a provedora pela qual as proximas ligacoes saem. */
+    setRoute: function (p) {
+      var id = p && p.id
+      if (id == null) throw new Error('id da rota ausente')
+      var R = window.BravoPhoneRoutes
+      if (!R || typeof R.select !== 'function') {
+        throw new Error('seletor de rotas indisponivel')
+      }
+      var pronto = typeof R.whenReady === 'function' ? R.whenReady() : Promise.resolve()
+      return Promise.resolve(pronto).then(function () {
+        var existe = (R.getRoutes() || []).some(function (r) {
+          return String(r.id) === String(id)
+        })
+        // Selecionar um id que nao existe deixaria o webphone sem rota, e a
+        // proxima ligacao sairia sem prefixo - falha silenciosa e cara.
+        if (!existe) throw new Error('rota desconhecida: ' + id)
+        R.select(id)
+        return {
+          ok: true,
+          selected: R.getSelected ? R.getSelected() : null,
+          prefix: R.getPrefix ? R.getPrefix() : '',
+        }
+      })
+    },
+
     clearDial: function () {
       return clicarBotao(function () {
         var alvo = (chrome.i18n.getMessage('globalClear') || 'limpar').toLowerCase()

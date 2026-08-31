@@ -3,228 +3,422 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bravophone SDK — teste local</title>
+<title>Bravophone SDK — playground</title>
 <style>
-  :root { color-scheme: light dark; }
-  body { font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
-         max-width: 780px; margin: 0 auto; padding: 32px 20px 120px; }
-  h1 { font-size: 21px; margin: 0 0 4px; }
-  .sub { color: #6b7280; font-size: 13px; margin: 0 0 24px; }
-  fieldset { border: 1px solid #d1d5db; border-radius: 10px; padding: 14px 16px; margin: 0 0 16px; }
-  legend { font-size: 12px; font-weight: 700; text-transform: uppercase;
-           letter-spacing: .6px; color: #6b7280; padding: 0 6px; }
-  button { padding: 7px 13px; margin: 3px 3px 3px 0; font-size: 14px; cursor: pointer;
-           border: 1px solid #d1d5db; border-radius: 7px; background: #fff; }
-  button:hover { background: #f3f4f6; }
-  button.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
-  button.primary:hover { background: #1d4ed8; }
-  input { padding: 7px 10px; font-size: 14px; border: 1px solid #d1d5db; border-radius: 7px; }
-  #log { background: #0d0d14; color: #86efac; padding: 12px; height: 230px; overflow: auto;
-         font: 12px/1.55 ui-monospace, SFMono-Regular, monospace; border-radius: 8px;
-         white-space: pre-wrap; }
-  .hint { font-size: 12px; color: #6b7280; margin: 8px 0 0; }
-  code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
-  @media (prefers-color-scheme: dark) {
-    body { background: #111827; color: #e5e7eb; }
-    fieldset { border-color: #374151; }
-    button { background: #1f2937; border-color: #374151; color: #e5e7eb; }
-    button:hover { background: #374151; }
-    input { background: #1f2937; border-color: #374151; color: #e5e7eb; }
-    code { background: #1f2937; }
+  /* A paleta é a do produto: o webphone é escuro, e o playground que o
+     documenta não deveria inventar uma segunda identidade. */
+  :root {
+    color-scheme: light dark;
+    --roxo: #6c5ce7;
+    --roxo-claro: #8b7cf8;
+    --fundo: #f6f7fb;
+    --painel: #ffffff;
+    --painel-alt: #f0f2f8;
+    --borda: #e2e6f0;
+    --texto: #1b2030;
+    --texto-fraco: #626b85;
+    --codigo-fundo: #10131c;
+    --codigo-texto: #e7e9ee;
   }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fundo: #10131c;
+      --painel: #171b28;
+      --painel-alt: #1c2131;
+      --borda: #262c40;
+      --texto: #e7e9ee;
+      --texto-fraco: #9aa2b8;
+      --codigo-fundo: #0c0f16;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--fundo); color: var(--texto);
+    font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+  header {
+    border-bottom: 1px solid var(--borda); background: var(--painel);
+    padding: 22px 24px;
+  }
+  .faixa { max-width: 1180px; margin: 0 auto; }
+  h1 {
+    margin: 0; font-size: 20px; letter-spacing: -.01em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h1 .versao {
+    font: 600 11px/1 ui-monospace, monospace; color: var(--roxo);
+    border: 1px solid var(--roxo); border-radius: 999px; padding: 4px 8px;
+  }
+  header p { margin: 8px 0 0; color: var(--texto-fraco); font-size: 14px; max-width: 74ch; }
+
+  main {
+    max-width: 1180px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+
+  section {
+    background: var(--painel); border: 1px solid var(--borda);
+    border-radius: 12px; padding: 16px 18px; margin: 0 0 16px;
+  }
+  section h2 { margin: 0; font-size: 14px; }
+  .cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .cab button {
+    font: 600 10.5px/1 ui-monospace, monospace; letter-spacing: .06em;
+    text-transform: uppercase; padding: 5px 9px; flex: none;
+  }
+  .cab button[aria-pressed="true"] { border-color: var(--roxo); color: var(--roxo); }
+  pre.exemplos { margin: 14px 0 0; }
+  pre.exemplos[hidden] { display: none; }
+  section p.sub { margin: 0 0 12px; font-size: 13px; color: var(--texto-fraco); }
+
+  .acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+  button {
+    font: 500 13px/1 inherit; padding: 9px 13px; border-radius: 8px;
+    border: 1px solid var(--borda); background: var(--painel-alt);
+    color: var(--texto); cursor: pointer;
+    transition: border-color .12s, background .12s;
+  }
+  button:hover { border-color: var(--roxo); }
+  button.primario { background: var(--roxo); border-color: var(--roxo); color: #fff; }
+  button.primario:hover { background: var(--roxo-claro); border-color: var(--roxo-claro); }
+
+  label { display: block; font-size: 12px; color: var(--texto-fraco); margin: 0 0 4px; }
+  input {
+    font: inherit; font-size: 13px; padding: 8px 10px; border-radius: 8px;
+    border: 1px solid var(--borda); background: var(--painel-alt);
+    color: var(--texto); width: 100%;
+  }
+  .linha { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin: 0 0 12px; }
+  .linha > div { flex: 1 1 190px; min-width: 0; }
+
+  .lado { position: sticky; top: 24px; }
+  pre {
+    margin: 0; padding: 14px 16px; border-radius: 10px; overflow-x: auto;
+    background: var(--codigo-fundo); color: var(--codigo-texto);
+    font-size: 12.5px; line-height: 1.6;
+  }
+  .painel-codigo { position: relative; }
+  .painel-codigo .copiar {
+    position: absolute; top: 8px; right: 8px; font-size: 11px; padding: 5px 9px;
+    background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.16); color: #cfd4e4;
+  }
+  #log {
+    margin: 12px 0 0; height: 250px; overflow: auto; padding: 12px 14px;
+    background: var(--codigo-fundo); color: #86efac; border-radius: 10px;
+    font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+  }
+  #log .erro { color: #fca5a5; }
+  #log .ev { color: #93c5fd; }
+  .dica { font-size: 12px; color: var(--texto-fraco); margin: 10px 0 0; }
 </style>
 </head>
 <body>
 
-<h1>Bravophone SDK — teste local</h1>
-<p class="sub">
-  Esta página é o "site do cliente". Carrega o build UMD de <code>dist/</code> por
-  <code>&lt;script&gt;</code>, igual ao uso por CDN. O webphone roda num
-  <b>iframe de outra origem</b> (porta 5174), então o teste é cross-origin de verdade.
-</p>
+<header>
+  <div class="faixa">
+    <h1>Bravophone SDK <span class="versao" id="versao">—</span></h1>
+    <p>
+      O webphone completo dentro de qualquer página. Cada botão executa uma chamada
+      real da API e mostra <strong>o código que rodou</strong>, com os valores dos
+      campos já resolvidos. O texto é lido do corpo da própria função — não existe
+      um segundo lugar onde o exemplo possa divergir do que acontece.
+      Use <code>code</code> em cada bloco para ver o grupo inteiro de uma vez.
+    </p>
+  </div>
+</header>
 
-<!-- Exatamente como o integrador faria via CDN:
-     <script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone"></script> -->
+<main>
+  <div>
+    <section>
+      <h2>Instalação</h2>
+      <p class="sub">
+        Cole <strong>inline</strong>, não como arquivo externo — um arquivo externo
+        teria o mesmo problema de cache que este trecho existe para evitar.
+      </p>
+      <pre id="instalacao"></pre>
+    </section>
+    <div id="grupos"></div>
+  </div>
+
+  <div class="lado">
+    <section>
+      <h2>Código da última ação</h2>
+      <p class="sub">Pronto para copiar, com os valores dos campos resolvidos.</p>
+      <div class="painel-codigo">
+        <button class="copiar" id="copiar">copiar</button>
+        <pre id="codigo">// clique em uma ação ao lado</pre>
+      </div>
+      <div id="log"></div>
+      <p class="dica">
+        Eventos chegam por <code>Bravophone.on('*', ...)</code>. Erros em vermelho.
+      </p>
+    </section>
+  </div>
+</main>
+
+<!-- Em produção é a linha do CDN; aqui é o build local, para o playground
+     acompanhar o código sem publicar uma versão antes. -->
 <script src="../dist/bravophone.umd.js"></script>
-
-<fieldset>
-  <legend>Qual webphone carregar</legend>
-  <button id="useReal" class="primary">popup.js REAL (seu UI)</button>
-  <button id="useMock">mock (sem SIP)</button>
-  <button id="useSrcdoc">srcdoc (assets do CDN)</button>
-  <label style="margin-left:12px;font-size:13px">
-    <input type="checkbox" id="showBar" checked> mostrar barra de título
-  </label>
-  <p class="hint">
-    O <b>real</b> carrega os 932 KB do <code>popup.js</code> intactos — é o seu UI.
-    Precisa de rede/CORS para logar; sem isso a tela renderiza mas não registra.
-    O <b>mock</b> não depende de nada.
-  </p>
-</fieldset>
-
-<fieldset>
-  <legend>Telefonia</legend>
-  <input id="num" value="11987654321" placeholder="número">
-  <button id="call" class="primary">Ligar</button>
-  <button id="answer">Atender</button>
-  <button id="hangup">Desligar</button>
-  <br>
-  <button id="mute">Mute (toggle)</button>
-  <button id="hold">Hold (toggle)</button>
-  <button id="dtmf">DTMF 5</button>
-  <button id="transfer">Transferir</button>
-  <button id="status">Status</button>
-</fieldset>
-
-<fieldset>
-  <legend>Janela</legend>
-  <button id="show">Abrir</button>
-  <button id="hide">Fechar</button>
-  <button id="toggle">Toggle</button>
-  <button id="min">Minimizar</button>
-  <button id="center">Centralizar</button>
-  <button id="big">900×720 (histórico largo)</button>
-  <button id="destroy">Destruir</button>
-  <button id="sideRight">Aba à direita</button>
-  <button id="sideLeft">Aba à esquerda</button>
-  <br>
-  <button id="icoPhone">◗ Handset+ondas</button>
-  <button id="icoWave">▥ Equalizador</button>
-  <button id="icoHead">◠ Headset</button>
-  <button id="icoChat">◍ Bolha</button>
-  <a href="icons.html" style="font-size:13px;margin-left:8px">ver todos os estados →</a>
-  <p class="hint">Sem moldura, <b>arraste pelo próprio webphone</b> (qualquer área que
-     não seja botão/campo). Redimensione por <b>qualquer borda ou canto</b>.
-     A posição persiste ao recarregar.<br>
-     Feche a janela para ver a <b>aba lateral</b>: passe o mouse para revelar a alça
-     de pontinhos, arraste-a na vertical, ou clique para reabrir.</p>
-</fieldset>
-
-<fieldset>
-  <legend>Encaixe (dock)</legend>
-  <button id="dockLeft">◧ Esquerda</button>
-  <button id="dockRight">◨ Direita</button>
-  <button id="dockLeftHalf">◐ Meia esquerda</button>
-  <button id="dockRightHalf">◑ Meia direita</button>
-  <button id="dockTopHalf">⬒ Metade de cima</button>
-  <button id="dockBottomHalf">⬓ Metade de baixo</button>
-  <button id="dockMax">⛶ Maximizar</button>
-  <button id="dockFloat">⤢ Flutuante</button>
-  <p class="hint">
-    <b>Arrastando</b>, o perímetro inteiro encaixa: laterais = altura cheia;
-    <b>borda de baixo = metade inferior</b>; topo = maximizar (ou metade superior,
-    com <code>dockTop:'top-half'</code>); os quatro cantos = meia tela.
-    A prévia azul mostra o encaixe antes de soltar; arraste de volta para o meio
-    para desencaixar.<br>
-    <b>Redimensionando:</b> ao chegar a ~32px de uma borda, a janela completa sozinha
-    até ela.
-  </p>
-</fieldset>
-
-<fieldset>
-  <legend>Sessão</legend>
-  <input id="token" value="tok_demo_123" placeholder="token">
-  <button id="auth">setAuth</button>
-  <button id="logout">logout</button>
-  <p class="hint">Confira no painel do mock se o <code>vxToken</code> chegou no storage.</p>
-</fieldset>
-
-<fieldset>
-  <legend>Eventos recebidos</legend>
-  <div id="log"></div>
-  <button id="clear" style="margin-top:8px">Limpar</button>
-</fieldset>
-
 <script>
-  const logEl = document.getElementById('log')
-  const log = (...a) => {
-    logEl.textContent += new Date().toLocaleTimeString() + '  ' +
-      a.map(x => typeof x === 'string' ? x : JSON.stringify(x)).join(' ') + '\n'
-    logEl.scrollTop = 1e9
+(function () {
+  'use strict'
+
+  var bp = window.Bravophone
+  document.getElementById('versao').textContent = 'v' + bp.version
+
+  // --- o log ---------------------------------------------------------------
+  var elLog = document.getElementById('log')
+  function log(texto, classe) {
+    var linha = document.createElement('div')
+    if (classe) linha.className = classe
+    linha.textContent = texto
+    elLog.appendChild(linha)
+    elLog.scrollTop = elLog.scrollHeight
   }
 
-  if (typeof Bravophone === 'undefined') {
-    log('✗ Bravophone não carregou. Rode "npm run build" antes.')
-    throw new Error('build ausente')
+  function campo(id) {
+    var e = document.getElementById(id)
+    return e ? e.value.trim() : ''
   }
-  log('SDK v' + Bravophone.version + ' carregado (window.Bravophone)')
 
-  const params = new URLSearchParams(location.search)
-  const useMock = params.get('host') === 'mock'
-  const useSrcdoc = params.get('host') === 'srcdoc'
-  const withBar = params.get('bar') !== '0'
-  document.getElementById('showBar').checked = withBar
+  // --- o código exibido vem da própria função ------------------------------
+  //
+  // Guardar o exemplo como string ao lado da implementação convida à
+  // divergência: alguém corrige um e esquece o outro, e a documentação passa a
+  // mentir. Lendo de Function.prototype.toString não existe segundo lugar onde
+  // errar — o que está na tela é literalmente o que foi executado.
+  function fonteDe(fn) {
+    var texto = String(fn)
+    var abre = texto.indexOf('{')
+    var fecha = texto.lastIndexOf('}')
+    if (abre < 0 || fecha < abre) return texto.trim()
+    var corpo = texto.slice(abre + 1, fecha).replace(/^\s*\n/, '').replace(/\s+$/, '')
+    var linhas = corpo.split('\n')
+    var menor = Infinity
+    linhas.forEach(function (l) {
+      if (!l.trim()) return
+      menor = Math.min(menor, l.length - l.replace(/^\s+/, '').length)
+    })
+    if (!isFinite(menor)) menor = 0
+    return linhas.map(function (l) { return l.slice(menor) }).join('\n')
+  }
 
-  Bravophone.init({
-    // No modo srcdoc o iframe não navega: o conteúdo vem do CDN, e o hostUrl
-    // é ignorado.
-    mode: useSrcdoc ? 'srcdoc' : 'hosted',
-    // Em desenvolvimento os assets vêm do host local, não do CDN — assim dá
-    // para testar o modo srcdoc sem publicar uma versão antes.
-    hostBase: useSrcdoc ? 'http://localhost:5174/' : undefined,
-    hostUrl: 'http://localhost:5174/' + (useMock ? 'mock.html' : 'index.html'),
-    token: document.getElementById('token').value,
+  /**
+   * A fonte crua vira exemplo copiavel.
+   *
+   * O corpo real le os campos da pagina (`campo('numero')`), o que nao serve a
+   * quem esta lendo a documentacao. Trocamos pela string que aquela chamada
+   * devolveu: e o mesmo valor que a funcao usou, entao o exemplo continua
+   * sendo verdade — so que legivel fora daqui.
+   */
+  function exemploDe(fn) {
+    return fonteDe(fn)
+      .replace(/\bcampo\('([^']+)'\)/g, function (_, id) {
+        return JSON.stringify(campo(id))
+      })
+      .replace(/\bbp\./g, 'Bravophone.')
+      .replace(/^return /gm, 'await ')
+  }
+
+  var elCodigo = document.getElementById('codigo')
+
+  document.getElementById('copiar').onclick = function () {
+    navigator.clipboard.writeText(elCodigo.textContent)
+      .then(function () { log('código copiado') })
+      .catch(function () { log('não consegui copiar', 'erro') })
+  }
+
+  // --- os grupos ------------------------------------------------------------
+  var GRUPOS = [
+    {
+      titulo: 'Sessão',
+      sub: 'O vxToken vem do seu login. Sem sessão o webphone abre na tela de entrada.',
+      campos: [{ id: 'token', rotulo: 'vxToken', valor: '' }],
+      acoes: [
+        { nome: 'setAuth', primario: true, fn: function () {
+            return bp.setAuth({ vxToken: campo('token') })
+          } },
+        { nome: 'logout', fn: function () {
+            return bp.logout()
+          } },
+      ],
+    },
+    {
+      titulo: 'Discagem',
+      sub: 'setDial escreve no campo sem ligar — para a pessoa conferir antes.',
+      campos: [{ id: 'numero', rotulo: 'Número ou usuário SIP', valor: '11988887777' }],
+      acoes: [
+        { nome: 'setDial', fn: function () {
+            return bp.setDial(campo('numero'))
+          } },
+        { nome: 'clearDial', fn: function () {
+            return bp.clearDial()
+          } },
+        { nome: 'call', primario: true, fn: function () {
+            return bp.call(campo('numero'), { source: 'playground' })
+          } },
+      ],
+    },
+    {
+      titulo: 'Provedora (rota do tronco)',
+      sub: 'A rota decide por onde a ligação sai; o prefixo dela entra no destino do INVITE.',
+      campos: [{ id: 'rota', rotulo: 'ID da rota', valor: '' }],
+      acoes: [
+        { nome: 'getRoutes', fn: function () {
+            return bp.getRoutes()
+          } },
+        { nome: 'setRoute', fn: function () {
+            return bp.setRoute(campo('rota'))
+          } },
+      ],
+    },
+    {
+      titulo: 'Durante a chamada',
+      sub: 'mute e hold alternam, não aceitam estado alvo. transfer abre a lista e escolhe o ramal.',
+      campos: [{ id: 'ramal', rotulo: 'Ramal de destino', valor: '2000' }],
+      acoes: [
+        { nome: 'answer', fn: function () { return bp.answer() } },
+        { nome: 'hangup', fn: function () { return bp.hangup() } },
+        { nome: 'mute', fn: function () { return bp.mute() } },
+        { nome: 'hold', fn: function () { return bp.hold() } },
+        { nome: 'sendDTMF', fn: function () { return bp.sendDTMF('5') } },
+        { nome: 'transfer', fn: function () {
+            return bp.transfer(campo('ramal'))
+          } },
+      ],
+    },
+    {
+      titulo: 'Janela',
+      sub: 'A janela flutuante é arrastável e encaixa nas bordas.',
+      acoes: [
+        { nome: 'reveal', fn: function () { return bp.reveal() } },
+        { nome: 'hide', fn: function () { return bp.hide() } },
+        { nome: 'toggle', fn: function () { return bp.toggle() } },
+        { nome: 'minimize', fn: function () { return bp.minimize() } },
+        { nome: 'resize', fn: function () {
+            return bp.resize({ width: 420, height: 720 })
+          } },
+        { nome: 'dock', fn: function () { return bp.dock('right') } },
+        { nome: 'move', fn: function () { return bp.move({ x: 60, y: 60 }) } },
+      ],
+    },
+    {
+      titulo: 'Estado',
+      sub: 'getStatus responde o que o webphone sabe agora, sem esperar evento.',
+      acoes: [
+        { nome: 'getStatus', fn: function () { return bp.getStatus() } },
+      ],
+    },
+  ]
+
+  // --- monta a página -------------------------------------------------------
+  var elGrupos = document.getElementById('grupos')
+
+  GRUPOS.forEach(function (g) {
+    var sec = document.createElement('section')
+    var h = '<div class="cab"><h2>' + g.titulo + '</h2>' +
+      '<button class="ver-codigo" aria-pressed="false">code</button></div>' +
+      '<p class="sub">' + g.sub + '</p>'
+    if (g.campos) {
+      h += '<div class="linha">'
+      g.campos.forEach(function (c) {
+        h += '<div><label for="' + c.id + '">' + c.rotulo + '</label>' +
+          '<input id="' + c.id + '" value="' + c.valor + '"></div>'
+      })
+      h += '</div>'
+    }
+    h += '<div class="acoes"></div><pre class="exemplos" hidden></pre>'
+    sec.innerHTML = h
+
+    var caixa = sec.querySelector('.acoes')
+    g.acoes.forEach(function (a) {
+      var b = document.createElement('button')
+      b.textContent = a.nome
+      if (a.primario) b.className = 'primario'
+      b.onclick = function () {
+        elCodigo.textContent = exemploDe(a.fn)
+        Promise.resolve().then(a.fn)
+          .then(function (r) {
+            log('✓ ' + a.nome + (r === undefined ? '' : ' → ' + JSON.stringify(r)))
+            if (a.nome === 'getRoutes' && r && r.routes) preencherRotas(r)
+          })
+          .catch(function (e) { log('✗ ' + a.nome + ': ' + e.message, 'erro') })
+      }
+      caixa.appendChild(b)
+    })
+
+    // O "code" mostra o grupo inteiro de uma vez: quem esta lendo quer ver as
+    // chamadas juntas, nao descobri-las clicando uma por uma.
+    var exemplos = sec.querySelector('.exemplos')
+    var verCodigo = sec.querySelector('.ver-codigo')
+    verCodigo.onclick = function () {
+      var abrindo = exemplos.hidden
+      if (abrindo) {
+        exemplos.textContent = g.acoes.map(function (a) {
+          return '// ' + a.nome + '\n' + exemploDe(a.fn)
+        }).join('\n\n')
+      }
+      exemplos.hidden = !abrindo
+      verCodigo.setAttribute('aria-pressed', String(abrindo))
+    }
+
+    elGrupos.appendChild(sec)
+  })
+
+  /** Depois de listar, deixa um id pronto no campo do setRoute. */
+  function preencherRotas(r) {
+    var alvo = document.getElementById('rota')
+    if (!alvo) return
+    var atual = r.selected && r.selected.id
+    alvo.value = atual || (r.routes[0] && r.routes[0].id) || ''
+    log('  ' + r.routes.map(function (x) { return x.id + ' · ' + x.name }).join('   '))
+  }
+
+  // --- a instalação ---------------------------------------------------------
+  document.getElementById('instalacao').textContent = [
+    '<script>',
+    '// Duas etapas de proposito: a consulta tem 5 min de cache, o bundle e',
+    "// immutable. Assim uma correcao chega em minutos, sem revalidar 30 kB a",
+    '// cada visita - e sem os 7 dias de cache que a URL sem versao carrega.',
+    "// cache:'no-store' vale para a CONSULTA (~1 kB): sem ele a resposta fica",
+    '// ate 5 min no navegador e uma publicacao recem-saida nao aparece.',
+    "fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved',",
+    "      { cache: 'no-store' })",
+    '  .then((r) => r.json())',
+    '  .then(({ version }) => {',
+    "    const s = document.createElement('script')",
+    '    s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`',
+    '    s.onload = () => Bravophone.init({ session: SESSAO_DO_LOGIN })',
+    "    s.onerror = () => console.error('Bravophone: falha ao carregar do CDN')",
+    '    document.head.appendChild(s)',
+    '  })',
+    '<' + '/script>',
+  ].join('\n')
+
+  // --- sobe o webphone ------------------------------------------------------
+  var comBarra = new URLSearchParams(location.search).get('bar') !== '0'
+
+  bp.init({
+    // Em desenvolvimento os assets vêm do host local; em produção o padrão já
+    // é o CDN travado nesta versão do pacote.
+    mode: 'srcdoc',
+    hostBase: 'http://localhost:5174/',
     position: 'bottom-right',
     open: true,
-    // 'none' (padrão) preserva 100% da UI: sem barra, arrasta pelo próprio app.
-    frame: withBar ? undefined : 'none',
+    frame: comBarra ? undefined : 'none',
   })
-  log((useSrcdoc ? 'srcdoc (CDN)' : useMock ? 'mock' : 'popup.js REAL') + ' · moldura: ' + (withBar ? 'barra' : 'nenhuma'))
 
-  const reload = (host, bar) => {
-    location.search = '?host=' + host + '&bar=' + (bar ? '1' : '0')
-  }
-  document.getElementById('useReal').onclick = () => reload('real', withBar)
-  document.getElementById('useMock').onclick = () => reload('mock', withBar)
-  document.getElementById('useSrcdoc').onclick = () => reload('srcdoc', withBar)
-  document.getElementById('showBar').onchange = (e) =>
-    reload(useMock ? 'mock' : 'real', e.target.checked)
-
-  // '*' recebe todos os eventos como { event, payload }
-  Bravophone.on('*', ({ event, payload }) => log('◆ ' + event, payload ?? ''))
-
-  const safe = (label, fn) => () =>
-    Promise.resolve().then(fn)
-      .then(r => r !== undefined && log('  ' + label + ' →', r))
-      .catch(e => log('  ✗ ' + label + ': ' + e.message))
-
-  const $ = (id) => document.getElementById(id)
-  const num = () => $('num').value
-
-  $('call').onclick     = safe('call',     () => Bravophone.call(num(), { source: 'test-page' }))
-  $('answer').onclick   = safe('answer',   () => Bravophone.answer())
-  $('hangup').onclick   = safe('hangup',   () => Bravophone.hangup())
-  $('mute').onclick     = safe('mute',     () => Bravophone.mute())
-  $('hold').onclick     = safe('hold',     () => Bravophone.hold())
-  $('dtmf').onclick     = safe('dtmf',     () => Bravophone.sendDTMF('5'))
-  $('transfer').onclick = safe('transfer', () => Bravophone.transfer('2000'))
-  $('status').onclick   = safe('status',   () => Bravophone.getStatus())
-  $('auth').onclick     = safe('auth',     () => Bravophone.setAuth($('token').value))
-  $('logout').onclick   = safe('logout',   () => Bravophone.logout())
-
-  $('show').onclick   = () => Bravophone.show()
-  $('hide').onclick   = () => Bravophone.hide()
-  $('toggle').onclick = () => Bravophone.toggle()
-  $('min').onclick    = () => Bravophone.minimize()
-  $('center').onclick = () => Bravophone.move(
-    Math.round((innerWidth - 380) / 2), Math.round((innerHeight - 640) / 2))
-  $('big').onclick    = () => Bravophone.resize(900, 720)
-
-  const docks = { dockLeft: 'left', dockRight: 'right', dockLeftHalf: 'left-half',
-                  dockRightHalf: 'right-half', dockTopHalf: 'top-half',
-                  dockBottomHalf: 'bottom-half', dockMax: 'max', dockFloat: 'float' }
-  Object.entries(docks).forEach(([id, zone]) => {
-    $(id).onclick = () => { Bravophone.dock(zone); log('dock →', zone) }
+  bp.on('*', function (ev) {
+    log('◆ ' + ev.event + (ev.payload ? ' ' + JSON.stringify(ev.payload) : ''), 'ev')
   })
-  $('destroy').onclick = () => { Bravophone.destroy(); log('widget destruído') }
-  $('sideRight').onclick = () => Bravophone.setLauncherSide('right')
-  $('sideLeft').onclick = () => Bravophone.setLauncherSide('left')
-  const icons = { icoPhone: 'phone-waves', icoWave: 'waveform',
-                  icoHead: 'headset', icoChat: 'chat-phone' }
-  Object.entries(icons).forEach(([id, name]) => {
-    $(id).onclick = () => { Bravophone.setLauncherIcon(name); log('ícone →', name) }
-  })
-  $('clear').onclick  = () => { logEl.textContent = '' }
+
+  log('SDK v' + bp.version + ' carregado')
+})()
 </script>
 </body>
 </html>

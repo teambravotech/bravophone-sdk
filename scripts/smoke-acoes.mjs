@@ -53,9 +53,12 @@ function botao({ titulo = null, texto = '', classe = '', disabled = false }) {
   return b
 }
 
-function montarAmbiente({ comLista = true, ramalAtivo = true } = {}) {
+function montarAmbiente({ comLista = true, ramalAtivo = true,
+                          campoMontado = true, semRotas = false } = {}) {
   const respostas = []   // o que a ponte devolveu ao pai
   const winLis = {}
+  const preenchidos = []
+  let selecionada = { id: 'r1', name: 'Tronco A', prefix: '0' }
   const tela = {
     desligar: botao({ titulo: 'Desligar' }),
     atender: botao({ titulo: 'Atender' }),
@@ -111,6 +114,18 @@ function montarAmbiente({ comLista = true, ramalAtivo = true } = {}) {
     navigator: { language: 'pt-BR', mediaDevices: { addEventListener() {} } },
     parent: { postMessage: (m) => respostas.push(m) },
     __bpParentOrigin: 'http://cliente',
+    // O campo de discagem publica este gancho quando esta montado.
+    __bpInputPreencher: (t) => { preenchidos.push(String(t)); return campoMontado },
+    BravoPhoneRoutes: semRotas ? undefined : {
+      whenReady: () => Promise.resolve(),
+      getRoutes: () => [
+        { id: 'r1', name: 'Tronco A', prefix: '0' },
+        { id: 'r2', name: 'Tronco B', prefix: null },
+      ],
+      getSelected: () => selecionada,
+      getPrefix: () => (selecionada && selecionada.prefix) || '',
+      select: (id) => { selecionada = { id: String(id), name: 'Tronco', prefix: '9' } },
+    },
     console: { log() {}, warn() {}, error() {}, info() {} },
     setTimeout, clearTimeout, setInterval, clearInterval,
     MutationObserver: class { observe() {} disconnect() {} },
@@ -133,7 +148,8 @@ function montarAmbiente({ comLista = true, ramalAtivo = true } = {}) {
 
   vm.createContext(win)
   vm.runInContext(FONTE, win)
-  return { win, tela, teclas, ramais, respostas, winLis }
+  return { win, tela, teclas, ramais, respostas, winLis, preenchidos,
+           rotaAtual: () => selecionada }
 }
 
 /**
@@ -286,6 +302,63 @@ console.log('\nações — o emitter não voltou pela porta dos fundos:')
     !/\bem\.emit\(/.test(FONTE) && !/emitter\.emit\(/.test(FONTE))
   // status.ready media prontidão pelo emitter, então vinha sempre false.
   check('status.ready mede pelo store', /ready: !!findStore\(\)/.test(FONTE))
+}
+
+console.log('\nações — setDial escreve sem discar:')
+{
+  // `call` disca na hora; nem todo fluxo quer isso. Vindo de um CRM, muitas
+  // vezes o certo é deixar o número na tela para a pessoa conferir.
+  const a = montarAmbiente()
+  await espera()
+  const r = await comando(a, 'setDial', { number: '11988887777' })
+  check('escreveu no campo', a.preenchidos[0] === '11988887777', a.preenchidos[0])
+  check('e devolve o que escreveu', r && r.number === '11988887777', JSON.stringify(r))
+  check('sem discar', a.respostas.every((m) => !m.payload || !m.payload.phone))
+
+  let erro = null
+  await comando(a, 'setDial', {}).catch((e) => { erro = e.message })
+  check('sem número, recusa', /numero ausente/.test(erro || ''), erro)
+
+  // Fora da aba do teclado o campo não existe; dizer isso é melhor que
+  // fingir que escreveu.
+  const b = montarAmbiente({ campoMontado: false })
+  await espera()
+  erro = null
+  await comando(b, 'setDial', { number: '123' }).catch((e) => { erro = e.message })
+  check('campo desmontado vira erro', /nao esta montado/.test(erro || ''), erro)
+}
+
+console.log('\nações — a rota decide por onde a ligação sai:')
+{
+  const a = montarAmbiente()
+  await espera()
+  const r = await comando(a, 'routes')
+  check('lista os troncos', r.routes.length === 2, JSON.stringify(r.routes))
+  check('e diz qual está em uso', r.selected.id === 'r1', JSON.stringify(r.selected))
+  // O prefixo do tronco entra no destino do INVITE.
+  check('com o prefixo', r.prefix === '0', r.prefix)
+
+  const t = await comando(a, 'setRoute', { id: 'r2' })
+  check('trocou', a.rotaAtual().id === 'r2', a.rotaAtual().id)
+  check('e devolve a nova seleção', t.selected.id === 'r2', JSON.stringify(t))
+
+  // Selecionar um id inexistente deixaria o webphone sem rota, e a próxima
+  // ligação sairia sem prefixo — falha silenciosa e cara.
+  let erro = null
+  await comando(a, 'setRoute', { id: 'nao-existe' }).catch((e) => { erro = e.message })
+  check('id desconhecido é recusado', /rota desconhecida/.test(erro || ''), erro)
+  check('e a rota anterior fica', a.rotaAtual().id === 'r2', a.rotaAtual().id)
+
+  erro = null
+  await comando(a, 'setRoute', {}).catch((e) => { erro = e.message })
+  check('sem id, recusa', /id da rota ausente/.test(erro || ''), erro)
+
+  const b = montarAmbiente({ semRotas: true })
+  await espera()
+  erro = null
+  await comando(b, 'routes').catch((e) => { erro = e.message })
+  check('sem seletor de rotas, erro claro',
+    /indisponivel/.test(erro || ''), erro)
 }
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
