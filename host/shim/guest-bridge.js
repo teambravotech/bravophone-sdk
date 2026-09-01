@@ -660,7 +660,7 @@
   // --- os avisos do app -------------------------------------------------
   //
   // O bundle usa Vue-Toastification com o tema de fabrica: retangulos chapados
-  // em #ff5252 / #ffc107 / #4caf50 / #2196f3, texto branco de 16px em Lato,
+  // em #ff5252 / var(--bp-aviso,#ffc107) / #4caf50 / #2196f3, texto branco de 16px em Lato,
   // 64px de altura minima, 326px de largura minima e um X de 24px. Nada disso
   // conversa com um painel escuro de 380px - e o mesmo motivo pelo qual o
   // aviso de ramal precisou ser refeito.
@@ -675,12 +675,12 @@
 
     // fundo, borda, texto, icone
     var TIPOS = [
-      ['error', '#241a20', '#5a2b33', '#ffb3b3', '#ff8a8a'],
-      ['warning', '#241e16', '#5a4526', '#ffd7a3', '#ffb454'],
+      ['error', 'var(--bp-alerta-bg,#241a20)', 'var(--bp-alerta-borda,#5a2b33)', 'var(--bp-alerta-texto,#ffb3b3)', 'var(--bp-alerta-titulo,#ff8a8a)'],
+      ['warning', '#241e16', '#5a4526', 'var(--bp-aviso-suave,#ffd7a3)', '#ffb454'],
       ['success', '#16241d', '#26553d', '#a9e3c1', '#4ade80'],
       // Informacao e o painel do proprio app, com o roxo da marca no icone.
-      ['info', '#1c2131', '#262c40', '#c8cee0', '#8b7cf8'],
-      ['default', '#1c2131', '#262c40', '#c8cee0', '#8b7cf8']
+      ['info', 'var(--bp-panel-alt,#1c2131)', 'var(--bp-border,#262c40)', 'var(--bp-text-suave,#c8cee0)', 'var(--bp-marca-clara,#8b7cf8)'],
+      ['default', 'var(--bp-panel-alt,#1c2131)', 'var(--bp-border,#262c40)', 'var(--bp-text-suave,#c8cee0)', 'var(--bp-marca-clara,#8b7cf8)']
     ]
     var porTipo = ''
     for (var i = 0; i < TIPOS.length; i++) {
@@ -704,7 +704,7 @@
       'max-width:none!important;width:100%!important;' +
       'padding:9px 12px!important;margin-bottom:8px!important;' +
       'border-radius:10px!important;border:1px solid transparent;' +
-      'box-shadow:0 10px 28px rgba(0,0,0,.5)!important;' +
+      'box-shadow:0 10px 28px var(--bp-scrim,rgba(0,0,0,.5))!important;' +
       'font-family:system-ui,-apple-system,sans-serif!important;' +
       'align-items:center!important}' +
 
@@ -787,9 +787,9 @@
       '.bp-aviso-ramal{position:fixed;left:8px;top:8px;right:auto;' +
       'width:calc(var(--bp-painel-larg,380px) - 16px);z-index:2147483000;' +
       'display:flex;align-items:center;gap:9px;padding:9px 12px;' +
-      'background:#241a20;border:1px solid #5a2b33;border-radius:10px;' +
-      'color:#c9a6ab;font:500 11.5px/1.45 system-ui,-apple-system,sans-serif;' +
-      'box-shadow:0 10px 28px rgba(0,0,0,.5)}' +
+      'background:var(--bp-alerta-bg,#241a20);border:1px solid var(--bp-alerta-borda,#5a2b33);border-radius:10px;' +
+      'color:var(--bp-alerta-dim,#c9a6ab);font:500 11.5px/1.45 system-ui,-apple-system,sans-serif;' +
+      'box-shadow:0 10px 28px var(--bp-scrim,rgba(0,0,0,.5))}' +
       // O aviso nao entra na arvore do Vue - ver reservarEspaco. Em vez
       // disso encolhemos o shell por dentro: como o Tailwind poe todo mundo
       // em border-box, um padding-top no elemento de altura fixa reduz a
@@ -804,16 +804,16 @@
       'body.bp-sem-ramal .webphone-shell-main{' +
       'padding-top:var(--bp-aviso-altura,58px)!important}' +
       '.bp-aviso-ramal svg{flex:0 0 auto;width:15px;height:15px}' +
-      '.bp-aviso-ramal > svg:first-child{color:#ff8a8a}' +
-      '.bp-aviso-txt{min-width:0;color:#ffb3b3;font-weight:600}' +
+      '.bp-aviso-ramal > svg:first-child{color:var(--bp-alerta-titulo,#ff8a8a)}' +
+      '.bp-aviso-txt{min-width:0;color:var(--bp-alerta-texto,#ffb3b3);font-weight:600}' +
       // No lugar do X: um ícone que gira enquanto consultamos a API. Fechar
       // não faz sentido aqui — o aviso descreve um estado, não um recado.
       '.bp-aviso-sync{margin-left:auto;flex:0 0 auto;width:14px;height:14px;' +
-      'color:#c9a6ab;opacity:.45;transition:opacity .2s}' +
+      'color:var(--bp-alerta-dim,#c9a6ab);opacity:.45;transition:opacity .2s}' +
       '.bp-aviso-ramal.buscando .bp-aviso-sync{opacity:1;' +
       'animation:bp-sync 900ms linear infinite}' +
       '@keyframes bp-sync{to{transform:rotate(360deg)}}' +
-      '@keyframes bp-chama{0%,100%{background:#241a20}50%{background:#43222c}}' +
+      '@keyframes bp-chama{0%,100%{background:var(--bp-alerta-bg,#241a20)}50%{background:var(--bp-alerta-pulso,#43222c)}}' +
       '.bp-aviso-ramal.chamando{animation:bp-chama 380ms ease-in-out 2}' +
       '@media (prefers-reduced-motion: reduce){' +
       '.bp-aviso-ramal.buscando .bp-aviso-sync,.bp-aviso-ramal.chamando{animation:none}}'

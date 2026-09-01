@@ -35,7 +35,7 @@
    elemento de ação — pintá-la de verde descaracteriza a identidade. Ela é a
    única ocorrência que combina a classe com tracking-wider, o que dá um
    seletor preciso sem tocar no bundle. */
-#app .text-blue-700.tracking-wider { color: #ffffff !important; }
+#app .text-blue-700.tracking-wider { color: var(--bp-text-forte, #ffffff) !important; }
 
 /* Mesma família, fora da allowlist original. */
 #app .text-blue-800,
@@ -45,7 +45,7 @@
 #app .text-red-700,
 #app .text-red-800 { color: var(--bp-danger) !important; }
 #app .text-amber-600,
-#app .text-amber-800 { color: #f5b342 !important; }
+#app .text-amber-800 { color: var(--bp-ambar-texto, #f5b342) !important; }
 #app .text-gray-950 { color: var(--bp-text) !important; }
 #app .text-slate-600,
 #app .text-slate-700,

@@ -47,6 +47,8 @@ const ASSETS = [
   { from: 'js/bravophone-presenca.js', to: 'js/bravophone-presenca.js', required: false },
   { from: 'js/bravophone-audio.js', to: 'js/bravophone-audio.js', required: false },
   { from: 'js/bravophone-janela.js', to: 'js/bravophone-janela.js', required: false },
+  // Tema claro/escuro: precisa rodar antes do primeiro quadro.
+  { from: 'js/bravophone-tema.js', to: 'js/bravophone-tema.js', required: false },
   { from: 'js/noise', to: 'js/noise', required: false },
   { from: 'css', to: 'css', required: true },
   { from: 'images', to: 'images', required: false },
@@ -270,11 +272,14 @@ function buildHtml() {
 <title>Webphone BRAVOPHONE</title>
 <link rel="icon" href="./favicon.ico">
 <link rel="stylesheet" href="./css/dark-theme.css">
+<link rel="stylesheet" href="./css/tema-claro.css">
 <!-- Correções de tema que o dark-theme.css da extensão não cobre.
      Fica em styles/ (e não em css/) porque o sync apaga css/ inteiro. -->
 <link rel="stylesheet" href="./styles/theme-fixes.css">
 <style>
-  html, body { margin: 0; height: 100%; background: #1e1e2d; overflow: hidden; }
+  /* O fundo sai do token: fixo em #1e1e2d ele vazava escuro por baixo do
+     tema claro, nas bordas e enquanto o Vue nao montava. */
+  html, body { margin: 0; height: 100%; background: var(--bp-bg, #1e1e2d); overflow: hidden; }
   #app { height: 100%; }
 </style>
 
@@ -282,6 +287,9 @@ function buildHtml() {
      toque em chrome.* durante a avaliação do bundle. -->
 <!-- Mensagens de _locales/: alimentam chrome.i18n.getMessage, de onde vem
      praticamente todo label da interface. Precisa vir antes do popup.js. -->
+<!-- Sem defer e primeiro: o atributo do tema tem de estar no <html>
+     antes do primeiro quadro, senao o iframe pisca escuro e clareia. -->
+<script src="./js/bravophone-tema.js"></script>
 <script src="./shim/messages.js"></script>
 <script src="./shim/chrome-shim.js"></script>
 <script src="./js/libwebphone.js"></script>

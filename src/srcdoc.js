@@ -65,6 +65,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
      transferir. Com <base>, resolvem contra o CDN. -->
 <base href="${b}">
 <link rel="stylesheet" href="${b}css/dark-theme.css">
+<link rel="stylesheet" href="${b}css/tema-claro.css">
 <link rel="stylesheet" href="${b}styles/theme-fixes.css">
 <style>
   html, body { margin: 0; height: 100%; background: #10131c; overflow: hidden; }
@@ -102,6 +103,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
   }
 })();
 <\/script>
+<script src="${b}js/bravophone-tema.js"><\/script>
 <script src="${b}shim/messages.js"><\/script>
 <script src="${b}shim/chrome-shim.js"><\/script>
 <script src="${b}js/libwebphone.js"><\/script>
