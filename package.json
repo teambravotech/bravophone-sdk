@@ -30,7 +30,7 @@
     "test": "node scripts/smoke-shim.mjs && node scripts/smoke-geometry.mjs && node scripts/smoke-launcher.mjs && node scripts/smoke-sessao.mjs && node scripts/smoke-teclado.mjs && node scripts/smoke-campo.mjs && node scripts/smoke-presenca.mjs && node scripts/smoke-acoes.mjs && node scripts/smoke-audio.mjs && node scripts/smoke-janela.mjs && node scripts/smoke-package.mjs",
     "start": "node scripts/dev-server.mjs",
     "audit:theme": "node scripts/audit-theme.mjs",
-    "prepublishOnly": "npm run build && npm test",
+    "prepublishOnly": "npm run prepare:host && npm run build && npm test",
     "prepare:host": "node scripts/sync-from-extension.mjs --cdn",
     "purge": "node scripts/purge-cdn.mjs",
     "postpublish": "node scripts/purge-cdn.mjs"
