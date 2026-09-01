@@ -153,6 +153,34 @@ console.log('\ntema — o controle não entra na árvore do Vue:')
   check('sem matchMedia, cai no escuro',
     /if \(!window\.matchMedia\) return false/.test(js))
 }
+console.log('\ntema — quem embrulha o webphone fica sabendo:')
+{
+  const js = readFileSync(join(EXT, 'js', 'bravophone-tema.js'), 'utf8')
+
+  // O evento nasceu avisando só TROCA. Quem abrisse já no claro nunca
+  // trocava nada, e a moldura do widget do SDK ficava escura em volta de um
+  // app claro — sem evento nenhum para corrigir. Só apareceu olhando a tela;
+  // nenhum teste de então tinha como pegar, porque cada metade estava certa.
+  check('anuncia o tema inicial, e nao so as trocas',
+    /anunciarOEstadoAtual\(\)/.test(js) && /function anunciarOEstadoAtual/.test(js))
+  check('avisa tambem quando o sistema troca sozinho',
+    /aoMudarOSistema[\s\S]{0,260}avisar\(/.test(js))
+
+  const w = readFileSync(join(SDK, 'src', 'widget.js'), 'utf8')
+  check('a moldura do widget escuta o evento', /theme:changed/.test(w))
+  check('e parte do sistema antes de o iframe responder',
+    /prefers-color-scheme: light/.test(w))
+
+  const st = readFileSync(join(SDK, 'src', 'styles.js'), 'utf8')
+  // O CSS do widget é um template literal: uma crase dentro de um comentário
+  // encerra a string, e o rollup falha com um erro que não menciona crase.
+  // Aconteceu ao escrever justamente o comentário destes tokens.
+  check('o CSS do widget tem crases equilibradas',
+    (st.match(/`/g) || []).length % 2 === 0,
+    (st.match(/`/g) || []).length + ' crases')
+  check('a moldura tem tokens proprios', /--bpw-bg/.test(st))
+}
+
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)

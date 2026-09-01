@@ -4,7 +4,44 @@
 import { ICON_STATE_CSS } from './icons.js'
 
 export const WIDGET_CSS = `
-:host { all: initial; }
+:host {
+  /* A moldura do widget vive no Shadow DOM, fora do iframe — o
+     tema-claro.css do webphone não a alcança. Então ela tem os próprios
+     tokens, e o widget.js os alterna ouvindo o evento theme:changed que o
+     webphone emite ao trocar de tema.
+
+     Só o que é MOLDURA entra aqui. A cor da marca no lançador, o vermelho do
+     badge e o verde/âmbar do status ficam fixos: são identidade e semântica,
+     e valem igual nos dois temas. */
+  all: initial;
+
+  --bpw-bg: #1e1e2d;
+  --bpw-header-bg: #15151f;
+  --bpw-texto: #e6e6f0;
+  --bpw-texto-dim: #9ca3af;
+  --bpw-texto-fraco: #cbd5e1;
+  --bpw-borda: rgba(255,255,255,.06);
+  --bpw-sombra: rgba(0,0,0,.45);
+  --bpw-overlay-bg: rgba(10,10,16,.72);
+  --bpw-realce: rgba(255,255,255,.08);
+  --bpw-alca: rgba(255,255,255,.3);
+  --bpw-texto-forte: #fff;
+}
+
+:host([data-bp-tema="claro"]) {
+  --bpw-bg: #ffffff;
+  --bpw-header-bg: #f4f6fa;
+  --bpw-texto: #161a24;
+  --bpw-texto-dim: #5a6379;
+  --bpw-texto-fraco: #5a6379;
+  --bpw-borda: rgba(16,24,40,.12);
+  --bpw-sombra: rgba(16,24,40,.18);
+  --bpw-overlay-bg: rgba(255,255,255,.88);
+  --bpw-realce: rgba(15,23,42,.07);
+  --bpw-alca: rgba(15,23,42,.28);
+  --bpw-texto-forte: #161a24;
+}
+
 * { box-sizing: border-box; }
 
 .bp-root {
@@ -13,9 +50,9 @@ export const WIDGET_CSS = `
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   display: flex;
   flex-direction: column;
-  background: #1e1e2d;
+  background: var(--bpw-bg);
   border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06);
+  box-shadow: 0 12px 40px var(--bpw-sombra), 0 0 0 1px var(--bpw-borda);
   overflow: hidden;
   will-change: transform;
 }
@@ -37,7 +74,7 @@ export const WIDGET_CSS = `
   gap: 2px;
   padding: 3px;
   border-radius: 8px;
-  background: rgba(10,10,16,.72);
+  background: var(--bpw-overlay-bg);
   backdrop-filter: blur(6px);
   opacity: 0;
   transition: opacity .14s ease;
@@ -47,7 +84,7 @@ export const WIDGET_CSS = `
 .bp-root.bp-chromeless:hover .bp-overlay,
 .bp-root.bp-chromeless:focus-within .bp-overlay { opacity: 1; pointer-events: auto; }
 .bp-root.bp-dragging .bp-overlay { opacity: 0; pointer-events: none; }
-.bp-overlay .bp-btn { width: 22px; height: 22px; font-size: 13px; color: #cbd5e1; }
+.bp-overlay .bp-btn { width: 22px; height: 22px; font-size: 13px; color: var(--bpw-texto-fraco); }
 
 /* Sem barra de titulo o arraste vem de dentro do iframe: o cursor tambem. */
 .bp-root.bp-chromeless.bp-dragging { cursor: grabbing; }
@@ -61,8 +98,8 @@ export const WIDGET_CSS = `
   gap: 8px;
   height: 36px;
   padding: 0 6px 0 12px;
-  background: #15151f;
-  color: #e6e6f0;
+  background: var(--bpw-header-bg);
+  color: var(--bpw-texto);
   cursor: grab;
   flex: 0 0 auto;
   touch-action: none;
@@ -91,17 +128,17 @@ export const WIDGET_CSS = `
   width: 24px; height: 24px;
   display: grid; place-items: center;
   border: 0; border-radius: 6px;
-  background: transparent; color: #9ca3af;
+  background: transparent; color: var(--bpw-texto-dim);
   cursor: pointer; font-size: 15px; line-height: 1;
   flex: 0 0 auto; padding: 0;
 }
-.bp-btn:hover { background: rgba(255,255,255,.08); color: #fff; }
+.bp-btn:hover { background: var(--bpw-realce); color: var(--bpw-texto-forte); }
 .bp-btn-close:hover { background: #dc2626; color: #fff; }
 
 .bp-body { flex: 1 1 auto; position: relative; min-height: 0; }
 .bp-frame {
   width: 100%; height: 100%;
-  border: 0; display: block; background: #1e1e2d;
+  border: 0; display: block; background: var(--bpw-bg);
 }
 /* Durante o arraste o iframe precisa parar de capturar o ponteiro,
    senão o mousemove é engolido pelo documento interno e o drag "trava". */
@@ -129,7 +166,7 @@ export const WIDGET_CSS = `
 .bp-h-se::after {
   content: ''; position: absolute; right: 3px; bottom: 3px;
   width: 9px; height: 9px;
-  background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,.3) 50%);
+  background: linear-gradient(135deg, transparent 50%, var(--bpw-alca) 50%);
 }
 
 /* Uma janela docada nao se redimensiona pelas bordas coladas na viewport. */

@@ -79,6 +79,17 @@ export function createWidget(options) {
   // alcança o widget, e o CSS do widget não alcança a página.
   const mount = h('div', { 'data-bravophone': 'root' })
   mount.style.cssText = 'all:initial;position:static'
+  // A moldura acompanha o tema do webphone. Antes de o iframe carregar não há
+  // quem perguntar, então partimos do sistema — que é o padrão do webphone
+  // também, e por isso os dois combinam desde o primeiro quadro.
+  const seguirTema = (tema) => {
+    if (tema === 'claro') mount.setAttribute('data-bp-tema', 'claro')
+    else mount.removeAttribute('data-bp-tema')
+  }
+  try {
+    seguirTema(window.matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'escuro')
+  } catch { /* navegador sem matchMedia: fica no escuro */ }
+
   const shadow = mount.attachShadow({ mode: 'open' })
   shadow.appendChild(h('style', { text: WIDGET_CSS }))
 
@@ -204,6 +215,10 @@ export function createWidget(options) {
     frame: frameEl,
     origin,
     onEvent: (name, payload) => {
+      // O webphone avisa quando o tema muda — por escolha na aba
+      // Configurações ou porque o sistema operacional trocou sozinho.
+      if (name === 'theme:changed') seguirTema(payload && payload.theme)
+
       if (name === 'ready') {
         status.dataset.state = 'ready'
         launcherBtn.dataset.state = 'ready'
