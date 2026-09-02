@@ -347,6 +347,25 @@ console.log('\nqualidade — a base da rota e configuravel:')
   // quando a rota subir em produção, sem ninguém lembrar de nada.
   check('ha override por localStorage', /bp:qualidade:base/.test(envio))
   check('e o padrao e a base da presenca', /return p\.apiBase\(\)/.test(envio))
+
+  // O OVERRIDE MOVE A ROTA, NAO A CREDENCIAL, e isso custou um teste inteiro:
+  // onze POSTs, onze 401, tabela vazia e nenhuma pista na tela. O vxToken
+  // nasce no ambiente do login, porque cada ambiente tem seu banco de
+  // sessoes; apontar so esta rota para outro lugar manda um token que o
+  // outro lado legitimamente nao conhece.
+  //
+  // Nao da para mover o login daqui (e do bundle). Da para o problema se
+  // anunciar em vez de virar um 401 misterioso.
+  check('avisa quando as bases divergem',
+    envio.includes("function conferirDivergencia") &&
+    envio.includes("A base da rota e a base do login são DIFERENTES"))
+  check('avisa uma vez, nao a cada tentativa',
+    envio.includes("if (avisouDivergencia) return true"))
+  check('e explica o 401 quando ele acontece',
+    envio.includes("r.status === 401 && divergente"))
+  check('ha diagnostico sem precisar ler log',
+    envio.includes("diagnostico: function ()") &&
+    envio.includes("baseDaCredencial"))
 }
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
