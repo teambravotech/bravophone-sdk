@@ -181,6 +181,31 @@ console.log('\ntema — quem embrulha o webphone fica sabendo:')
   check('a moldura tem tokens proprios', /--bpw-bg/.test(st))
 }
 
+console.log('\ntema — as sugestoes de contato:')
+{
+  const bundle = readFileSync(join(EXT, 'popup.js'), 'utf8')
+  const css = readFileSync(join(EXT, 'css', 'tema-claro.css'), 'utf8')
+
+  // A lista repete os dois problemas da tela de chamada: fundo inline e
+  // `text-white` num texto que o dark-theme.css nunca remapeou (branco já
+  // era certo no escuro). Alcançá-la depende do estilo inline continuar lá.
+  check('o bundle ainda desenha a lista com fundo inline',
+    /z-20 shadow-lg",style:\{top:"100%",marginTop:"4px",background:"#1c2131"/.test(bundle))
+  check('e o item ainda usa hover:bg-gray-800',
+    bundle.includes('hover:bg-gray-800'))
+
+  check('o claro cobre a caixa',
+    /\.z-20\.shadow-lg\[style\*="#1c2131"\]\s*\{/.test(css))
+  check('o nome do contato', /\.z-20\.shadow-lg\[style\*="#1c2131"\] \.text-white/.test(css))
+  check('e o item sob o ponteiro', /hover\\:bg-gray-800:hover/.test(css))
+
+  // `text-gray-400` (o número do contato) já é mapeado pelo dark-theme.css e
+  // vira --bp-text-faint sozinho. Se alguém remapear aqui também, viram duas
+  // fontes para a mesma cor.
+  check('nao duplica o que o dark-theme ja mapeia',
+    !/z-20[^{]*\.text-gray-400/.test(css))
+}
+
 console.log('\ntema — a tela de chamada:')
 {
   const bundle = readFileSync(join(EXT, 'popup.js'), 'utf8')
@@ -235,9 +260,20 @@ console.log('\ntema — o controle vive enquanto Ajustes esta aberto:')
   // Fora de Ajustes o controle não pode existir na tela — flutuando sobre a
   // tela de chamada ele atrapalharia justamente na hora errada.
   check('esconde quando a aba nao esta a vista',
-    /if \(!r\) \{ el\.caixa\.hidden = true; return \}/.test(js))
+    /if \(!r\) \{ esconder\(\); return \}/.test(js) && /function esconder/.test(js))
   check('e usa offsetParent, que e como v-show se denuncia',
     /offsetParent === null/.test(js))
+
+  // O controle e uma camada FIXA sobre o rodape do painel: sem reservar o
+  // espaco, ele cobre o que estiver no fim da lista — o botao Sair, no
+  // limite da rolagem. Aconteceu.
+  check('reserva espaco no fim da lista',
+    /body.bp-tema-visivel .settings-tab/.test(js) &&
+    /padding-bottom:calc\(var\(--bp-tema-altura/.test(js))
+  check('mede a altura em vez de chutar', /offsetHeight/.test(js))
+  // Sem tirar a classe ao esconder, a aba fica com um vao no fim.
+  check('tira a reserva quando o controle some',
+    /classList\.remove\('bp-tema-visivel'\)/.test(js))
 }
 
 
