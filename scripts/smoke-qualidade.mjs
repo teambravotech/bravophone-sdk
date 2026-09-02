@@ -322,6 +322,21 @@ console.log('\nqualidade — a chamada que caiu antes de comecar:')
   const envio = readFileSync(join(EXT, 'js', 'bravophone-qualidade-envio.js'), 'utf8')
   check('o filtro real e o Call-ID, no envio',
     /if \(!resumo \|\| !resumo\.callId\)/.test(envio))
+
+  // A CORRECAO ANTERIOR NAO BASTAVA. Eu tinha tirado o descarte no fim, mas
+  // o coletor pulava qualquer sessao que ainda nao tivesse estabelecido —
+  // entao a chamada recusada, ocupada ou com ramal inexistente nunca era
+  // sequer rastreada. Corrigi o sintoma e deixei a causa.
+  check('acompanha a chamada antes de ela conectar',
+    !col.includes("if (s.isEstablished && !s.isEstablished()) continue"))
+
+  // Separa "chamada ruim" de "chamada que nem completou": sem isto as duas
+  // chegam ao banco com metrica nula e viram a mesma coisa na consulta.
+  check('o resumo diz se chegou a estabelecer',
+    col.includes("estabeleceu: !!c.estabeleceu"))
+  check('e o envio leva o campo',
+    readFileSync(join(EXT, "js/bravophone-qualidade-envio.js"), "utf8")
+      .includes("estabeleceu: resumo.estabeleceu"))
 }
 
 console.log('\nqualidade — a base da rota e configuravel:')
