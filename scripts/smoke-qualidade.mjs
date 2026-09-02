@@ -367,6 +367,60 @@ console.log('\nqualidade — a base da rota e configuravel:')
     envio.includes("diagnostico: function ()") &&
     envio.includes("baseDaCredencial"))
 }
+console.log('\nqualidade — o MOS conhece o codec:')
+{
+  const corpo = fonte.slice(fonte.indexOf('function percentil'),
+    fonte.indexOf('// ---', fonte.indexOf('function resumir')))
+  const mos = new Function(corpo + '; return mos')()
+
+  // O ASTERISK DA VOXFREE NEGOCIA PCMU — descoberto nas primeiras chamadas
+  // reais, não suposto. G.711 puro não tem PLC, então perda machuca muito
+  // mais nele do que no Opus. A fórmula anterior descontava perda linear e
+  // igual para todos, e eu a tinha defendido raciocinando sobre Opus.
+  //
+  // Com 5% de perda ela dava 4.04 — "boa" — para uma chamada que pica
+  // audivelmente em G.711. É este caso que justifica a mudança.
+  check('PCMU com 5% de perda nao passa por chamada boa',
+    mos(12, 3, 5, 'PCMU') < 2.6, mos(12, 3, 5, 'PCMU'))
+  check('e o mesmo cenario em Opus sofre menos',
+    mos(12, 3, 5, 'opus') > mos(12, 3, 5, 'PCMU') + 1,
+    mos(12, 3, 5, 'opus') + ' vs ' + mos(12, 3, 5, 'PCMU'))
+
+  // Sem perda os dois têm de ficar altos: o codec muda a FRAGILIDADE À
+  // PERDA, não a qualidade de uma linha limpa.
+  check('sem perda, os dois ficam altos',
+    mos(12, 3, 0, 'PCMU') > 4.2 && mos(12, 3, 0, 'opus') > 4.2)
+
+  // Codec desconhecido não pode punir como G.711 nem perdoar como Opus:
+  // chutar para um dos lados seria pior que admitir que não sabemos.
+  const meio = mos(12, 3, 5, null)
+  check('codec desconhecido fica entre os dois',
+    meio > mos(12, 3, 5, 'PCMU') && meio < mos(12, 3, 5, 'opus'), meio)
+  check('mimeType com prefixo tambem e reconhecido',
+    mos(12, 3, 5, 'audio/PCMU') === mos(12, 3, 5, 'pcmu'))
+
+  // A perda entra pela curva do modelo E: machuca muito no começo e satura.
+  // Linear, subestimava o começo e exagerava o fim.
+  check('a curva satura em vez de zerar',
+    mos(12, 3, 50, 'PCMU') >= 1 && mos(12, 3, 90, 'PCMU') >= 1)
+}
+
+console.log('\nqualidade — a origem do RTT fica registrada:')
+{
+  // A tabela guardava o número sem dizer de onde veio, e sem isso não dá
+  // para saber o quanto confiar: 'rtcp' é o que o outro lado relata pelo
+  // RTCP; 'par' é o plano B do candidate-pair.
+  check('marca rtcp quando vem do remote-inbound-rtp',
+    fonte.includes("a.rttFonte = 'rtcp'"))
+  check('e par quando cai no candidate-pair',
+    fonte.includes("a.rttFonte = 'par'"))
+  check('o resumo leva a origem',
+    fonte.includes("rttFonte: ultima.rttFonte"))
+  check('e o envio manda',
+    readFileSync(join(EXT, 'js/bravophone-qualidade-envio.js'), 'utf8')
+      .includes("rttFonte: resumo.rttFonte"))
+}
+
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)
