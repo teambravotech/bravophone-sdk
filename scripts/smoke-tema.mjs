@@ -277,6 +277,41 @@ console.log('\ntema — o controle vive enquanto Ajustes esta aberto:')
 }
 
 
+console.log('\ntema — o observador nao pode alimentar a si mesmo:')
+{
+  const js = readFileSync(join(EXT, 'js', 'bravophone-tema.js'), 'utf8')
+
+  // ISTO JÁ TRAVOU O NAVEGADOR. O observador filtra `style` e `class`, que
+  // são exatamente os dois atributos que o posicionamento escreve no
+  // `body`. Escrevendo sem conferir, cada passada dispara a seguinte — e
+  // com `offsetHeight` no meio, cada volta força cálculo de layout. A aba
+  // congela ao entrar numa chamada, que é quando o DOM mais muda.
+  //
+  // Medido num navegador de verdade: a versão sem guardas nunca devolveu o
+  // controle ao Chrome; a versão com guardas faz 2 escritas e para.
+
+  check('a classe do body so e tocada quando o estado vira',
+    /function reservarEspaco/.test(js) && /if \(sim === reservado\) return/.test(js))
+
+  check('a geometria so e reescrita quando muda',
+    /ultimoLugar/.test(js) && /assinatura !== ultimoLugar/.test(js))
+
+  // Medir layout a cada mutação do documento é caro justamente no meio de
+  // uma chamada.
+  check('offsetHeight so e lido quando algo pode ter mudado a altura',
+    /if \(mudouDeLugar \|\| ultimaAltura === 0\)/.test(js))
+
+  check('as mutacoes sao agrupadas por quadro',
+    /function agendar/.test(js) &&
+    /new MutationObserver\(agendar\)/.test(js) &&
+    /requestAnimationFrame/.test(js))
+
+  // Se alguém trocar o callback de volta para `sincronizar` direto, volta a
+  // rodar uma vez por mutação.
+  check('o observador nao chama sincronizar direto',
+    !/new MutationObserver\(sincronizar\)/.test(js))
+}
+
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)
