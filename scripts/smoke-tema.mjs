@@ -209,35 +209,37 @@ console.log('\ntema — a tela de chamada:')
   check('nao mexe no botao ativo (verde)', !/#16a34a"\]/.test(css))
 }
 
-console.log('\ntema — o controle aparece rapido e some com calma:')
+console.log('\ntema — o controle vive enquanto Ajustes esta aberto:')
 {
   const js = readFileSync(join(EXT, 'js', 'bravophone-tema.js'), 'utf8')
 
   // A TROCA DE ABA É MUTAÇÃO DE ATRIBUTO. O Vue usa `v-show`, que mexe em
-  // `style.display`. Observando só `childList`, o controle só reagia quando
-  // outra coisa mudava o DOM por perto — demorava a aparecer ao abrir
-  // Ajustes e ficava na tela depois de sair. Uma causa, dois sintomas.
+  // `style.display`. Observando só `childList`, o controle reagia por
+  // acidente — quando outra coisa mudava o DOM por perto. Demorava a
+  // aparecer ao abrir Ajustes e ficava na tela depois de sair: uma causa,
+  // dois sintomas. É o que faz o controle acompanhar a aba nos dois
+  // sentidos, e por isso continua aqui mesmo depois de a carência sair.
   check('observa atributos, e nao so filhos',
     /attributes:\s*true/.test(js) && /attributeFilter/.test(js))
   check('e filtra por style, que e o que o v-show mexe',
     /attributeFilter:\s*\['style'/.test(js))
 
-  check('aparecer e imediato', /function mostrarAgora/.test(js) &&
-    /clearTimeout\(relogioSaida\)/.test(js))
-  check('sumir tem carencia de 2s', /var CARENCIA = 2000/.test(js))
-  check('o mouse em cima segura', /mouseenter/.test(js) && /sobreOControle = true/.test(js))
-  check('e volta a contar ao sair', /mouseleave/.test(js) && /sumirDepois\(\)/.test(js))
+  // Houve uma versão com 2s de folga, trava pelo mouse e transição de
+  // saída. Na tela não convenceu: um controle que sobrevive à própria tela
+  // parece esquecido, não gentil. Estes casos existem para que essa
+  // máquina não volte por engano num refactor.
+  check('sem carencia para sumir', !/CARENCIA|relogioSaida/.test(js))
+  check('sem trava pelo mouse', !/sobreOControle|mouseenter/.test(js))
+  check('sem transicao de saida', !/bp-tema--saindo|transitionend/.test(js))
 
-  // Se a aba voltar durante a carência, não pode sumir assim mesmo.
-  check('a aba voltando cancela a saida', /if \(lugarDoControle\(\)\) return/.test(js))
-
-  // A transição pode não rodar (aba de fundo, motion reduzido). Sem um prazo
-  // de reserva o nó ficaria meio transparente na tela para sempre.
-  check('ha prazo de reserva se transitionend nao vier',
-    /transitionend/.test(js) && /setTimeout\(fecha,/.test(js))
-  check('respeita quem pediu menos movimento',
-    /prefers-reduced-motion/.test(js))
+  // Fora de Ajustes o controle não pode existir na tela — flutuando sobre a
+  // tela de chamada ele atrapalharia justamente na hora errada.
+  check('esconde quando a aba nao esta a vista',
+    /if \(!r\) \{ el\.caixa\.hidden = true; return \}/.test(js))
+  check('e usa offsetParent, que e como v-show se denuncia',
+    /offsetParent === null/.test(js))
 }
+
 
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
