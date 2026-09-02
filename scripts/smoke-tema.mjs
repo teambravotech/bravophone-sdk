@@ -181,6 +181,64 @@ console.log('\ntema — quem embrulha o webphone fica sabendo:')
   check('a moldura tem tokens proprios', /--bpw-bg/.test(st))
 }
 
+console.log('\ntema — a tela de chamada:')
+{
+  const bundle = readFileSync(join(EXT, 'popup.js'), 'utf8')
+  const css = readFileSync(join(EXT, 'css', 'tema-claro.css'), 'utf8')
+
+  // A tela de chamada não se pinta por classe: o fundo vem de uma computed
+  // que devolve o gradiente pronto, e os botões levam cor no atributo
+  // `style`. Só dá para alcançá-los mirando o CONTEÚDO do atributo, e isso
+  // depende de os hexes continuarem existindo no bundle.
+  //
+  // Se o bundle trocar de cor, estas asserções caem e a gente fica sabendo.
+  // Sem elas, o sintoma seria a tela de chamada continuar escura dentro do
+  // tema claro, sem nada acusando.
+  check('o bundle ainda usa o gradiente conhecido',
+    bundle.includes('#12141c') && bundle.includes('#171b28'))
+  check('e o cinza do botao de acao em repouso',
+    bundle.includes('#1c2131'))
+
+  check('o claro cobre o fundo da tela de chamada',
+    /call-screen\[style\*="#12141c"\]/.test(css))
+  check('e os botoes de acao',
+    /call-screen \[style\*="#1c2131"\]/.test(css))
+
+  // O botão ATIVO é verde com texto branco e serve nos dois temas. Se a
+  // regra o pegasse junto, o estado ligado sumiria.
+  check('nao mexe no botao ativo (verde)', !/#16a34a"\]/.test(css))
+}
+
+console.log('\ntema — o controle aparece rapido e some com calma:')
+{
+  const js = readFileSync(join(EXT, 'js', 'bravophone-tema.js'), 'utf8')
+
+  // A TROCA DE ABA É MUTAÇÃO DE ATRIBUTO. O Vue usa `v-show`, que mexe em
+  // `style.display`. Observando só `childList`, o controle só reagia quando
+  // outra coisa mudava o DOM por perto — demorava a aparecer ao abrir
+  // Ajustes e ficava na tela depois de sair. Uma causa, dois sintomas.
+  check('observa atributos, e nao so filhos',
+    /attributes:\s*true/.test(js) && /attributeFilter/.test(js))
+  check('e filtra por style, que e o que o v-show mexe',
+    /attributeFilter:\s*\['style'/.test(js))
+
+  check('aparecer e imediato', /function mostrarAgora/.test(js) &&
+    /clearTimeout\(relogioSaida\)/.test(js))
+  check('sumir tem carencia de 2s', /var CARENCIA = 2000/.test(js))
+  check('o mouse em cima segura', /mouseenter/.test(js) && /sobreOControle = true/.test(js))
+  check('e volta a contar ao sair', /mouseleave/.test(js) && /sumirDepois\(\)/.test(js))
+
+  // Se a aba voltar durante a carência, não pode sumir assim mesmo.
+  check('a aba voltando cancela a saida', /if \(lugarDoControle\(\)\) return/.test(js))
+
+  // A transição pode não rodar (aba de fundo, motion reduzido). Sem um prazo
+  // de reserva o nó ficaria meio transparente na tela para sempre.
+  check('ha prazo de reserva se transitionend nao vier',
+    /transitionend/.test(js) && /setTimeout\(fecha,/.test(js))
+  check('respeita quem pediu menos movimento',
+    /prefers-reduced-motion/.test(js))
+}
+
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)
