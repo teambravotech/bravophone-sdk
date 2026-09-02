@@ -181,58 +181,45 @@ console.log('\ntema — quem embrulha o webphone fica sabendo:')
   check('a moldura tem tokens proprios', /--bpw-bg/.test(st))
 }
 
-console.log('\ntema — as sugestoes de contato:')
+console.log('\ntema — o que o bundle pinta por estilo inline:')
 {
-  const bundle = readFileSync(join(EXT, 'popup.js'), 'utf8')
   const css = readFileSync(join(EXT, 'css', 'tema-claro.css'), 'utf8')
 
-  // A lista repete os dois problemas da tela de chamada: fundo inline e
-  // `text-white` num texto que o dark-theme.css nunca remapeou (branco já
-  // era certo no escuro). Alcançá-la depende do estilo inline continuar lá.
-  check('o bundle ainda desenha a lista com fundo inline',
-    /z-20 shadow-lg",style:\{top:"100%",marginTop:"4px",background:"#1c2131"/.test(bundle))
-  check('e o item ainda usa hover:bg-gray-800',
-    bundle.includes('hover:bg-gray-800'))
+  // NÃO MIRAR PELO ATRIBUTO `style`. O Vue aplica pela CSSOM, e o navegador
+  // RE-SERIALIZA a declaração: `#12141c` vira `rgb(18, 20, 28)` e o
+  // `180deg` do gradiente some. Um seletor [style*="#12141c"] nunca casa no
+  // app de verdade.
+  //
+  // Isso custou uma rodada inteira: o teste de tela que escrevi passava,
+  // porque eu tinha escrito o atributo à mão no HTML — o único caso que não
+  // acontece em produção. O harness confirmava a minha suposição, não o
+  // produto.
+  check('a tela de chamada e alcancada pela classe, nao pelo atributo',
+    /#app \.call-screen \{/.test(css) &&
+    !/call-screen\[style/.test(css))
 
-  check('o claro cobre a caixa',
-    /\.z-20\.shadow-lg\[style\*="#1c2131"\]\s*\{/.test(css))
-  check('o nome do contato', /\.z-20\.shadow-lg\[style\*="#1c2131"\] \.text-white/.test(css))
+  // A lista de sugestões é irmã seguinte do nosso campo. O
+  // bravophone-input.js já depende dessa relação para escondê-la, então é
+  // âncora provada.
+  check('as sugestoes sao alcancadas pela estrutura',
+    /\.bpi-wrap ~ \.z-20\.shadow-lg \{/.test(css))
+  check('o nome do contato', /\.bpi-wrap ~ \.z-20\.shadow-lg \.text-white/.test(css))
   check('e o item sob o ponteiro', /hover\\:bg-gray-800:hover/.test(css))
 
-  // `text-gray-400` (o número do contato) já é mapeado pelo dark-theme.css e
-  // vira --bp-text-faint sozinho. Se alguém remapear aqui também, viram duas
-  // fontes para a mesma cor.
+  // Onde o atributo é INEVITÁVEL — botão ativo e inativo são o mesmo
+  // elemento, mesma classe, só a cor inline os separa — usamos a forma
+  // serializada, que é definida por especificação e é o que existe no DOM.
+  check('os botoes de acao usam a forma serializada',
+    /\[style\*="rgb\(28, 33, 49\)"\]/.test(css))
+  check('e o botao ativo (verde) fica de fora',
+    !/rgb\(22, 163, 74\)/.test(css))
+
+  // Os textos da tela de chamada usam text-gray-*, que o dark-theme.css já
+  // mapeia. Duplicar aqui criaria duas fontes para a mesma cor.
   check('nao duplica o que o dark-theme ja mapeia',
-    !/z-20[^{]*\.text-gray-400/.test(css))
+    !/call-screen[^{]*\.text-gray-/.test(css))
 }
 
-console.log('\ntema — a tela de chamada:')
-{
-  const bundle = readFileSync(join(EXT, 'popup.js'), 'utf8')
-  const css = readFileSync(join(EXT, 'css', 'tema-claro.css'), 'utf8')
-
-  // A tela de chamada não se pinta por classe: o fundo vem de uma computed
-  // que devolve o gradiente pronto, e os botões levam cor no atributo
-  // `style`. Só dá para alcançá-los mirando o CONTEÚDO do atributo, e isso
-  // depende de os hexes continuarem existindo no bundle.
-  //
-  // Se o bundle trocar de cor, estas asserções caem e a gente fica sabendo.
-  // Sem elas, o sintoma seria a tela de chamada continuar escura dentro do
-  // tema claro, sem nada acusando.
-  check('o bundle ainda usa o gradiente conhecido',
-    bundle.includes('#12141c') && bundle.includes('#171b28'))
-  check('e o cinza do botao de acao em repouso',
-    bundle.includes('#1c2131'))
-
-  check('o claro cobre o fundo da tela de chamada',
-    /call-screen\[style\*="#12141c"\]/.test(css))
-  check('e os botoes de acao',
-    /call-screen \[style\*="#1c2131"\]/.test(css))
-
-  // O botão ATIVO é verde com texto branco e serve nos dois temas. Se a
-  // regra o pegasse junto, o estado ligado sumiria.
-  check('nao mexe no botao ativo (verde)', !/#16a34a"\]/.test(css))
-}
 
 console.log('\ntema — o controle vive enquanto Ajustes esta aberto:')
 {
