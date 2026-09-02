@@ -104,7 +104,7 @@ console.log('\nqualidade — o resumo de uma chamada:')
     { em: 2, rtt: 40, jitter: 4, perdidos: 1, recebidos: 100, codec: 'opus', tipoLocal: 'host', tipoRemoto: 'host' },
     { em: 3, rtt: 30, jitter: 3, perdidos: 3, recebidos: 147, codec: 'opus', tipoLocal: 'host', tipoRemoto: 'host' },
   ]
-  const r = resumir({ callId: 'abc', direcao: 'sainte', inicio: 0, fim: 6000, amostras })
+  const r = resumir({ callId: 'abc', direcao: 'outbound', inicio: 0, fim: 6000, amostras })
 
   check('guarda o Call-ID', r.callId === 'abc')
   check('media de RTT', r.rttMedioMs === 30, r.rttMedioMs)
@@ -121,7 +121,7 @@ console.log('\nqualidade — o resumo de uma chamada:')
   check('caminho dos candidatos', r.caminho === 'host/host', r.caminho)
   check('nao marca relay quando e direto', r.viaRelay === false)
 
-  const semNada = resumir({ callId: 'z', direcao: 'entrante', inicio: 0, fim: 1000, amostras: [] })
+  const semNada = resumir({ callId: 'z', direcao: 'inbound', inicio: 0, fim: 1000, amostras: [] })
   check('chamada sem amostra nao inventa numero',
     semNada.rttMedioMs === null && semNada.mos === null && semNada.perdaPct === null)
 }
@@ -134,6 +134,67 @@ console.log('\nqualidade — o que o coletor promete a quem consome:')
   // número solto que não se liga a nada.
   check('captura o Call-ID do SIP', /call_id/.test(fonte))
   check('a janela de amostras e limitada', /TETO_AMOSTRAS/.test(fonte) && /amostras\.shift\(\)/.test(fonte))
+}
+
+console.log('\nqualidade — o vocabulario e o do banco, nao um nosso:')
+{
+  // `inbound`/`outbound` é o que crm_chamadas.sentido usa. O codid existe
+  // para casar as duas tabelas; duas palavras para a mesma coisa viram uma
+  // tradução na consulta e um bug de filtro algum dia.
+  check('direcao usa inbound/outbound',
+    /'inbound' : 'outbound'/.test(fonte) && !/entrante|sainte/.test(fonte))
+}
+
+console.log('\nqualidade — a razao do fim:')
+{
+  // Metade do diagnóstico. Queda por rede não se parece com desligamento
+  // normal, e sem isto a linha mostra a chamada ruim sem dizer como terminou.
+  check('escuta ended e failed da sessao',
+    /sessao\.on\('ended'/.test(fonte) && /sessao\.on\('failed'/.test(fonte))
+  // Precisa ser na hora em que a chamada aparece: quando a varredura percebe
+  // que a sessão sumiu, a causa já se foi junto.
+  check('escuta no inicio, nao no fim',
+    fonte.indexOf('escutarOFim(alvo.sessao)') < fonte.indexOf('function encerrar'))
+  check('o motivo entra no resumo', /motivoFim: c\.motivoFim/.test(fonte))
+  // O JsSIP manda frase, não código. O sip_code do CRM foi criado estreito
+  // demais por essa suposição e rejeitava linha.
+  check('corta em 190, o tamanho da coluna', /slice\(0, 190\)/.test(fonte))
+}
+
+console.log('\nqualidade — o envio guarda antes de mandar:')
+{
+  const envio = readFileSync(join(EXT, 'js', 'bravophone-qualidade-envio.js'), 'utf8')
+
+  // O resumo sai no fim da chamada — que é exatamente quando a rede pode estar
+  // ruim, porque foi a rede ruim que gerou o resumo que vale a pena ler.
+  // Enviar e torcer perderia justamente os casos que interessam.
+  const ouvinte = envio.slice(envio.indexOf("addEventListener('bp:qualidade'"))
+  check('enfileira antes de tentar',
+    ouvinte.indexOf('enfileirar(') < ouvinte.indexOf('escoar('),
+    ouvinte.slice(0, 120).replace(/\n/g, ' '))
+  check('so apaga da fila quando o servidor confirma',
+    /r\.ok \|\| r\.status === 409/.test(envio))
+  check('a fila tem teto', /TETO_FILA/.test(envio) && /f\.shift\(\)/.test(envio))
+
+  // Resumo sem Call-ID não se liga a chamada nenhuma, e achar depois é o
+  // motivo de existir.
+  check('recusa resumo sem Call-ID', /if \(!resumo \|\| !resumo\.callId\)/.test(envio))
+  // O mesmo Call-ID duas vezes é retry, não chamada nova.
+  check('o mesmo Call-ID nao vira duas linhas',
+    /f\[i\]\.callId === resumo\.callId/.test(envio))
+
+  // A identidade vem da credencial. O corpo descreve a chamada.
+  check('manda o token no header', /'X-Vx-Token': t/.test(envio))
+  // O trecho da função que monta o corpo, sem comentários — a primeira versão
+  // deste caso reprovou porque casava com a palavra "ramal" dentro do
+  // comentário que explica justamente que ramal não vai no corpo.
+  const corpo = envio
+    .slice(envio.indexOf('function corpoDe'), envio.indexOf('function escoar'))
+    .replace(/\/\/[^\n]*/g, '')
+  check('nao manda cliente nem ramal no corpo',
+    !/cliente|ramal/i.test(corpo), corpo.match(/.{0,40}(cliente|ramal).{0,40}/i))
+  check('reusa a identidade da presenca, nao redescobre',
+    /__bpPresenca/.test(envio) && !/chrome\.storage/.test(envio))
 }
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
