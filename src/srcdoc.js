@@ -115,6 +115,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
 <script defer src="${b}js/bravophone-presenca.js"><\/script>
 <script defer src="${b}js/bravophone-audio.js"><\/script>
 <script defer src="${b}js/bravophone-qualidade.js"><\/script>
+<script defer src="${b}js/bravophone-ping.js"><\/script>
 <script defer src="${b}js/bravophone-qualidade-envio.js"><\/script>
 <script defer src="${b}js/bravophone-janela.js"><\/script>
 <script defer src="${b}popup.js"><\/script>

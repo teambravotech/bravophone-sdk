@@ -197,5 +197,80 @@ console.log('\nqualidade — o envio guarda antes de mandar:')
     /__bpPresenca/.test(envio) && !/chrome\.storage/.test(envio))
 }
 
+console.log('\nping — a medicao trocada, o indicador mantido:')
+{
+  const ping = readFileSync(join(EXT, 'js', 'bravophone-ping.js'), 'utf8')
+
+  // Um Image de mentira, para exercitar o envelope sem navegador. O descritor
+  // nativo de `src` é o que o envelope delega quando NÃO é o ping.
+  const carregadas = []
+  class ImagemFalsa {
+    constructor() { this.onload = null; this.onerror = null; this._src = null }
+  }
+  const proto = { }
+  Object.defineProperty(proto, 'src', {
+    configurable: true,
+    get() { return 'ABSOLUTA:' + this._src },
+    set(v) { this._src = v; carregadas.push(v) },
+  })
+  Object.setPrototypeOf(ImagemFalsa.prototype, proto)
+
+  const relogios = []
+  const janela = {
+    Image: ImagemFalsa,
+    HTMLImageElement: { prototype: proto },
+    setTimeout: (fn, ms) => { relogios.push({ fn, ms }); return relogios.length },
+    fetch: () => Promise.resolve({}),
+    __bpQualidade: { emChamada: () => true, agora: () => ({ rttMedioMs: 42 }) },
+    __bpPresenca: { apiBase: () => 'https://api.exemplo' },
+  }
+  janela.window = janela
+
+  new Function('window', 'setTimeout', 'fetch', 'console', ping)(
+    janela, janela.setTimeout, janela.fetch, { warn() {}, info() {} })
+
+  check('envolveu o construtor Image', janela.Image !== ImagemFalsa)
+  check('publicou a API do ping', !!janela.__bpPing)
+
+  // IMAGEM DE VERDADE PASSA INTACTA. O getter nativo devolve URL absoluta; um
+  // getter meu devolvendo o valor cru mudaria o significado de `img.src` para
+  // o app inteiro — inclusive para quem compara URL de foto de contato.
+  const normal = new janela.Image()
+  normal.src = 'https://exemplo.com/foto.png'
+  check('imagem normal chega ao caminho nativo',
+    carregadas.indexOf('https://exemplo.com/foto.png') >= 0, carregadas.join(','))
+  check('e o getter continua devolvendo a URL absoluta',
+    normal.src === 'ABSOLUTA:https://exemplo.com/foto.png', normal.src)
+
+  // O PING É RECONHECIDO PELA FORMA, não pelo domínio: trocar o host do
+  // favicon é provável; trocar o nome do parâmetro, não.
+  const antes = carregadas.length
+  const sonda = new janela.Image()
+  sonda.src = 'https://app2.voxfree.com.br/x.png?random-no-cache=abc'
+  check('o ping nao vira requisicao de imagem', carregadas.length === antes)
+  check('reconhece pela forma, nao pelo dominio', /random-no-cache=/.test(ping))
+}
+
+console.log('\nping — o que ele promete:')
+{
+  const ping = readFileSync(join(EXT, 'js', 'bravophone-ping.js'), 'utf8')
+
+  // Em chamada o número já existe, medido pelo navegador sobre o RTP. Fora
+  // dela, um pedido de verdade à NOSSA API — host que controlamos, para uma
+  // queda nossa não virar toast dizendo ao cliente que a internet dele caiu.
+  check('em chamada usa o RTT real', /emChamada\(\)/.test(ping) && /rttMedioMs/.test(ping))
+  check('fora dela mede a nossa API', /apiBase\(\)/.test(ping) && /fetch\(/.test(ping))
+  check('nao contata mais o host de terceiro', !/voxfree/.test(ping.replace(/\/\*[\s\S]*?\*\//g, '')))
+
+  // O componente marcava offline e mostrava toast vermelho na PRIMEIRA falha.
+  // Uma troca de wi-fi virava alarme no meio do expediente.
+  check('ha histerese antes de dizer offline', /FALHAS_PARA_OFFLINE = 3/.test(ping))
+  check('falha isolada ainda responde ok', /falhasSeguidas < FALHAS_PARA_OFFLINE/.test(ping))
+
+  // Se o descritor nativo não existir, é melhor não envolver nada.
+  check('sem descritor nativo, desiste em vez de meio-envolver',
+    /sem descritor nativo/.test(ping))
+}
+
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)
