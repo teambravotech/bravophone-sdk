@@ -172,8 +172,8 @@ console.log('\nqualidade — o envio guarda antes de mandar:')
   check('enfileira antes de tentar',
     ouvinte.indexOf('enfileirar(') < ouvinte.indexOf('escoar('),
     ouvinte.slice(0, 120).replace(/\n/g, ' '))
-  check('so apaga da fila quando o servidor confirma',
-    /r\.ok \|\| r\.status === 409/.test(envio))
+  check('so apaga da fila conforme a politica de status',
+    envio.includes("if (apagaDaFila(r.status))"))
   check('a fila tem teto', /TETO_FILA/.test(envio) && /f\.shift\(\)/.test(envio))
 
   // Resumo sem Call-ID não se liga a chamada nenhuma, e achar depois é o
@@ -270,6 +270,68 @@ console.log('\nping — o que ele promete:')
   // Se o descritor nativo não existir, é melhor não envolver nada.
   check('sem descritor nativo, desiste em vez de meio-envolver',
     /sem descritor nativo/.test(ping))
+}
+
+console.log('\nqualidade — o que apaga da fila e o que fica:')
+{
+  const envio = readFileSync(join(EXT, 'js', 'bravophone-qualidade-envio.js'), 'utf8')
+  // A função é pura: dá para exercitá-la de verdade em vez de olhar o texto.
+  const corpo = envio.slice(envio.indexOf('function apagaDaFila'),
+    envio.indexOf('// ---', envio.indexOf('function apagaDaFila')))
+  const apaga = new Function(corpo + '; return apagaDaFila')()
+
+  check('2xx entrou, apaga', apaga(200) && apaga(201) && apaga(204))
+  // O duplicado vem 200 com { duplicado: true } — reenvio depois de queda de
+  // rede não é conflito, é o comportamento esperado.
+  check('duplicado tambem e 2xx, apaga', apaga(200))
+
+  // 503 é o estado enquanto o DDL não roda: o corpo está certo, quem não está
+  // é o servidor. Insistir depois é o comportamento correto.
+  check('503 fica na fila', !apaga(503))
+  check('500 e 502 ficam', !apaga(500) && !apaga(502))
+
+  // vxToken válido mas sem ramal na sessão também dá 401.
+  check('401 fica (token ainda nao carregou)', !apaga(401))
+  check('408 e 429 ficam', !apaga(408) && !apaga(429))
+
+  // Corpo que o servidor nunca vai aceitar: insistir entupiria a fila.
+  check('400 apaga', apaga(400))
+  check('422 apaga', apaga(422))
+  check('404 apaga', apaga(404))
+}
+
+console.log('\nqualidade — a chamada que caiu antes de comecar:')
+{
+  const col = readFileSync(join(EXT, 'js', 'bravophone-qualidade.js'), 'utf8')
+  // A versão anterior descartava resumo sem amostra, e era erro: uma chamada
+  // que caiu antes da primeira leitura é justamente a mais interessante — não
+  // há métrica, mas há o motivoFim, que responde por que ela caiu.
+  check('nao descarta resumo sem amostra', !/if \(!r\.amostras\) return/.test(col))
+
+  const corpo = col.slice(col.indexOf('function percentil'),
+    col.indexOf('// ---', col.indexOf('function resumir')))
+  const { resumir } = new Function(corpo + '; return { resumir }')()
+  const r = resumir({
+    callId: 'caiu', direcao: 'outbound', inicio: 0, fim: 1500,
+    motivoFim: 'remote:Rejected', amostras: [],
+  })
+  check('e o resumo carrega o motivo', r.motivoFim === 'remote:Rejected', r.motivoFim)
+  check('sem inventar metrica', r.mos === null && r.rttMedioMs === null)
+
+  // O filtro que importa é outro: sem Call-ID não há como achar a chamada.
+  const envio = readFileSync(join(EXT, 'js', 'bravophone-qualidade-envio.js'), 'utf8')
+  check('o filtro real e o Call-ID, no envio',
+    /if \(!resumo \|\| !resumo\.callId\)/.test(envio))
+}
+
+console.log('\nqualidade — a base da rota e configuravel:')
+{
+  const envio = readFileSync(join(EXT, 'js', 'bravophone-qualidade-envio.js'), 'utf8')
+  // A rota nasceu em homologação, num vhost próprio; a produção ainda não a
+  // tem. Sem a chave, cai na base da presença — que é para onde isto vai
+  // quando a rota subir em produção, sem ninguém lembrar de nada.
+  check('ha override por localStorage', /bp:qualidade:base/.test(envio))
+  check('e o padrao e a base da presenca', /return p\.apiBase\(\)/.test(envio))
 }
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
