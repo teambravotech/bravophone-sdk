@@ -427,6 +427,78 @@ console.log('\nqualidade — a origem do RTT fica registrada:')
   }
 }
 
+console.log('\nping — aba oculta nao reporta relogio estrangulado:')
+{
+  const ping = readFileSync(join(EXT, 'js', 'bravophone-ping.js'), 'utf8')
+
+  // O componente cronometra `Date.now() - n` em volta do requestImage, e o
+  // meu setter roda DENTRO dele — entao a latencia que ele reporta e,
+  // literalmente, o meu setTimeout. Em aba oculta o Chrome estrangula timers
+  // a um por minuto: setTimeout(30) vira 60000ms, o componente calcula 60s e
+  // o indicador acende "lento" toda vez que a pessoa volta para a aba.
+  //
+  // O teste EXECUTA o script com os timers estrangulados. Nao confere texto:
+  // confere se o onload chegou sem passar por timer nenhum.
+  function montar(estado) {
+    const timers = []
+    const proto = {}
+    Object.defineProperty(proto, 'src', {
+      configurable: true, get() { return this._s }, set(v) { this._s = v },
+    })
+    const janela = {
+      document: { visibilityState: estado, addEventListener() {} },
+      HTMLImageElement: { prototype: proto },
+      // O estrangulamento: nenhum timer roda sozinho neste teste.
+      setTimeout: (fn, ms) => { timers.push({ fn, ms }); return timers.length },
+      setInterval: () => 1,
+      fetch: () => Promise.resolve({}),
+      __bpPresenca: { apiBase: () => 'https://api.exemplo' },
+      Image: function () { return Object.create(proto) },
+    }
+    janela.window = janela
+    new Function('window', 'document', 'setTimeout', 'setInterval', 'fetch', 'console', ping)(
+      janela, janela.document, janela.setTimeout, janela.setInterval, janela.fetch,
+      { warn() {}, info() {} })
+    return { janela, timers }
+  }
+
+  // --- OCULTA: o onload tem de chegar sem timer nenhum ter rodado ---------
+  const oculta = montar('hidden')
+  const imgO = new oculta.janela.Image()
+  let chamouOculta = false
+  imgO.onload = () => { chamouOculta = true }
+  imgO.src = 'https://x/y.png?random-no-cache=1'
+  await Promise.resolve(); await Promise.resolve()
+
+  check('oculta: onload chega por microtarefa', chamouOculta)
+  check('oculta: nenhum timer foi agendado para responder',
+    oculta.timers.length === 0, JSON.stringify(oculta.timers.map((t) => t.ms)))
+
+  // --- VISIVEL: mede de verdade e usa o atraso como canal ----------------
+  const visivel = montar('visible')
+  const imgV = new visivel.janela.Image()
+  let chamouVisivel = false
+  imgV.onload = () => { chamouVisivel = true }
+  imgV.src = 'https://x/y.png?random-no-cache=2'
+  await Promise.resolve(); await Promise.resolve(); await Promise.resolve()
+
+  check('visivel: NAO responde de imediato', !chamouVisivel)
+  check('visivel: agenda o atraso que carrega o numero',
+    visivel.timers.length === 1, JSON.stringify(visivel.timers.map((t) => t.ms)))
+
+  // E ao rodar o timer, o onload sai.
+  if (visivel.timers.length) visivel.timers[0].fn()
+  check('visivel: o onload sai quando o atraso vence', chamouVisivel)
+
+  // Ao voltar, a conexao com a API ja foi fechada pelo navegador. Sem
+  // aquecer, a primeira medicao paga DNS+TCP+TLS e vira outro pico logo
+  // depois do que acabamos de eliminar.
+  check('aquece a conexao ao voltar para a aba',
+    ping.includes("addEventListener('visibilitychange'"))
+  check('e descarta o resultado do aquecimento',
+    /medir\(\)\.catch\(function \(\) \{ \/\* aquecimento/.test(ping))
+}
+
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)
