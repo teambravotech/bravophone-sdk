@@ -430,6 +430,46 @@ console.log("\npresenca — o microfone esta liberado?")
     (fonte.match(/microfoneOk/g) || []).length >= 3)
 }
 
+console.log("\npresenca — em que involucro estamos:")
+{
+  const fonte = await readFile(
+    resolve(ROOT, '..', 'Bravophone', 'js', 'bravophone-presenca.js'), 'utf8')
+  const corpo = fonte.slice(fonte.indexOf('function plataformaDoInvolucro'),
+    fonte.indexOf('function perfil()'))
+  const qual = (janela) => new Function('window', corpo + '; return plataformaDoInvolucro()')(janela)
+
+  // ISTO ESTAVA ERRADO E ERA INVISIVEL: a funcao distinguia so extensao de
+  // web, entao o app desktop e os dois apps de celular se anunciavam TODOS
+  // como `web` — indistinguiveis do SDK num site qualquer. A lista de
+  // dispositivos do painel mostrava "sdk" para todo mundo, e qualquer
+  // relatorio por plataforma nasceria mentindo. As pontes sabiam a
+  // resposta; ninguem perguntava.
+  check('Electron diz qual sistema',
+    qual({ bravophoneNative: { plataforma: 'desktop-windows' } }) === 'desktop-windows')
+
+  // Versao antiga do app, sem o campo: ainda e desktop, e `desktop`
+  // generico e melhor que `web` errado.
+  check('Electron antigo cai em desktop, nao em web',
+    qual({ bravophoneNative: { versao: '1.0.0' } }) === 'desktop')
+
+  check('iOS e Android vem da ponte do Capacitor',
+    qual({ __bpPonte: { plataforma: () => 'ios' } }) === 'ios' &&
+    qual({ __bpPonte: { plataforma: () => 'android' } }) === 'android')
+
+  // Capacitor tambem devolve `web` quando roda no navegador; ali nao ha
+  // involucro nativo e a decisao volta para o caminho antigo.
+  check('web do Capacitor nao vira involucro',
+    qual({ __bpPonte: { plataforma: () => 'web' } }) === null)
+  check('sem ponte nenhuma, decide o caminho antigo', qual({}) === null)
+
+  // O chaveId e a chave do deviceId no armazenamento. Mexer nele faria
+  // cada dispositivo ja cadastrado virar um novo — o oposto do que se quer
+  // numa lista de dispositivos.
+  check('o involucro nao mexe no chaveId',
+    fonte.indexOf("if (doInvolucro) {") > 0 &&
+    fonte.indexOf("chaveId: CHAVE_ID }") > fonte.indexOf("if (doInvolucro) {"))
+}
+
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)
