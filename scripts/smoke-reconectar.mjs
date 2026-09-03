@@ -197,6 +197,44 @@ console.log('\nreconectar — nao mexe na arvore do Vue:')
   check('respeita quem pediu menos movimento',
     fonte.includes('prefers-reduced-motion'))
 }
+console.log('\nsem-ramal — os quatro motivos do servidor:')
+{
+  const sr = readFileSync(join(EXT, 'js', 'bravophone-sem-ramal.js'), 'utf8')
+
+  // O servidor tem QUATRO valores de `reason` (conferidos no server.js:
+  // ok, credentials_not_available, no_extension_assigned, relogin_required).
+  // Este arquivo tratava UM. Os outros tres caiam num if(hasExtension) que
+  // adivinhava — e adivinhava errado no caso mais comum.
+  for (const motivo of ['ok', 'credentials_not_available', 'no_extension_assigned', 'relogin_required']) {
+    check('trata ' + motivo, sr.includes("'" + motivo + "'"))
+  }
+
+  // A ASSIMETRIA QUE IMPORTA: credentials_not_available cobre duas
+  // situacoes opostas. Quem ja estava registrado continua falando (o
+  // registro SIP vive no cliente, nao na API); quem recarregou a pagina nao
+  // consegue registrar. Mesma resposta do servidor, e so o cliente sabe em
+  // qual das duas esta.
+  check('a credencial perdida consulta o registro local',
+    /credentials_not_available[\s\S]{0,400}registradoAgora\(\)/.test(sr))
+  check('e ha uma funcao que le webphoneRegistered',
+    /function registradoAgora[\s\S]{0,220}webphoneRegistered/.test(sr))
+
+  // Texto proprio: "atribuiram um ramal" e "voce perdeu o acesso ao que
+  // tinha" mandam a pessoa para lugares diferentes — o administrador ou a
+  // tela de login.
+  check('a sessao caida tem texto proprio, nao o de ramal atribuido',
+    /TXT_SESSAO_CAIU/.test(sr) && !/TXT_SESSAO_CAIU\s*=\s*TXT_RELOGIN/.test(sr))
+
+  // Motivo novo do servidor nao pode virar tela em branco.
+  check('motivo desconhecido cai no comportamento antigo',
+    /rede de seguran/.test(sr) && /if \(st\.hasExtension\) esconderAvisoSemRamal\(\)/.test(sr))
+
+  // Sem conseguir ler o store, esconder o aviso deixaria a pessoa sem
+  // entender por que nao consegue ligar. O padrao seguro e MOSTRAR.
+  check('sem acesso ao store, nao esconde o aviso',
+    /catch \(e\) \{[\s\S]{0,220}return false/.test(sr))
+}
+
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)
