@@ -457,6 +457,7 @@ pelo webphone" — justamente o que a auto-autenticação existe para evitar.
 |---|---|
 | [`docs/api.html`](docs/api.html) | Referência completa da API — abra no navegador |
 | [`docs/PARA-IA.md`](docs/PARA-IA.md) | Contexto para um agente de IA implementar a integração |
+| [`docs/PROMPT-INTEGRACAO.md`](docs/PROMPT-INTEGRACAO.md) | Prompt pronto para colar num agente: integrar sempre na última versão, assíncrono, em qualquer stack |
 | [`examples/integracao.html`](examples/integracao.html) | Exemplo pronto para colar numa página |
 | [`examples/loader.js`](examples/loader.js) | Carregar o SDK por JavaScript (SPA, Tag Manager) |
 

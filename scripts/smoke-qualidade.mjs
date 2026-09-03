@@ -410,15 +410,21 @@ console.log('\nqualidade — a origem do RTT fica registrada:')
   // A tabela guardava o número sem dizer de onde veio, e sem isso não dá
   // para saber o quanto confiar: 'rtcp' é o que o outro lado relata pelo
   // RTCP; 'par' é o plano B do candidate-pair.
-  check('marca rtcp quando vem do remote-inbound-rtp',
-    fonte.includes("a.rttFonte = 'rtcp'"))
-  check('e par quando cai no candidate-pair',
-    fonte.includes("a.rttFonte = 'par'"))
+  check('marca a fonte quando vem do RTCP do outro lado',
+    fonte.includes("a.rttFonte = 'remote-inbound-rtp'"))
+  check('e marca o plano B quando cai no candidate-pair',
+    fonte.includes("a.rttFonte = 'candidate-pair'"))
   check('o resumo leva a origem',
     fonte.includes("rttFonte: ultima.rttFonte"))
   check('e o envio manda',
     readFileSync(join(EXT, 'js/bravophone-qualidade-envio.js'), 'utf8')
       .includes("rttFonte: resumo.rttFonte"))
+
+  // A coluna e VARCHAR(24). Um valor mais longo seria truncado no banco e
+  // viraria uma string que nao casa com nada na consulta.
+  for (const v of ['remote-inbound-rtp', 'candidate-pair']) {
+    check('"' + v + '" cabe em VARCHAR(24)', v.length <= 24, v.length)
+  }
 }
 
 
