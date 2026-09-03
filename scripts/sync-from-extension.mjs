@@ -42,6 +42,8 @@ const ASSETS = [
   { from: 'js/bravophone-noise-suppressor.js', to: 'js/bravophone-noise-suppressor.js', required: false },
   // Aviso de "sem ramal": vive na extensão e é reaproveitado pelo host.
   { from: 'js/bravophone-sem-ramal.js', to: 'js/bravophone-sem-ramal.js', required: false },
+  // Botao de presenca: re-registra ou procura ramal, com giro honesto.
+  { from: 'js/bravophone-reconectar.js', to: 'js/bravophone-reconectar.js', required: false },
   // Campo de discagem reformulado: vive na extensão e o host reaproveita.
   { from: 'js/bravophone-input.js', to: 'js/bravophone-input.js', required: false },
   { from: 'js/bravophone-presenca.js', to: 'js/bravophone-presenca.js', required: false },
@@ -310,6 +312,7 @@ function buildHtml() {
 <script defer src="./js/bravophone-janela.js"></script>
 <script defer src="./popup.js"></script>
 <script defer src="./js/bravophone-sem-ramal.js"></script>
+<script defer src="./js/bravophone-reconectar.js"></script>
 <!-- guest-bridge roda depois do app montar (defer preserva a ordem). -->
 <script defer src="./shim/guest-bridge.js"></script>
 </head>

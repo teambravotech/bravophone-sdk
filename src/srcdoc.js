@@ -120,6 +120,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
 <script defer src="${b}js/bravophone-janela.js"><\/script>
 <script defer src="${b}popup.js"><\/script>
 <script defer src="${b}js/bravophone-sem-ramal.js"><\/script>
+<script defer src="${b}js/bravophone-reconectar.js"><\/script>
 <script defer src="${b}shim/guest-bridge.js"><\/script>
 </head>
 <body>

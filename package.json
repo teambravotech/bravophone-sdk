@@ -27,7 +27,7 @@
     "dev": "node scripts/dev-server.mjs",
     "build": "vite build",
     "build:host": "npm run sync && vite build --config vite.host.config.js",
-    "test": "node scripts/smoke-shim.mjs && node scripts/smoke-geometry.mjs && node scripts/smoke-launcher.mjs && node scripts/smoke-sessao.mjs && node scripts/smoke-teclado.mjs && node scripts/smoke-campo.mjs && node scripts/smoke-presenca.mjs && node scripts/smoke-acoes.mjs && node scripts/smoke-audio.mjs && node scripts/smoke-janela.mjs && node scripts/smoke-tema.mjs && node scripts/smoke-qualidade.mjs && node scripts/smoke-package.mjs",
+    "test": "node scripts/smoke-shim.mjs && node scripts/smoke-geometry.mjs && node scripts/smoke-launcher.mjs && node scripts/smoke-sessao.mjs && node scripts/smoke-teclado.mjs && node scripts/smoke-campo.mjs && node scripts/smoke-presenca.mjs && node scripts/smoke-acoes.mjs && node scripts/smoke-audio.mjs && node scripts/smoke-janela.mjs && node scripts/smoke-tema.mjs && node scripts/smoke-qualidade.mjs && node scripts/smoke-reconectar.mjs && node scripts/smoke-package.mjs",
     "start": "node scripts/dev-server.mjs",
     "audit:theme": "node scripts/audit-theme.mjs",
     "prepublishOnly": "npm run prepare:host && npm run build && npm test",
