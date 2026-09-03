@@ -394,6 +394,42 @@ console.log('\npresença — a saída limpa não é só ao fechar a janela:')
   await espera()
   check('401 também avisa a saída', b.beacons.length === 1, b.beacons.length)
 }
+console.log("\npresenca — o microfone esta liberado?")
+{
+  const fonte = await readFile(
+    resolve(ROOT, '..', 'Bravophone', 'js', 'bravophone-presenca.js'), 'utf8')
+  const corpo = fonte.slice(fonte.indexOf('function microfoneLiberado'),
+    fonte.indexOf('function permissaoMicrofone'))
+  const liberado = new Function(corpo + '; return microfoneLiberado')()
+
+  // POR QUE ESTA FUNCAO EXISTE: Firefox e Safari nao expoem `microphone` em
+  // navigator.permissions.query, entao ali `permission` e SEMPRE `unknown` —
+  // e Safari e o que roda no iOS. Um painel que tratasse `unknown` como
+  // negado acusaria microfone bloqueado para todo usuario de iPhone com o
+  // microfone liberado, e o alerta viraria ruido na primeira semana.
+  //
+  // O sinal que vale em todo navegador sao os labels: enumerateDevices
+  // devolve nome vazio ate a permissao ser concedida. E especificacao, nao
+  // truque de um navegador.
+  check('permissao explicita manda', liberado('granted', []) === true &&
+    liberado('denied', [{ label: 'Mic' }]) === false)
+
+  check('Safari COM permissao: label preenchido',
+    liberado('unknown', [{ label: 'MacBook Microphone' }]) === true)
+  check('Safari SEM permissao: label vazio',
+    liberado('unknown', [{ label: '' }]) === false)
+  check('prompt ainda nao e permissao', liberado('prompt', [{ label: '' }]) === false)
+
+  // Sem dispositivo listado, "sem permissao" e "sem microfone na maquina"
+  // sao indistinguiveis daqui. Chutar seria pior que admitir.
+  check('sem dispositivo devolve null', liberado('unknown', []) === null)
+
+  // O contrato nao pode variar entre os caminhos: o painel le sempre o
+  // mesmo campo.
+  check('todos os caminhos mandam o campo',
+    (fonte.match(/microfoneOk/g) || []).length >= 3)
+}
+
 
 console.log(`\n${pass} passaram, ${fail} falharam`)
 process.exit(fail ? 1 : 0)
