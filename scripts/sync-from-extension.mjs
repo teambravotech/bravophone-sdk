@@ -50,6 +50,11 @@ const ASSETS = [
   { from: 'js/bravophone-audio.js', to: 'js/bravophone-audio.js', required: false },
   // Qualidade de chamada lida do getStats() do WebRTC.
   { from: 'js/bravophone-qualidade.js', to: 'js/bravophone-qualidade.js', required: false },
+  // Ringback local: cobre o silêncio entre o "chamando" (180 Ringing, sem
+  // áudio) e a mídia adiantada do PABX. O silêncio é do protocolo SIP, não do
+  // invólucro, então vale aqui igual. Depende do mesmo getStats() do
+  // qualidade para saber quando o áudio real chegou — daí vir logo depois.
+  { from: 'js/bravophone-ringback.js', to: 'js/bravophone-ringback.js', required: false },
   { from: 'js/bravophone-ping.js', to: 'js/bravophone-ping.js', required: false },
   { from: 'js/bravophone-qualidade-envio.js', to: 'js/bravophone-qualidade-envio.js', required: false },
   { from: 'js/bravophone-janela.js', to: 'js/bravophone-janela.js', required: false },
@@ -122,6 +127,8 @@ async function main() {
   console.log('  ✓ fontes resolvem em /fonts/ (Audiowide, SegoeUIEmoji)')
 
   await buildMessages()
+
+  await corrigirSaidaDaPagina()
 
   if (publicPath) await rewritePublicPath(publicPath)
 
@@ -233,6 +240,59 @@ async function permitirLoginSemRamal() {
 }
 
 /**
+ * Tira o "É possível que as alterações feitas não sejam salvas" de toda saída.
+ *
+ * O bundle registra, no instante em que o ramal registra no SIP, um
+ * beforeunload que chama `e.preventDefault()` INCONDICIONALMENTE:
+ *
+ *     window.addEventListener("beforeunload", function (e) {
+ *       return e.preventDefault(), …, t.getUserAgent().unregister(), !1
+ *     })
+ *
+ * O objetivo do listener era só desregistrar o ramal ao fechar, e isso não
+ * precisa de preventDefault nenhum. Do jeito que estava, quem deixa o webphone
+ * aberto leva o diálogo de confirmação em TODA saída de página, o dia inteiro,
+ * sem ligação em curso e sem nada editado.
+ *
+ * No SDK dói mais: em modo srcdoc o listener vive dentro do iframe, e o
+ * beforeunload de um iframe participa da navegação do documento de topo — o
+ * diálogo aparece na aplicação inteira do integrador, não só no webphone.
+ *
+ * Aqui as duas coisas viram listeners separados:
+ *   · beforeunload só confirma se houver ligação em curso (`isRunningCall`,
+ *     computed que o próprio componente já mantém);
+ *   · pagehide desregistra sempre, sem bloquear a saída — é o evento que o
+ *     resto do host já usa para saída limpa (bravophone-presenca.js) e o que
+ *     dispara de forma confiável em mobile, onde beforeunload costuma não vir.
+ *
+ * De quebra o handler vira arrow: no original `this` era o window, então
+ * `this.isDebug` era sempre undefined e aquele console.info nunca rodou.
+ */
+async function corrigirSaidaDaPagina() {
+  const file = join(HOST, 'popup.js')
+  const js = await readFile(file, 'utf8')
+  const alvo = 'window.addEventListener("beforeunload",function(e){return e.preventDefault(),this.isDebug&&console.info("BravoPhone > Webphone > force unregister"),t.getUserAgent().unregister(),!1})'
+  const corrigido = 'window.addEventListener("beforeunload",e=>{this.isRunningCall&&(e.preventDefault(),e.returnValue="")});window.addEventListener("pagehide",()=>{this.isDebug&&console.info("BravoPhone > Webphone > force unregister");try{t.getUserAgent().unregister()}catch(e){}})'
+  const n = js.split(alvo).length - 1
+
+  // A extensão pode já trazer a correção de fábrica — não é erro.
+  if (n === 0 && js.includes(corrigido)) {
+    console.log('  · saída sem confirmação já vem aplicada na extensão')
+    return
+  }
+
+  // Uma só: a que o app registra depois de getUserAgent().start(). O outro
+  // beforeunload do bundle é do RUM do Datadog e não bloqueia a saída.
+  if (n !== 1) {
+    console.error(`✗ esperava 1 ocorrência do beforeunload do webphone, achei ${n}.`)
+    console.error('  O bundle mudou: revise o patch de saída da página.')
+    process.exit(1)
+  }
+  await writeFile(file, js.replace(alvo, corrigido), 'utf8')
+  console.log('  ✓ saída sem confirmação (o unregister foi para o pagehide)')
+}
+
+/**
  * Reescreve o `__webpack_public_path__` do bundle para servir sob um subpath.
  * É a troca de uma constante só, determinística e refeita a cada sync.
  */
@@ -307,6 +367,7 @@ function buildHtml() {
 <script defer src="./js/bravophone-presenca.js"></script>
 <script defer src="./js/bravophone-audio.js"></script>
 <script defer src="./js/bravophone-qualidade.js"></script>
+<script defer src="./js/bravophone-ringback.js"></script>
 <script defer src="./js/bravophone-ping.js"></script>
 <script defer src="./js/bravophone-qualidade-envio.js"></script>
 <script defer src="./js/bravophone-janela.js"></script>
