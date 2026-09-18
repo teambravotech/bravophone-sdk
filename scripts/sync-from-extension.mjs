@@ -47,6 +47,9 @@ const ASSETS = [
   // Campo de discagem reformulado: vive na extensão e o host reaproveita.
   { from: 'js/bravophone-input.js', to: 'js/bravophone-input.js', required: false },
   { from: 'js/bravophone-presenca.js', to: 'js/bravophone-presenca.js', required: false },
+  // Identidade do aparelho no REGISTER (X-Bravo-Device-*). Depende do
+  // deviceId da presença — daí vir logo depois dela.
+  { from: 'js/bravophone-aparelho.js', to: 'js/bravophone-aparelho.js', required: false },
   { from: 'js/bravophone-audio.js', to: 'js/bravophone-audio.js', required: false },
   // Qualidade de chamada lida do getStats() do WebRTC.
   { from: 'js/bravophone-qualidade.js', to: 'js/bravophone-qualidade.js', required: false },
@@ -365,6 +368,7 @@ function buildHtml() {
      registrar o listener e instanciar o webphone. -->
 <script defer src="./js/bravophone-input.js"></script>
 <script defer src="./js/bravophone-presenca.js"></script>
+<script defer src="./js/bravophone-aparelho.js"></script>
 <script defer src="./js/bravophone-audio.js"></script>
 <script defer src="./js/bravophone-qualidade.js"></script>
 <script defer src="./js/bravophone-ringback.js"></script>

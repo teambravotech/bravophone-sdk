@@ -109,6 +109,7 @@ Chame uma vez, com o `<body>` já existindo. Devolve a instância.
 | `launcherIcon` | `'phone-waves' \| 'waveform' \| 'headset' \| 'chat-phone'` | `'phone-waves'` | |
 | `dockTop` | `'max' \| 'top-half'` | `'max'` | O que arrastar até o topo faz |
 | `title` | `string` | `'BRAVOPHONE'` | Só com `frame: 'bar'` |
+| `device` | `{ hostname?: string, user?: string }` | — | Identifica a máquina no REGISTER (`X-Bravo-Device-Hostname/-User`). Só o que a página souber; `user` expõe o usuário ao administrador da conta |
 
 ### `mode`: escolha entre os dois
 
@@ -141,6 +142,7 @@ Todos os de telefonia devolvem `Promise`.
 | `transfer(to)` | `Promise<{ok}>` | Ramal ou número de destino |
 | `getStatus()` | `Promise<PhoneStatus>` | Ver formato abaixo |
 | `setAuth(token)` | `Promise<{ok}>` | Troca a sessão sem recarregar |
+| `setDevice({ hostname, user })` | `Promise<{ok}>` | Informa hostname/usuário para o REGISTER; se já registrado, reenvia |
 | `logout()` | `Promise<{ok}>` | Encerra a sessão |
 
 `meta` de `call()` — todos opcionais, alimentam o card da chamada e os

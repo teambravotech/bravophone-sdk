@@ -66,6 +66,10 @@ export function createWidget(options) {
     // de adivinhar. Era a adivinhação que acusava "sem ramal" quem tinha.
     // Com a consulta sempre de pé, a resposta certa chega sozinha.
     apiBase = 'https://pabx.teambravotech.com',
+    // O que o integrador sabe da máquina — hostname e usuário — para o
+    // REGISTER (X-Bravo-Device-*). Uma página não descobre isso sozinha;
+    // quem embute num sistema interno costuma saber.
+    device = null,
     version,
     emit,
   } = options
@@ -227,6 +231,9 @@ export function createWidget(options) {
         if (session || token) {
           bridge.call('auth', { session: session || { vxToken: token } }).catch(() => {})
         }
+        // Antes do registro quando a sessão vai junto; se o webphone já
+        // registrou (srcdoc com sessão pré-gravada), ele reenvia o REGISTER.
+        if (device) bridge.call('device', device).catch(() => {})
 
         // O ramal pode ser atribuído ou trocado sem novo login. Só faz
         // sentido acompanhar se soubermos para onde perguntar.

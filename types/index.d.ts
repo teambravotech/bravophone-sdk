@@ -31,6 +31,19 @@ export interface BravophoneSession {
   }
 }
 
+/**
+ * O que a página sabe da máquina em que roda. Vai no REGISTER como
+ * `X-Bravo-Device-Hostname` e `X-Bravo-Device-User`, e é o que faz a tela
+ * "Aparelhos" de uma ligação mostrar "DESKTOP-JOAO01 · joao.silva" em vez
+ * de IP + nome do software. Tudo opcional: o que faltar não é enviado.
+ * Uma linha, até 128 caracteres; o excesso é cortado.
+ */
+export interface BravophoneDevice {
+  hostname?: string | null
+  /** Expõe o usuário a quem administra a conta — informe só se for aceitável. */
+  user?: string | null
+}
+
 export interface BravophoneOptions {
   /** Origem do webphone hospedado. Só usado com `mode: 'hosted'`. */
   hostUrl?: string
@@ -102,6 +115,8 @@ export interface BravophoneOptions {
    * continua disponível por `dock('max')`.
    */
   dockTop?: 'max' | 'top-half'
+  /** Identificação da máquina para o REGISTER. Ver `BravophoneDevice`. */
+  device?: BravophoneDevice
 }
 
 export interface CallInfo {
@@ -233,6 +248,8 @@ export interface BravophoneAPI {
   setRoute(id: string): Promise<{ ok: true; selected: BravophoneRoute | null; prefix: string }>
   setAuth(session: BravophoneSession | string): Promise<{ ok: true }>
   logout(): Promise<{ ok: true }>
+  /** Informa (ou troca) o hostname/usuário enviados no REGISTER. */
+  setDevice(info: BravophoneDevice): Promise<{ ok: true; headers: number }>
 
   on<K extends keyof BravophoneEvents>(
     event: K,

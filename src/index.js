@@ -41,6 +41,9 @@ const Bravophone = {
    *   'srcdoc': o iframe roda na origem do próprio site e busca o webphone no
    *   CDN. Some o iframe de terceiro — em troca, a origem do integrador
    *   precisa estar na allowlist de CORS dos backends.
+   * @param {{hostname?: string, user?: string}} [opts.device] O que a página
+   *   sabe da máquina, para o REGISTER identificar o aparelho na tela
+   *   "Aparelhos" de uma ligação. Opcional; o que faltar não vai.
    */
   init(opts = {}) {
     if (instance) return instance
@@ -111,6 +114,11 @@ const Bravophone = {
     return requireInstance().bridge.call('auth', { session })
   },
   logout()            { return requireInstance().bridge.call('logout') },
+  /**
+   * Conta ao webphone o que a página sabe da máquina (hostname, usuário).
+   * Vai no REGISTER como X-Bravo-Device-*; se já registrado, reenvia.
+   */
+  setDevice(info)     { return requireInstance().bridge.call('device', info || {}) },
 
   // ---- Eventos ----
   /** Eventos: ready, state, call:dialing, call:incoming, call:answered,

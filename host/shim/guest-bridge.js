@@ -542,6 +542,25 @@
       return { ok: true, semRamal: !!window.__bpSemRamal() }
     },
 
+    /**
+     * O que a página sabe da máquina, para o REGISTER (X-Bravo-Device-*).
+     *
+     * Quem aplica é o bravophone-aparelho.js: troca os cabeçalhos no
+     * registrador e, se o ramal já registrou, reenvia o REGISTER na hora.
+     * `null` limpa um valor; ausente não mexe.
+     */
+    device: function (p) {
+      var a = window.__bpAparelho
+      if (!a || typeof a.definir !== 'function') {
+        throw new Error('identificação de aparelho indisponível nesta versão do webphone')
+      }
+      a.definir({
+        hostname: p ? p.hostname : undefined,
+        usuario: p ? (p.user !== undefined ? p.user : p.usuario) : undefined,
+      })
+      return { ok: true, headers: a.cabecalhos().length }
+    },
+
     ping: function () { return Promise.resolve({ pong: Date.now() }) },
   }
 

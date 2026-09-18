@@ -477,6 +477,7 @@ pelo webphone" — justamente o que a auto-autenticação existe para evitar.
 | `frame` | `'none' \| 'bar'` | `'none'` | Moldura da janela — ver abaixo |
 | `dockTop` | `'max' \| 'top-half'` | `'max'` | O que arrastar até a borda superior faz |
 | `title` | `string` | `'BRAVOPHONE'` | Texto da barra (só com `frame: 'bar'`) |
+| `device` | `{ hostname?, user? }` | — | Identifica a máquina no REGISTER (`X-Bravo-Device-*`) — ver abaixo |
 
 ### Moldura: preservando 100% da UI
 
@@ -499,6 +500,16 @@ Use `frame: 'bar'` se preferir a barra com título, indicador de estado e contro
 
 **Janela** — `show()` · `hide()` · `toggle()` · `minimize(force?)` · `move(x, y)` ·
 `resize(w, h)` · `dock(zone)` · `destroy()` · `isOpen` · `geometry`
+
+**Aparelho** — `setDevice({ hostname, user })`. O webphone identifica o aparelho no
+REGISTER com três cabeçalhos opcionais: `X-Bravo-Device-Id` (um UUID gerado uma vez e
+guardado — o mesmo do heartbeat de presença), `X-Bravo-Device-Hostname` e
+`X-Bravo-Device-User`. É o que a tela "Aparelhos" de uma ligação mostra em vez de IP +
+nome do software. O id sai sozinho; hostname e usuário uma página não descobre, então
+quem embute num sistema interno informa pela opção `device` do `init()` ou por
+`setDevice()` a qualquer momento — se o ramal já registrou, o REGISTER é reenviado. O
+que faltar não vai (ausência é ausência, nunca vazio). `user` expõe o usuário a quem
+administra a conta: informe só se isso for aceitável para o seu caso.
 
 ### Dois modos de carregar o webphone
 
