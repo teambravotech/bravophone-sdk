@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bravophone — ícones da aba</title>
+<title>BCVoz — ícones da aba</title>
 <style>
   :root { color-scheme: light dark; --bg:#f6f7fb; --fg:#111827; --muted:#6b7280; --card:#fff; --line:#e5e7eb }
   @media (prefers-color-scheme: dark) {
@@ -120,8 +120,8 @@
   for (const key of Object.keys(ICONS)) {
     const b = document.createElement('button')
     b.textContent = META[key]?.[0] ?? key
-    b.onclick = () => window.parent?.Bravophone?.setLauncherIcon?.(key) ??
-      window.Bravophone?.setLauncherIcon?.(key)
+    b.onclick = () => window.parent?.BCVoz?.setLauncherIcon?.(key) ??
+      window.BCVoz?.setLauncherIcon?.(key)
     pick.appendChild(b)
   }
   document.querySelectorAll('[data-state]').forEach((b) => {

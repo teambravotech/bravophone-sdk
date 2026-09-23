@@ -25,7 +25,7 @@ const waveform = `<svg viewBox="0 0 24 24" fill="none" ${A} aria-hidden="true">
   <path class="bp-i-bar bp-i-bar-5" d="M20 10v4"/>
 </svg>`
 
-/** Headset: fala de atendimento, que é o uso real do Bravophone. */
+/** Headset: fala de atendimento, que é o uso real do BCVoz. */
 const headset = `<svg viewBox="0 0 24 24" fill="none" ${A} aria-hidden="true">
   <path class="bp-i-body" d="M4 13v-1a8 8 0 0 1 16 0v1"/>
   <path class="bp-i-body" d="M20 14.5v2a3.5 3.5 0 0 1-3.5 3.5H13"/>

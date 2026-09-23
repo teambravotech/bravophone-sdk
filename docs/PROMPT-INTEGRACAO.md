@@ -1,4 +1,4 @@
-# Prompt: integrar o Bravophone SDK sempre na última versão, de forma assíncrona
+# Prompt: integrar o BCVoz SDK sempre na última versão, de forma assíncrona
 
 Cole o bloco abaixo (do primeiro `---` até o último) no Claude — ou em qualquer
 agente de IA — junto com o código da página/app onde o webphone vai entrar.
@@ -15,7 +15,7 @@ Antes de colar, troque os três marcadores:
 
 ## Tarefa
 
-Integre o webphone **BRAVOPHONE** (`@bravophone/webphone`) em uma aplicação
+Integre o webphone **BCVOZ** (`@bcvoz/webphone`) em uma aplicação
 **{{STACK}}**. O widget deve:
 
 1. carregar **sempre a última versão publicada**, sem que ninguém edite código
@@ -35,7 +35,7 @@ plausível.
 ## Regra 1 — como buscar "a última versão" (não é a URL sem versão)
 
 A URL sem versão parece a resposta óbvia e é **a pior opção**. O jsDelivr
-entrega `/npm/@bravophone/webphone` e as faixas (`@0.7`) com
+entrega `/npm/@bcvoz/webphone` e as faixas (`@0.7`) com
 `max-age=604800`: sete dias de cache **no navegador de quem acessa**. Publicar
 uma correção não alcança essa pessoa, e purgar o CDN não adianta — o cache
 está na máquina dela. Já a URL com versão exata é `immutable`.
@@ -52,16 +52,16 @@ Use exatamente este loader — módulo isolado, idempotente, com timeout e
 fallback. Ele é a **única** forma de o SDK entrar na página:
 
 ```js
-// bravophone-loader.js — não altere a estratégia de versão sem ler a Regra 1.
-const PACOTE = '@bravophone/webphone'
+// bcvoz-loader.js — não altere a estratégia de versão sem ler a Regra 1.
+const PACOTE = '@bcvoz/webphone'
 const META = `https://data.jsdelivr.com/v1/packages/npm/${PACOTE}/resolved`
-const ARQUIVO = 'dist/bravophone.umd.js'
+const ARQUIVO = 'dist/bcvoz.umd.js'
 
-export function carregarBravophone({ timeout = 12000 } = {}) {
+export function carregarBCVoz({ timeout = 12000 } = {}) {
   if (typeof window === 'undefined') {
-    return Promise.reject(new Error('Bravophone: só roda no browser.'))
+    return Promise.reject(new Error('BCVoz: só roda no browser.'))
   }
-  if (window.Bravophone) return Promise.resolve(window.Bravophone)
+  if (window.BCVoz) return Promise.resolve(window.BCVoz)
   // A promessa mora no window, não no módulo: com bundle duplicado ou HMR,
   // duas cópias do módulo ainda compartilham um único carregamento.
   if (window.__bpCarregando) return window.__bpCarregando
@@ -75,10 +75,10 @@ export function carregarBravophone({ timeout = 12000 } = {}) {
       : `https://cdn.jsdelivr.net/npm/${PACOTE}`
 
     await injetar(url, timeout)
-    if (!window.Bravophone) {
-      throw new Error('Bravophone: o script carregou mas a API não apareceu')
+    if (!window.BCVoz) {
+      throw new Error('BCVoz: o script carregou mas a API não apareceu')
     }
-    return window.Bravophone
+    return window.BCVoz
   })()
 
   // Falha não pode ficar cacheada: a próxima chamada precisa poder tentar.
@@ -108,12 +108,12 @@ function injetar(url, timeout) {
     s.async = true          // assíncrono: não segura o parser nem o paint
     const t = setTimeout(() => {
       s.remove()
-      erro(new Error(`Bravophone: o CDN não respondeu em ${timeout} ms`))
+      erro(new Error(`BCVoz: o CDN não respondeu em ${timeout} ms`))
     }, timeout)
     s.onload = () => { clearTimeout(t); ok() }
     s.onerror = () => {
       clearTimeout(t); s.remove()
-      erro(new Error('Bravophone: falha ao carregar (rede, bloqueador ou CSP)'))
+      erro(new Error('BCVoz: falha ao carregar (rede, bloqueador ou CSP)'))
     }
     document.head.appendChild(s)
   })
@@ -127,21 +127,21 @@ Complementos que valem em qualquer stack:
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 ```
 
-**Não instale o SDK como dependência de runtime.** `npm i @bravophone/webphone`
+**Não instale o SDK como dependência de runtime.** `npm i @bcvoz/webphone`
 congela a versão no seu build — exatamente o que este loader existe para
 evitar. Se quiser tipagem, instale o pacote como `devDependency` e importe só
 os tipos:
 
 ```ts
-import type { BravophoneAPI, BravophoneSession } from '@bravophone/webphone'
+import type { BCVozAPI, BCVozSession } from '@bcvoz/webphone'
 ```
 
-Trave a versão com `<script src=".../@0.7.1/dist/bravophone.umd.js">` **apenas**
+Trave a versão com `<script src=".../@0.7.1/dist/bcvoz.umd.js">` **apenas**
 se eu pedir explicitamente (política de build, SRI, integração de terceiros).
 
 ## Regra 2 — montar uma vez só
 
-`Bravophone.init()` é idempotente: chamar de novo devolve a mesma instância e
+`BCVoz.init()` é idempotente: chamar de novo devolve a mesma instância e
 **ignora as novas opções**. Para trocar de configuração é `destroy()` + `init()`.
 
 Consequências que você precisa respeitar:
@@ -159,7 +159,7 @@ Consequências que você precisa respeitar:
 `init()` recebe a resposta do `/api/voxfree/login` **inteira**:
 
 ```js
-Bravophone.init({
+BCVoz.init({
   session: {
     vxToken:   '…',   // obrigatório
     expiresIn: 3600,
@@ -187,7 +187,7 @@ Bravophone.init({
 
 ## Contrato da API (não invente nada fora daqui)
 
-O UMD expõe `window.Bravophone`. **Não** use `Bravophone.default`.
+O UMD expõe `window.BCVoz`. **Não** use `BCVoz.default`.
 
 ### `init(options)` — chame com o `<body>` já existindo
 
@@ -206,12 +206,12 @@ O UMD expõe `window.Bravophone`. **Não** use `Bravophone.default`.
 | `launcherSide` | `'right' \| 'left'` | `'right'` | Borda em que a aba cola |
 | `launcherIcon` | `'phone-waves' \| 'waveform' \| 'headset' \| 'chat-phone'` | `'phone-waves'` | |
 | `dockTop` | `'max' \| 'top-half'` | `'max'` | O que arrastar até o topo faz |
-| `title` | `string` | `'BRAVOPHONE'` | Só com `frame: 'bar'` |
+| `title` | `string` | `'BCVOZ'` | Só com `frame: 'bar'` |
 
 `'srcdoc'` (padrão) roda o iframe na origem do próprio site e busca o webphone
 no CDN — sem iframe de terceiro e sem storage particionado, mas **exige que a
-origem do site esteja na allowlist de CORS dos backends do Bravophone**.
-`'hosted'` navega para o domínio do Bravophone: origem fixa no CORS, em troca
+origem do site esteja na allowlist de CORS dos backends do BCVoz**.
+`'hosted'` navega para o domínio do BCVoz: origem fixa no CORS, em troca
 de ser iframe de terceiro (bloqueadores, storage particionado).
 
 ### Telefonia — tudo devolve `Promise`
@@ -236,7 +236,7 @@ Propriedades: `version` · `isOpen` · `geometry`.
 ### Eventos
 
 ```js
-const off = Bravophone.on('call:incoming', (call) => { /* … */ })
+const off = BCVoz.on('call:incoming', (call) => { /* … */ })
 off()   // remove
 ```
 
@@ -281,12 +281,12 @@ disponível e sempre trate o `catch`.
   para o StrictMode não montar dois widgets nem destruir na primeira limpeza.
 - O cleanup remove **só os listeners deste componente**; `destroy()` fica para
   o logout.
-- Exponha um contexto/hook (`useBravophone()`) devolvendo `{ pronto, api, erro }`,
+- Exponha um contexto/hook (`useBCVoz()`) devolvendo `{ pronto, api, erro }`,
   para as telas fazerem click-to-call sem tocar em `window`.
 
 ### Vue 3 (inclusive Nuxt)
 
-- Um composable `useBravophone()` com estado no escopo do módulo (singleton),
+- Um composable `useBCVoz()` com estado no escopo do módulo (singleton),
   `onMounted` para carregar, `onBeforeUnmount` só para os listeners.
 - Ou um plugin (`app.use`) que injeta a instância — no Nuxt, plugin
   `*.client.ts`, nunca universal.
@@ -312,7 +312,7 @@ usuário não deve esperar o webphone para ver a tela.
 ```js
 document.querySelectorAll('[data-fone]').forEach((el) => {
   el.addEventListener('click', () => {
-    Bravophone.call(el.dataset.fone, {
+    BCVoz.call(el.dataset.fone, {
       name: el.dataset.nome,
       crm: el.dataset.empresa,
       gateway: 'nome-do-sistema',   // identifica a origem nos relatórios
@@ -336,9 +336,9 @@ Em React/Vue/Angular, entregue o equivalente idiomático da stack — sem
 
 ## Critérios de aceite (confira antes de dizer que terminou)
 
-- [ ] `Bravophone.version` no console bate com o `version` de
-      `https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved`.
-- [ ] Nenhuma `<script src>` do Bravophone no HTML servido — o SDK entra só por
+- [ ] `BCVoz.version` no console bate com o `version` de
+      `https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webphone/resolved`.
+- [ ] Nenhuma `<script src>` do BCVoz no HTML servido — o SDK entra só por
       injeção assíncrona.
 - [ ] Nenhuma URL de CDN sem versão no código final.
 - [ ] Navegar entre telas e voltar não cria um segundo widget; em React
@@ -349,7 +349,7 @@ Em React/Vue/Angular, entregue o equivalente idiomático da stack — sem
 
 ## Se algo não funcionar, diagnostique nesta ordem
 
-1. `window.Bravophone` existe? Se não, o script não carregou — rede, CSP ou
+1. `window.BCVoz` existe? Se não, o script não carregou — rede, CSP ou
    bloqueador.
 2. O evento `ready` disparou? Se não, a ponte não conectou.
 3. `state` veio `'error'`? É registro SIP: token inválido, `extension`

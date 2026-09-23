@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Exemplo de integração — Bravophone</title>
+<title>Exemplo de integração — BCVoz</title>
 
 <!-- ===================================================================
      1. CARREGAR O SDK
@@ -12,7 +12,7 @@
      bundle é immutable. Assim as correções chegam em minutos, sem revalidar
      30 kB a cada visita.
 
-     A URL sem versão (/npm/@bravophone/webphone) parece mais simples, mas
+     A URL sem versão (/npm/@bcvoz/webphone) parece mais simples, mas
      vem com 7 dias de cache NO NAVEGADOR do usuário: uma publicação não
      alcança quem já carregou.
      =================================================================== -->
@@ -21,14 +21,14 @@
 // no navegador e uma publicação recém-saída não aparece — foi o que exigiu
 // Ctrl+Shift+R nos testes. O bundle continua vindo de cache immutable, então
 // o custo é uma requisição pequena por carregamento, não 30 kB.
-fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved',
+fetch('https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webphone/resolved',
       { cache: 'no-store' })
   .then((r) => r.json())
   .then(({ version }) => {
     const s = document.createElement('script')
-    s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
+    s.src = `https://cdn.jsdelivr.net/npm/@bcvoz/webphone@${version}/dist/bcvoz.umd.js`
     s.onload = iniciar
-    s.onerror = () => console.error('Bravophone: falha ao carregar do CDN')
+    s.onerror = () => console.error('BCVoz: falha ao carregar do CDN')
     document.head.appendChild(s)
   })
 </script>
@@ -78,7 +78,7 @@ function iniciar() {
 // Chame uma vez, depois que o <body> existir. Chamadas repetidas
 // devolvem a mesma instância, então não há risco de montar dois widgets.
 // =====================================================================
-Bravophone.init({
+BCVoz.init({
   // Token de sessão do usuário logado, emitido pelo SEU backend.
   // Nunca coloque credencial fixa no HTML: gere por usuário e injete no
   // template, como você faria com um token de API.
@@ -104,7 +104,7 @@ Bravophone.init({
 // =====================================================================
 document.querySelectorAll('.tel').forEach((botao) => {
   botao.addEventListener('click', () => {
-    Bravophone.call(botao.dataset.fone, {
+    BCVoz.call(botao.dataset.fone, {
       name: botao.dataset.nome,
       crm: botao.dataset.empresa,
       gateway: 'meu-sistema',       // identifica a origem nos relatórios
@@ -124,30 +124,30 @@ document.querySelectorAll('.tel').forEach((botao) => {
 // =====================================================================
 const estado = document.getElementById('estado')
 
-Bravophone.on('ready', () => { estado.textContent = 'Webphone pronto.' })
+BCVoz.on('ready', () => { estado.textContent = 'Webphone pronto.' })
 
-Bravophone.on('state', ({ state }) => {
+BCVoz.on('state', ({ state }) => {
   if (state === 'ready') estado.textContent = 'Ramal registrado.'
   if (state === 'error') estado.textContent = 'Sem linha — verifique a conexão.'
 })
 
-Bravophone.on('call:incoming', ({ number }) => {
+BCVoz.on('call:incoming', ({ number }) => {
   // A janela se abre sozinha numa chamada entrante; aqui você pode, por
   // exemplo, buscar o cliente pelo número e abrir a ficha dele.
   estado.textContent = 'Chamada recebida de ' + number
 })
 
-Bravophone.on('call:answered', ({ number }) => {
+BCVoz.on('call:answered', ({ number }) => {
   estado.textContent = 'Em chamada com ' + number
 })
 
-Bravophone.on('call:ended', ({ number }) => {
+BCVoz.on('call:ended', ({ number }) => {
   estado.textContent = 'Chamada encerrada' + (number ? ' — ' + number : '')
   // Bom lugar para registrar o atendimento no seu sistema.
 })
 
 // Durante o desenvolvimento, veja tudo o que acontece:
-// Bravophone.on('*', (e) => console.log('[bravophone]', e.event, e.payload))
+// BCVoz.on('*', (e) => console.log('[bcvoz]', e.event, e.payload))
 }
 </script>
 </body>

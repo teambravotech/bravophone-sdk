@@ -55,7 +55,7 @@
         try { v = getter() } catch (_) {}
         if (v) return resolve(v)
         if (Date.now() - started > (timeout || 20000)) {
-          return reject(new Error('Bravophone: webphone não inicializou a tempo'))
+          return reject(new Error('BCVoz: webphone não inicializou a tempo'))
         }
         setTimeout(tick, 120)
       })()

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bravophone SDK — exemplo</title>
+<title>BCVoz SDK — exemplo</title>
 <style>
   body { font: 15px/1.6 system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; }
   h1 { font-size: 20px; }
@@ -14,7 +14,7 @@
 </style>
 </head>
 <body>
-<h1>Bravophone SDK — exemplo básico</h1>
+<h1>BCVoz SDK — exemplo básico</h1>
 
 <p>
   <input id="num" placeholder="11987654321" value="11987654321">
@@ -32,10 +32,10 @@
 
 <script type="module">
   // Em produção:
-  //   import Bravophone from '@bravophone/webphone'
+  //   import BCVoz from '@bcvoz/webphone'
   // ou via CDN:
-  //   <script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone"><\/script>
-  import Bravophone from '../src/index.js'
+  //   <script src="https://cdn.jsdelivr.net/npm/@bcvoz/webphone"><\/script>
+  import BCVoz from '../src/index.js'
 
   const log = (...a) => {
     document.getElementById('log').textContent +=
@@ -44,7 +44,7 @@
     document.getElementById('log').scrollTop = 1e9
   }
 
-  Bravophone.init({
+  BCVoz.init({
     // Aponte para o seu host durante o desenvolvimento:
     hostUrl: 'http://localhost:5174/',
     token: localStorage.getItem('demo-token') || undefined,
@@ -52,16 +52,16 @@
     open: true,
   })
 
-  Bravophone.on('*', ({ event, payload }) => log(event, payload ?? ''))
+  BCVoz.on('*', ({ event, payload }) => log(event, payload ?? ''))
 
   document.getElementById('call').onclick = () =>
-    Bravophone.call(document.getElementById('num').value).catch(e => log('erro:', e.message))
+    BCVoz.call(document.getElementById('num').value).catch(e => log('erro:', e.message))
   document.getElementById('hangup').onclick = () =>
-    Bravophone.hangup().catch(e => log('erro:', e.message))
-  document.getElementById('toggle').onclick = () => Bravophone.toggle()
+    BCVoz.hangup().catch(e => log('erro:', e.message))
+  document.getElementById('toggle').onclick = () => BCVoz.toggle()
   document.getElementById('status').onclick = () =>
-    Bravophone.getStatus().then(s => log('status', s)).catch(e => log('erro:', e.message))
-  document.getElementById('destroy').onclick = () => Bravophone.destroy()
+    BCVoz.getStatus().then(s => log('status', s)).catch(e => log('erro:', e.message))
+  document.getElementById('destroy').onclick = () => BCVoz.destroy()
 </script>
 </body>
 </html>

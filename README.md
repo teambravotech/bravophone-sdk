@@ -1,6 +1,6 @@
-# @bravophone/webphone
+# @bcvoz/webphone
 
-Webphone BRAVOPHONE embutível em qualquer página web: o softphone aparece como
+Webphone BCVOZ embutível em qualquer página web: o softphone aparece como
 uma janela flutuante arrastável, com as mesmas funcionalidades da extensão de
 navegador.
 
@@ -14,14 +14,14 @@ navegador.
 // no navegador e uma publicação recém-saída não aparece — foi o que exigiu
 // Ctrl+Shift+R nos testes. O bundle continua vindo de cache immutable, então
 // o custo é uma requisição pequena por carregamento, não 30 kB.
-fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved',
+fetch('https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webphone/resolved',
       { cache: 'no-store' })
   .then((r) => r.json())
   .then(({ version }) => {
     const s = document.createElement('script')
-    s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
-    s.onload = () => Bravophone.init({ session: SESSAO_DO_LOGIN })
-    s.onerror = () => console.error('Bravophone: falha ao carregar do CDN')
+    s.src = `https://cdn.jsdelivr.net/npm/@bcvoz/webphone@${version}/dist/bcvoz.umd.js`
+    s.onload = () => BCVoz.init({ session: SESSAO_DO_LOGIN })
+    s.onerror = () => console.error('BCVoz: falha ao carregar do CDN')
     document.head.appendChild(s)
   })
 </script>
@@ -34,18 +34,36 @@ Detalhes em [Manter o cliente sempre atualizado](#manter-o-cliente-sempre-atuali
 Para travar numa versão (integração de terceiros, ou build com SRI):
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.3.0/dist/bravophone.umd.js"></script>
-<script>Bravophone.init({ token: TOKEN_DO_USUARIO })</script>
+<script src="https://cdn.jsdelivr.net/npm/@bcvoz/webphone@0.7.1/dist/bcvoz.umd.js"></script>
+<script>BCVoz.init({ token: TOKEN_DO_USUARIO })</script>
 ```
 
 ```js
 // ou via npm
-import Bravophone from '@bravophone/webphone'
+import BCVoz from '@bcvoz/webphone'
 
-Bravophone.init({ token })
-Bravophone.on('call:incoming', ({ number }) => console.log('ligação de', number))
-await Bravophone.call('11987654321')
+BCVoz.init({ token })
+BCVoz.on('call:incoming', ({ number }) => console.log('ligação de', number))
+await BCVoz.call('11987654321')
 ```
+
+---
+
+## Vindo do Bravophone
+
+O produto passou a se chamar **BCVoz**. A API é a mesma; mudam os nomes:
+
+| Antes | Agora |
+|---|---|
+| `@bravophone/webphone` | `@bcvoz/webphone` |
+| `dist/bravophone.umd.js` / `.mjs` | `dist/bcvoz.umd.js` / `.mjs` |
+| `window.Bravophone` | `window.BCVoz` |
+| tipos `Bravophone*` | tipos `BCVoz*` |
+
+`window.Bravophone` continua funcionando como alias (com um aviso no console),
+e os tipos `Bravophone*` seguem exportados como `@deprecated`. A sessão salva,
+os cabeçalhos `X-Bravo-Device-*` e os domínios não mudaram — ninguém é
+deslogado na troca.
 
 ---
 
@@ -75,7 +93,7 @@ todas — é o [`host/shim/chrome-shim.js`](host/shim/chrome-shim.js).
 ```
 ┌─ SITE DO CLIENTE (qualquer origem) ────────────────────────┐
 │                                                             │
-│   <script src="cdn.../@bravophone/webphone">                │
+│   <script src="cdn.../@bcvoz/webphone">                │
 │            │                                                │
 │            ▼                                                │
 │   ┌─ SDK (11 KB) ──────────────────────┐                    │
@@ -131,7 +149,7 @@ porque tinha um storage único.
 Três caminhos, em ordem de recomendação:
 
 1. **Token do integrador (recomendado).** O backend do cliente emite um token de sessão
-   e passa em `Bravophone.init({ token })`. O SDK entrega ao iframe pela ponte e o
+   e passa em `BCVoz.init({ token })`. O SDK entrega ao iframe pela ponte e o
    `guest-bridge` grava onde o bundle já procura (`vxToken`). Sem tela de login, sem
    depender de cookie de terceiros, e é o modelo que Intercom/Twilio usam. Combina bem
    com o fato de que [o `vxToken` é eterno](#) — só logout explícito o encerra.
@@ -149,12 +167,12 @@ Os ~25 `content-script-*.js` (Pipedrive, HubSpot, Kommo, Salesforce…) injetam
 click-to-call em CRMs de terceiros. **Isso é território exclusivo de extensão** — uma
 biblioteca só roda onde foi incluída.
 
-A substituição é a inversão do controle: em vez de o Bravophone entrar no CRM, o CRM
-chama o Bravophone.
+A substituição é a inversão do controle: em vez de o BCVoz entrar no CRM, o CRM
+chama o BCVoz.
 
 ```js
 document.querySelectorAll('[data-phone]').forEach((el) => {
-  el.onclick = () => Bravophone.call(el.dataset.phone, { source: 'crm', id: el.dataset.id })
+  el.onclick = () => BCVoz.call(el.dataset.phone, { source: 'crm', id: el.dataset.id })
 })
 ```
 
@@ -210,7 +228,7 @@ npm run prepare:host  # host servido do CDN — é o que vai no pacote publicado
 ```
 
 O `prepare:host` reescreve o `public_path` do bundle para
-`cdn.jsdelivr.net/npm/@bravophone/webphone@<versão>/host/`. **Rode-o depois de
+`cdn.jsdelivr.net/npm/@bcvoz/webphone@<versão>/host/`. **Rode-o depois de
 cada bump de versão e antes de publicar**: se a URL apontar para outra versão,
 o pacote busca assets que podem não existir. O `npm test` recusa esse
 descompasso.
@@ -291,7 +309,7 @@ exercitar o postMessage cross-origin de verdade, incluindo a validação de orig
 
 | Porta | Papel | Serve |
 |---|---|---|
-| 5173 | site do cliente | `examples/test.html`, carrega `dist/bravophone.umd.js` por `<script>`, como no CDN |
+| 5173 | site do cliente | `examples/test.html`, carrega `dist/bcvoz.umd.js` por `<script>`, como no CDN |
 | 5174 | host do webphone | `host/mock.html`, com os headers `frame-ancestors` e `Permissions-Policy` de produção |
 
 ### Testar sem SIP nem backend
@@ -352,8 +370,8 @@ Como o iframe tem origem fixa, essa lista não cresce com o número de clientes.
 npm publish --access public
 ```
 
-Disponível em `cdn.jsdelivr.net/npm/@bravophone/webphone` e `unpkg.com` logo após.
-Recomende aos integradores a versão travada — `@bravophone/webphone@0.1` — para que
+Disponível em `cdn.jsdelivr.net/npm/@bcvoz/webphone` e `unpkg.com` logo após.
+Recomende aos integradores a versão travada — `@bcvoz/webphone@0.7` — para que
 um major não quebre a página deles.
 
 ---
@@ -384,11 +402,11 @@ bundle, quase sempre servida do cache.
 
 ```js
 const { version } = await (await fetch(
-  'https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved'
+  'https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webphone/resolved'
 )).json()
 
 const s = document.createElement('script')
-s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
+s.src = `https://cdn.jsdelivr.net/npm/@bcvoz/webphone@${version}/dist/bcvoz.umd.js`
 document.head.appendChild(s)
 ```
 
@@ -401,7 +419,7 @@ Três caches diferentes, do mais provável ao menos:
 
 | O que está velho | Como saber | Solução |
 |---|---|---|
-| **A consulta de versão** | `Bravophone.version` mostra a anterior | Já resolvido: o snippet usa `cache: 'no-store'` |
+| **A consulta de versão** | `BCVoz.version` mostra a anterior | Já resolvido: o snippet usa `cache: 'no-store'` |
 | **A página do integrador** | o próprio snippet mudou e não teve efeito | Não sirva o HTML com `max-age` longo |
 | **O bundle** | — | Não acontece: a URL é versionada e `immutable` |
 
@@ -421,7 +439,7 @@ a versão do pacote, então carregar o SDK 0.2.1 carrega o host 0.2.1.
 `init()` recebe a resposta do `/api/voxfree/login` inteira:
 
 ```js
-Bravophone.init({
+BCVoz.init({
   session: {
     vxToken:    '…',   // obrigatório
     expiresIn:  3600,  // segundos
@@ -463,7 +481,7 @@ pelo webphone" — justamente o que a auto-autenticação existe para evitar.
 
 ## API
 
-### `Bravophone.init(options)`
+### `BCVoz.init(options)`
 
 | Opção | Tipo | Padrão | Descrição |
 |---|---|---|---|
@@ -476,7 +494,7 @@ pelo webphone" — justamente o que a auto-autenticação existe para evitar.
 | `launcherSide` | `'right' \| 'left'` | `'right'` | Lado em que a aba fica colada |
 | `frame` | `'none' \| 'bar'` | `'none'` | Moldura da janela — ver abaixo |
 | `dockTop` | `'max' \| 'top-half'` | `'max'` | O que arrastar até a borda superior faz |
-| `title` | `string` | `'BRAVOPHONE'` | Texto da barra (só com `frame: 'bar'`) |
+| `title` | `string` | `'BCVOZ'` | Texto da barra (só com `frame: 'bar'`) |
 | `device` | `{ hostname?, user? }` | — | Identifica a máquina no REGISTER (`X-Bravo-Device-*`) — ver abaixo |
 
 ### Moldura: preservando 100% da UI
@@ -514,8 +532,8 @@ administra a conta: informe só se isso for aceitável para o seu caso.
 ### Dois modos de carregar o webphone
 
 ```js
-Bravophone.init({ token })                     // hospedado (padrão)
-Bravophone.init({ token, mode: 'srcdoc' })     // na origem do próprio site
+BCVoz.init({ token })                     // hospedado (padrão)
+BCVoz.init({ token, mode: 'srcdoc' })     // na origem do próprio site
 ```
 
 | | `srcdoc` (padrão) | `hosted` |
@@ -567,9 +585,9 @@ A aba também responde a teclado (`Enter` / `Espaço`) e, numa chamada entrante,
 vermelho com o contador — visível mesmo com a janela fechada.
 
 ```js
-Bravophone.init({ launcherSide: 'left' })   // cola do outro lado
-Bravophone.setLauncherSide('right')         // troca em runtime
-Bravophone.init({ launcher: false })        // sem aba: você controla com show()
+BCVoz.init({ launcherSide: 'left' })   // cola do outro lado
+BCVoz.setLauncherSide('right')         // troca em runtime
+BCVoz.init({ launcher: false })        // sem aba: você controla com show()
 ```
 
 ### Redimensionar e encaixar
@@ -604,7 +622,7 @@ quem trabalha com metades verticais costuma preferir a metade de cima ali. Daí 
 `dockTop`:
 
 ```js
-Bravophone.init({ dockTop: 'top-half' })   // topo encaixa na metade superior
+BCVoz.init({ dockTop: 'top-half' })   // topo encaixa na metade superior
 ```
 
 Com ela, o máximo continua acessível por `dock('max')`.
@@ -619,15 +637,15 @@ sozinha — o "completamento sugestivo".
 Programaticamente:
 
 ```js
-Bravophone.dock('right')        // altura cheia à direita, largura mantida
-Bravophone.dock('right-half')   // metade direita  (W/2 × altura cheia)
-Bravophone.dock('bottom-half')  // metade inferior (largura cheia × H/2)
-Bravophone.dock('top-half')     // metade superior
-Bravophone.dock('bottom')       // metade inferior, mantendo a largura atual
-Bravophone.dock('max')          // maximiza
-Bravophone.dock('float')        // solta e restaura o tamanho anterior
+BCVoz.dock('right')        // altura cheia à direita, largura mantida
+BCVoz.dock('right-half')   // metade direita  (W/2 × altura cheia)
+BCVoz.dock('bottom-half')  // metade inferior (largura cheia × H/2)
+BCVoz.dock('top-half')     // metade superior
+BCVoz.dock('bottom')       // metade inferior, mantendo a largura atual
+BCVoz.dock('max')          // maximiza
+BCVoz.dock('float')        // solta e restaura o tamanho anterior
 
-Bravophone.on('resize', ({ width, height, dock }) => { /* … */ })
+BCVoz.on('resize', ({ width, height, dock }) => { /* … */ })
 ```
 
 O encaixe persiste entre sessões e é **recalculado para a viewport atual** ao recarregar
@@ -640,7 +658,7 @@ O encaixe persiste entre sessões e é **recalculado para a viewport atual** ao 
 ### Eventos
 
 ```js
-const off = Bravophone.on('call:incoming', (call) => { /* … */ })
+const off = BCVoz.on('call:incoming', (call) => { /* … */ })
 off()  // remove o listener
 ```
 

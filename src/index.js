@@ -10,19 +10,19 @@ const listeners = new Map()
 
 function emit(event, payload) {
   listeners.get(event)?.forEach((fn) => {
-    try { fn(payload) } catch (err) { console.error('[Bravophone] listener falhou:', err) }
+    try { fn(payload) } catch (err) { console.error('[BCVoz] listener falhou:', err) }
   })
   listeners.get('*')?.forEach((fn) => {
-    try { fn({ event, payload }) } catch (err) { console.error('[Bravophone] listener falhou:', err) }
+    try { fn({ event, payload }) } catch (err) { console.error('[BCVoz] listener falhou:', err) }
   })
 }
 
 function requireInstance() {
-  if (!instance) throw new Error('Bravophone: chame Bravophone.init() antes.')
+  if (!instance) throw new Error('BCVoz: chame BCVoz.init() antes.')
   return instance
 }
 
-const Bravophone = {
+const BCVoz = {
   /**
    * Monta o webphone na página.
    * @param {object} opts
@@ -48,23 +48,23 @@ const Bravophone = {
   init(opts = {}) {
     if (instance) return instance
     if (typeof window === 'undefined' || !document.body) {
-      throw new Error('Bravophone: init() precisa rodar no browser, após o <body> existir.')
+      throw new Error('BCVoz: init() precisa rodar no browser, após o <body> existir.')
     }
     if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
       // getUserMedia só funciona em secure context — falhar cedo e claro
       // evita um bug reportado como "o microfone não funciona".
-      console.warn('[Bravophone] Contexto inseguro: o microfone exige HTTPS ou localhost.')
+      console.warn('[BCVoz] Contexto inseguro: o microfone exige HTTPS ou localhost.')
     }
     // A versão vai junto: no modo srcdoc é ela que trava a URL dos assets no
     // CDN, garantindo que SDK e webphone nunca fiquem em versões diferentes.
     if (opts.mode === 'hosted' && !opts.hostUrl) {
       throw new Error(
-        "Bravophone: mode 'hosted' exige hostUrl. Use mode 'srcdoc' (padrão) " +
+        "BCVoz: mode 'hosted' exige hostUrl. Use mode 'srcdoc' (padrão) " +
         'para carregar o webphone do CDN sem depender de um host próprio.')
     }
     instance = createWidget({
       hostUrl: DEFAULT_HOST,
-      version: Bravophone.version,
+      version: BCVoz.version,
       ...opts,
       emit,
     })
@@ -126,7 +126,7 @@ const Bravophone = {
   on(event, fn) {
     if (!listeners.has(event)) listeners.set(event, new Set())
     listeners.get(event).add(fn)
-    return () => Bravophone.off(event, fn)
+    return () => BCVoz.off(event, fn)
   },
   off(event, fn) { listeners.get(event)?.delete(fn) },
 
@@ -140,7 +140,24 @@ const Bravophone = {
   version: __BP_VERSION__,
 }
 
-// Uso via <script> puro: window.Bravophone.
-if (typeof window !== 'undefined') window.Bravophone = Bravophone
+// Uso via <script> puro: window.BCVoz.
+if (typeof window !== 'undefined') {
+  window.BCVoz = BCVoz
+  // Nome anterior da marca. Integrações existentes chamam window.Bravophone;
+  // o alias mantém todas funcionando e avisa uma vez para migrarem.
+  if (!('Bravophone' in window)) {
+    let avisou = false
+    Object.defineProperty(window, 'Bravophone', {
+      configurable: true,
+      get() {
+        if (!avisou) {
+          avisou = true
+          console.warn('[BCVoz] window.Bravophone foi descontinuado; use window.BCVoz.')
+        }
+        return BCVoz
+      },
+    })
+  }
+}
 
-export default Bravophone
+export default BCVoz

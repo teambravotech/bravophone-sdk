@@ -1,4 +1,5 @@
-<title>Bravophone Webphone SDK</title>
+<title>BCVoz Webphone SDK</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20width%3D%2264%22%20height%3D%2264%22%20fill%3D%22none%22%20role%3D%22img%22%20aria-label%3D%22BCVOZ%22%3E%3Ctitle%3EBCVOZ%3C%2Ftitle%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22voz%22%20gradientUnits%3D%22userSpaceOnUse%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%2283.8%22%20y2%3D%22218.3%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%236366F1%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%233730A3%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Cg%20transform%3D%22translate(5.12%207.61)%20scale(0.28)%22%3E%3Cpath%20fill%3D%22url(%23voz)%22%20d%3D%22M0%2061A21%2021%200%200%201%2042%2061V115A21%2021%200%200%201%200%20115ZM62%2035A35%2035%200%200%201%20132%2035V141A35%2035%200%200%201%2062%20141ZM152%2051A21%2021%200%200%201%20194%2051V125A21%2021%200%200%201%20152%20125Z%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;600&family=Source+Sans+3:wght@400;500;600;700&display=swap">
@@ -92,6 +93,7 @@ nav a:hover { color: var(--violet); border-left-color: var(--violet); }
 main { padding: 34px 0 110px; min-width: 0; }
 
 /* ---------- tipografia ---------- */
+.marca { display: block; width: 180px; height: auto; margin: 0 0 20px; color: var(--ink); }
 .eyebrow { font: 600 12px/1 "Source Code Pro", monospace; letter-spacing: .1em;
            text-transform: uppercase; color: var(--violet); }
 h1 { font-size: 34px; font-weight: 700; letter-spacing: -.02em; margin: 10px 0 6px;
@@ -177,26 +179,28 @@ td { color: var(--ink-2); }
 
 <main>
 
-<span class="eyebrow">@bravophone/webphone</span>
+<!-- Logo oficial, de BCVOZ/MARKETING/01-logo; o logotipo herda --ink para valer nos dois temas. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 879.47 176" class="marca" fill="none" role="img" aria-label="BCVOZ"><title>BCVOZ</title><defs><linearGradient id="bcvozVoz" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="97.15" y2="253.1"><stop offset="0" stop-color="#6366F1"/><stop offset="1" stop-color="#3730A3"/></linearGradient></defs><g id="simbolo"><path fill="url(#bcvozVoz)" d="M0 88A15 15 0 1 1 30 88A15 15 0 1 1 0 88ZM48 70A21 21 0 0 1 90 70V106A21 21 0 0 1 48 106ZM108 51A21 21 0 0 1 150 51V125A21 21 0 0 1 108 125ZM168 35A35 35 0 0 1 238 35V141A35 35 0 0 1 168 141ZM256 55A21 21 0 0 1 298 55V121A21 21 0 0 1 256 121Z"/><path fill="#FFFFFF" d="M194.7 40.5C191.42 40.63 188.49 42.5 185.91 44.4C182.6 46.84 179.17 50.2 178.14 54.35C176.98 59.02 177.27 64.87 178.2 69.58C181.4 85.79 194.99 121.42 207.71 131.86C210.51 134.15 214.23 135.59 217.88 135.5C220.24 135.43 222.81 134.51 224.78 133.23C226.83 131.91 228.3 129.61 228.43 127.16C228.48 126.15 228.43 125.11 228.17 124.12C227.19 120.49 222.14 108.16 219.38 106.09C214.22 102.23 210.12 108.29 206.28 104.01C203.45 100.84 200.3 92.13 198.86 87.95C197.79 84.8 195.96 80.63 196.82 77.25C198.02 72.49 203.57 74.34 205.51 69.44C205.89 68.47 206.09 67.51 205.96 66.46C205.53 62.8 201.63 45.22 199.86 42.88C198.5 41.09 196.86 40.57 194.7 40.5Z"/></g><g id="logotipo"><path fill="currentColor" d="M372.11 143.9V122.51H396.37Q402.55 122.51 405.56 119.34Q408.58 116.18 408.58 110.15Q408.58 104.12 405.56 101.03Q402.55 97.95 396.37 97.95H372.11V81.37H395.47Q407.07 81.37 416.26 84.16Q425.45 86.95 430.73 93.27Q436 99.6 436 110.15V112.26Q436 122.21 431.33 129.29Q426.66 136.37 417.62 140.14Q408.58 143.9 395.47 143.9ZM348 143.9V32.1H375.12V143.9ZM372.11 93.73V77.15H392.3Q398.48 77.15 401.27 74.06Q404.05 70.97 404.05 65.4Q404.05 59.67 401.27 56.58Q398.48 53.49 392.3 53.49H372.11V32.1H391.1Q410.38 32.1 420.93 40.16Q431.48 48.22 431.48 63.14V65.4Q431.48 75.79 426.13 82.05Q420.78 88.3 411.66 91.01Q402.55 93.73 391.1 93.73ZM500.64 146.01Q485.73 146.01 475.03 140.82Q464.33 135.62 457.4 127.1Q450.47 118.59 447.15 108.64Q443.84 98.7 443.84 89.36V86.04Q443.84 75.64 447.23 65.62Q450.62 55.6 457.62 47.47Q464.63 39.33 475.18 34.51Q485.73 29.68 499.89 29.68Q514.96 29.68 526.64 35.34Q538.32 40.99 545.4 51.16Q552.48 61.33 553.68 74.74H525.66Q524.6 69.01 521.14 64.79Q517.67 60.58 512.25 58.24Q506.82 55.9 499.89 55.9Q493.41 55.9 488.21 58.16Q483.01 60.42 479.47 64.57Q475.93 68.71 474.05 74.59Q472.16 80.47 472.16 87.85Q472.16 95.23 474.05 101.11Q475.93 106.99 479.62 111.21Q483.32 115.42 488.59 117.61Q493.86 119.79 500.64 119.79Q511.19 119.79 518.5 114.67Q525.81 109.55 527.32 100.96H555.34Q553.99 113.32 547.05 123.56Q540.12 133.81 528.37 139.91Q516.62 146.01 500.64 146.01ZM589.4 143 557.45 33H586.38L610.34 123.26L605.07 120.7H619.53L614.11 123.26L636.41 33H664.44L634.6 143ZM727.42 146.01Q712.36 146.01 701.21 140.82Q690.05 135.62 682.67 127.1Q675.29 118.59 671.67 108.64Q668.05 98.7 668.05 89.36V86.04Q668.05 75.64 671.82 65.62Q675.59 55.6 683.12 47.47Q690.66 39.33 701.73 34.51Q712.81 29.68 727.42 29.68Q741.89 29.68 752.97 34.51Q764.04 39.33 771.58 47.47Q779.11 55.6 782.95 65.62Q786.79 75.64 786.79 86.04V89.36Q786.79 98.7 783.1 108.64Q779.41 118.59 772.03 127.1Q764.64 135.62 753.49 140.82Q742.34 146.01 727.42 146.01ZM727.42 119.79Q734.66 119.79 740.38 117.38Q746.11 114.97 750.18 110.6Q754.25 106.23 756.36 100.43Q758.47 94.63 758.47 87.85Q758.47 80.62 756.28 74.74Q754.1 68.86 750.03 64.64Q745.96 60.42 740.23 58.16Q734.51 55.9 727.42 55.9Q720.19 55.9 714.47 58.16Q708.74 60.42 704.67 64.64Q700.6 68.86 698.49 74.74Q696.38 80.62 696.38 87.85Q696.38 94.63 698.49 100.43Q700.6 106.23 704.67 110.6Q708.74 114.97 714.47 117.38Q720.19 119.79 727.42 119.79ZM791.01 143V124.32L844.66 56.81L845.41 59.52L840.29 52.89L843.75 55.9H793.12V33H879.47V51.68L825.67 119.19L824.92 116.33L830.04 123.11L826.58 120.1H878.86V143Z"/></g></svg>
+<span class="eyebrow">@bcvoz/webphone</span>
 <h1>Webphone SDK</h1>
 <p class="lede">
-  O softphone BRAVOPHONE como uma janela flutuante em qualquer página web.
+  O softphone BCVOZ como uma janela flutuante em qualquer página web.
   Uma linha de <code>&lt;script&gt;</code>, sem dependências, 30&nbsp;kB.
 </p>
-<p class="versao">versão 0.2.1 · apenas navegador</p>
+<p class="versao">versão 0.7.1 · apenas navegador</p>
 
 <h2 id="instalar">Instalação</h2>
 
 <p>Cole este trecho <strong>inline</strong> na página. Ele resolve a versão publicada e carrega o bundle dela:</p>
 
 <pre><code>&lt;script&gt;
-fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved'</span>)
+fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webphone/resolved'</span>)
   .then((r) =&gt; r.json())
   .then(({ version }) =&gt; {
     <span class="c-key">const</span> s = document.createElement(<span class="c-str">'script'</span>)
-    s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
-    s.onload  = () =&gt; Bravophone.init({ token: TOKEN_DO_USUARIO, mode: <span class="c-str">'srcdoc'</span> })
-    s.onerror = () =&gt; console.error(<span class="c-str">'Bravophone: falha ao carregar do CDN'</span>)
+    s.src = `https://cdn.jsdelivr.net/npm/@bcvoz/webphone@${version}/dist/bcvoz.umd.js`
+    s.onload  = () =&gt; BCVoz.init({ token: TOKEN_DO_USUARIO, mode: <span class="c-str">'srcdoc'</span> })
+    s.onerror = () =&gt; console.error(<span class="c-str">'BCVoz: falha ao carregar do CDN'</span>)
     document.head.appendChild(s)
   })
 &lt;/script&gt;</code></pre>
@@ -204,7 +208,7 @@ fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bravophone
 <div class="nota atencao">
   <p><span class="rot">Não use a URL sem versão.</span></p>
   <p>
-    <code>/npm/@bravophone/webphone</code> parece mais simples, mas o CDN a
+    <code>/npm/@bcvoz/webphone</code> parece mais simples, mas o CDN a
     entrega com <code>max-age=604800</code> — <strong>sete dias de cache no
     navegador do usuário</strong>. Uma correção publicada não alcança quem já
     carregou, e purgar o CDN não ajuda: o cache está na máquina dele.
@@ -218,14 +222,14 @@ fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bravophone
 
 <p>Para travar numa versão — integração de terceiros, política de build ou SRI:</p>
 
-<pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2.1/dist/bravophone.umd.js"&gt;&lt;/script&gt;</code></pre>
+<pre><code>&lt;script src="https://cdn.jsdelivr.net/npm/@bcvoz/webphone@0.7.1/dist/bcvoz.umd.js"&gt;&lt;/script&gt;</code></pre>
 
 <p>Por npm:</p>
 
-<pre><code>npm install @bravophone/webphone</code></pre>
-<pre><code><span class="c-key">import</span> Bravophone <span class="c-key">from</span> <span class="c-str">'@bravophone/webphone'</span>   <span class="c-com">// default export</span></code></pre>
+<pre><code>npm install @bcvoz/webphone</code></pre>
+<pre><code><span class="c-key">import</span> BCVoz <span class="c-key">from</span> <span class="c-str">'@bcvoz/webphone'</span>   <span class="c-com">// default export</span></code></pre>
 
-<p>O build UMD expõe <code>window.Bravophone</code>. Não use <code>Bravophone.default</code>.</p>
+<p>O build UMD expõe <code>window.BCVoz</code>. Não use <code>BCVoz.default</code>.</p>
 
 <h2 id="init">init(options)</h2>
 
@@ -249,7 +253,7 @@ fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bravophone
 <tr><td><code>launcherSide</code></td><td><code>'right' | 'left'</code></td><td><code>'right'</code></td><td>Borda em que a aba cola</td></tr>
 <tr><td><code>launcherIcon</code></td><td><code>string</code></td><td><code>'phone-waves'</code></td><td><code>waveform</code>, <code>headset</code>, <code>chat-phone</code></td></tr>
 <tr><td><code>dockTop</code></td><td><code>'max' | 'top-half'</code></td><td><code>'max'</code></td><td>O que arrastar até o topo faz</td></tr>
-<tr><td><code>title</code></td><td><code>string</code></td><td><code>'BRAVOPHONE'</code></td><td>Só com <code>frame: 'bar'</code></td></tr>
+<tr><td><code>title</code></td><td><code>string</code></td><td><code>'BCVOZ'</code></td><td>Só com <code>frame: 'bar'</code></td></tr>
 </tbody>
 </table></div>
 
@@ -268,7 +272,7 @@ fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bravophone
 <div class="tw"><table>
 <thead><tr><th></th><th><code>srcdoc</code></th><th><code>hosted</code></th></tr></thead>
 <tbody>
-<tr><td>Origem do iframe</td><td>a do seu site</td><td>domínio do Bravophone</td></tr>
+<tr><td>Origem do iframe</td><td>a do seu site</td><td>domínio do BCVoz</td></tr>
 <tr><td>De onde vêm os arquivos</td><td>CDN, travados na versão</td><td>do host</td></tr>
 <tr><td>Iframe de terceiro</td><td>não</td><td>sim — sujeito a bloqueadores</td></tr>
 <tr><td>Login entre domínios</td><td>storage próprio</td><td>particionado por site</td></tr>
@@ -280,7 +284,7 @@ fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bravophone
   <p><span class="rot">Como escolher.</span></p>
   <p>
     Use <code>'srcdoc'</code> se a origem do seu site já estiver na allowlist de
-    CORS do Bravophone. Se não estiver, o webphone aparece na tela e não
+    CORS do BCVoz. Se não estiver, o webphone aparece na tela e não
     registra — o navegador descarta as respostas. Nesse caso use
     <code>'hosted'</code> até a liberação.
   </p>
@@ -314,7 +318,7 @@ fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bravophone
   extensão de navegador.
 </p>
 
-<pre><code><span class="c-key">await</span> Bravophone.call(<span class="c-str">'11987654321'</span>, {
+<pre><code><span class="c-key">await</span> BCVoz.call(<span class="c-str">'11987654321'</span>, {
   name:    <span class="c-str">'Ana Ribeiro'</span>,      <span class="c-com">// aparece no card da chamada</span>
   crm:     <span class="c-str">'Acme Ltda'</span>,        <span class="c-com">// rótulo da origem</span>
   photo:   <span class="c-str">'https://…/foto.jpg'</span>, <span class="c-com">// avatar</span>
@@ -380,7 +384,7 @@ fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bravophone
 
 <h2 id="eventos">Eventos</h2>
 
-<pre><code><span class="c-key">const</span> off = Bravophone.on(<span class="c-str">'call:incoming'</span>, ({ number }) =&gt; {
+<pre><code><span class="c-key">const</span> off = BCVoz.on(<span class="c-str">'call:incoming'</span>, ({ number }) =&gt; {
   <span class="c-com">// abrir a ficha do cliente, por exemplo</span>
 })
 
@@ -431,7 +435,7 @@ off()   <span class="c-com">// remove o listener — útil ao desmontar um compo
 
 <pre><code>document.querySelectorAll(<span class="c-str">'[data-fone]'</span>).forEach((el) =&gt; {
   el.addEventListener(<span class="c-str">'click'</span>, () =&gt; {
-    Bravophone.call(el.dataset.fone, {
+    BCVoz.call(el.dataset.fone, {
       name: el.dataset.nome,
       crm:  el.dataset.empresa,
       gateway: <span class="c-str">'meu-sistema'</span>,
@@ -441,7 +445,7 @@ off()   <span class="c-com">// remove o listener — útil ao desmontar um compo
 
 <h3>Registrar o atendimento ao fim da chamada</h3>
 
-<pre><code>Bravophone.on(<span class="c-str">'call:ended'</span>, ({ number, direction }) =&gt; {
+<pre><code>BCVoz.on(<span class="c-str">'call:ended'</span>, ({ number, direction }) =&gt; {
   fetch(<span class="c-str">'/api/atendimentos'</span>, {
     method: <span class="c-str">'POST'</span>,
     headers: { <span class="c-str">'Content-Type'</span>: <span class="c-str">'application/json'</span> },
@@ -454,13 +458,13 @@ off()   <span class="c-com">// remove o listener — útil ao desmontar um compo
 <p>Quando não há como escrever a <code>&lt;script&gt;</code> no HTML — SPA, Tag Manager:</p>
 
 <pre><code><span class="c-key">function</span> carregar() {
-  <span class="c-key">if</span> (window.Bravophone) <span class="c-key">return</span> Promise.resolve(window.Bravophone)
+  <span class="c-key">if</span> (window.BCVoz) <span class="c-key">return</span> Promise.resolve(window.BCVoz)
   <span class="c-key">if</span> (window.__bpCarregando) <span class="c-key">return</span> window.__bpCarregando
   window.__bpCarregando = <span class="c-key">new</span> Promise((ok, erro) =&gt; {
     <span class="c-key">const</span> s = document.createElement(<span class="c-str">'script'</span>)
-    s.src = <span class="c-str">'https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2'</span>
+    s.src = <span class="c-str">'https://cdn.jsdelivr.net/npm/@bcvoz/webphone@0.7'</span>
     s.async = <span class="c-key">true</span>
-    s.onload  = () =&gt; window.Bravophone ? ok(window.Bravophone)
+    s.onload  = () =&gt; window.BCVoz ? ok(window.BCVoz)
       : erro(<span class="c-key">new</span> Error(<span class="c-str">'carregou mas a API não apareceu'</span>))
     s.onerror = () =&gt; erro(<span class="c-key">new</span> Error(<span class="c-str">'falhou (rede, bloqueador ou CSP)'</span>))
     document.head.appendChild(s)
@@ -480,7 +484,7 @@ off()   <span class="c-com">// remove o listener — útil ao desmontar um compo
   <p><span class="rot">O microfone é concedido à sua origem.</span></p>
   <p>
     No modo <code>srcdoc</code> o usuário autoriza o microfone para o
-    <em>seu</em> domínio, não para o Bravophone — uma vez por site. A favor:
+    <em>seu</em> domínio, não para o BCVoz — uma vez por site. A favor:
     a permissão fica no domínio que ele já conhece.
   </p>
 </div>
@@ -492,7 +496,7 @@ off()   <span class="c-com">// remove o listener — útil ao desmontar um compo
 <div class="tw"><table>
 <thead><tr><th>Verificação</th><th>Se falhar</th></tr></thead>
 <tbody>
-<tr><td><code>window.Bravophone</code> existe?</td><td>O script não carregou: rede, CSP ou bloqueador</td></tr>
+<tr><td><code>window.BCVoz</code> existe?</td><td>O script não carregou: rede, CSP ou bloqueador</td></tr>
 <tr><td>O evento <code>ready</code> disparou?</td><td>A ponte não conectou com o webphone</td></tr>
 <tr><td><code>state</code> veio <code>'error'</code>?</td><td>Registro SIP: token inválido, ou origem fora do CORS</td></tr>
 <tr><td>A UI aparece sem imagens?</td><td>Os assets não resolveram — confira o <code>hostBase</code></td></tr>

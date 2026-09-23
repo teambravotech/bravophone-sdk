@@ -1,17 +1,17 @@
 {
-  "name": "@bravophone/webphone",
+  "name": "@bcvoz/webphone",
   "version": "0.7.1",
-  "description": "Webphone BRAVOPHONE embutível em qualquer página web. Renderiza uma janela flutuante arrastável com todas as funcionalidades do softphone.",
-  "main": "./dist/bravophone.umd.js",
-  "module": "./dist/bravophone.mjs",
+  "description": "Webphone BCVOZ embutível em qualquer página web. Renderiza uma janela flutuante arrastável com todas as funcionalidades do softphone.",
+  "main": "./dist/bcvoz.umd.js",
+  "module": "./dist/bcvoz.mjs",
   "types": "./types/index.d.ts",
-  "unpkg": "./dist/bravophone.umd.js",
-  "jsdelivr": "./dist/bravophone.umd.js",
+  "unpkg": "./dist/bcvoz.umd.js",
+  "jsdelivr": "./dist/bcvoz.umd.js",
   "exports": {
     ".": {
       "types": "./types/index.d.ts",
-      "import": "./dist/bravophone.mjs",
-      "require": "./dist/bravophone.umd.js"
+      "import": "./dist/bcvoz.mjs",
+      "require": "./dist/bcvoz.umd.js"
     }
   },
   "files": [
@@ -41,7 +41,7 @@
     "sip",
     "webrtc",
     "voip",
-    "bravophone",
+    "bcvoz",
     "widget"
   ],
   "license": "UNLICENSED",
@@ -63,5 +63,5 @@
   "engines": {
     "node": ">=18"
   },
-  "browser": "./dist/bravophone.umd.js"
+  "browser": "./dist/bcvoz.umd.js"
 }

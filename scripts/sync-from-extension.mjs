@@ -338,7 +338,7 @@ function buildHtml() {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="referrer" content="strict-origin">
-<title>Webphone BRAVOPHONE</title>
+<title>Webphone BCVOZ</title>
 <link rel="icon" href="./favicon.ico">
 <link rel="stylesheet" href="./css/dark-theme.css">
 <link rel="stylesheet" href="./css/tema-claro.css">

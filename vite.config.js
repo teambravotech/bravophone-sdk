@@ -13,13 +13,13 @@ export default defineConfig({
   build: {
     lib: {
       entry: 'src/index.js',
-      name: 'Bravophone',
-      fileName: 'bravophone',
+      name: 'BCVoz',
+      fileName: 'bcvoz',
       formats: ['es', 'umd'],
     },
-    // exports:'default' faz o UMD atribuir a API direto em window.Bravophone.
+    // exports:'default' faz o UMD atribuir a API direto em window.BCVoz.
     // Sem isso a global vira o namespace do módulo e o consumidor via <script>
-    // precisaria escrever Bravophone.default.call(...) — armadilha silenciosa.
+    // precisaria escrever BCVoz.default.call(...) — armadilha silenciosa.
     rollupOptions: { output: { exports: 'default' } },
     minify: 'esbuild',
     // 'hidden' gera os .map (úteis para depurar aqui) mas NÃO escreve o

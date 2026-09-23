@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bravophone SDK — playground</title>
+<title>BCVoz SDK — playground</title>
 <style>
   /* A paleta é a do produto: o webphone é escuro, e o playground que o
      documenta não deveria inventar uma segunda identidade. */
@@ -121,7 +121,7 @@
 
 <header>
   <div class="faixa">
-    <h1>Bravophone SDK <span class="versao" id="versao">—</span></h1>
+    <h1>BCVoz SDK <span class="versao" id="versao">—</span></h1>
     <p>
       O webphone completo dentro de qualquer página. Cada botão executa uma chamada
       real da API e mostra <strong>o código que rodou</strong>, com os valores dos
@@ -155,7 +155,7 @@
       </div>
       <div id="log"></div>
       <p class="dica">
-        Eventos chegam por <code>Bravophone.on('*', ...)</code>. Erros em vermelho.
+        Eventos chegam por <code>BCVoz.on('*', ...)</code>. Erros em vermelho.
       </p>
     </section>
   </div>
@@ -163,12 +163,12 @@
 
 <!-- Em produção é a linha do CDN; aqui é o build local, para o playground
      acompanhar o código sem publicar uma versão antes. -->
-<script src="../dist/bravophone.umd.js"></script>
+<script src="../dist/bcvoz.umd.js"></script>
 <script>
 (function () {
   'use strict'
 
-  var bp = window.Bravophone
+  var bp = window.BCVoz
   document.getElementById('versao').textContent = 'v' + bp.version
 
   // --- o log ---------------------------------------------------------------
@@ -221,7 +221,7 @@
       .replace(/\bcampo\('([^']+)'\)/g, function (_, id) {
         return JSON.stringify(campo(id))
       })
-      .replace(/\bbp\./g, 'Bravophone.')
+      .replace(/\bbp\./g, 'BCVoz.')
       .replace(/^return /gm, 'await ')
   }
 
@@ -387,14 +387,14 @@
     '// cada visita - e sem os 7 dias de cache que a URL sem versao carrega.',
     "// cache:'no-store' vale para a CONSULTA (~1 kB): sem ele a resposta fica",
     '// ate 5 min no navegador e uma publicacao recem-saida nao aparece.',
-    "fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved',",
+    "fetch('https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webphone/resolved',",
     "      { cache: 'no-store' })",
     '  .then((r) => r.json())',
     '  .then(({ version }) => {',
     "    const s = document.createElement('script')",
-    '    s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`',
-    '    s.onload = () => Bravophone.init({ session: SESSAO_DO_LOGIN })',
-    "    s.onerror = () => console.error('Bravophone: falha ao carregar do CDN')",
+    '    s.src = `https://cdn.jsdelivr.net/npm/@bcvoz/webphone@${version}/dist/bcvoz.umd.js`',
+    '    s.onload = () => BCVoz.init({ session: SESSAO_DO_LOGIN })',
+    "    s.onerror = () => console.error('BCVoz: falha ao carregar do CDN')",
     '    document.head.appendChild(s)',
     '  })',
     '<' + '/script>',

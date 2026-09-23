@@ -31,12 +31,6 @@
    aba selecionada, todos elementos de ação. */
 #app .text-blue-700 { color: var(--bp-accent) !important; }
 
-/* EXCEÇÃO: a palavra "BRAVOPHONE" também usa text-blue-700, e marca não é
-   elemento de ação — pintá-la de verde descaracteriza a identidade. Ela é a
-   única ocorrência que combina a classe com tracking-wider, o que dá um
-   seletor preciso sem tocar no bundle. */
-#app .text-blue-700.tracking-wider { color: var(--bp-text-forte, #ffffff) !important; }
-
 /* Mesma família, fora da allowlist original. */
 #app .text-blue-800,
 #app .text-blue-900 { color: var(--bp-accent) !important; }

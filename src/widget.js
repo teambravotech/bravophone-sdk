@@ -39,7 +39,7 @@ export function createWidget(options) {
     position = 'bottom-right',
     open = false,
     launcher = true,
-    title = 'BRAVOPHONE',
+    title = 'BCVOZ',
     // 'bar' por padrão: título, indicador de estado e controles visíveis.
     // 'none' preserva 100% da UI do webphone — sem barra, o arraste vem de
     // dentro do iframe e só um botão de fechar aparece no hover.
@@ -129,7 +129,7 @@ export function createWidget(options) {
     // allow= é obrigatório no modo hospedado (cross-origin). Em srcdoc o
     // microfone já é herdado do topo, mas declarar não custa e documenta.
     allow: 'microphone; autoplay; clipboard-write; speaker-selection',
-    title: 'Webphone BRAVOPHONE',
+    title: 'Webphone BCVOZ',
   })
   if (srcdoc) {
     frameEl.setAttribute('srcdoc',

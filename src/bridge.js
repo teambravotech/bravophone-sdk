@@ -47,7 +47,7 @@ export function createBridge({ frame, origin, onEvent }) {
       const send = () => {
         const timer = setTimeout(() => {
           pending.delete(id)
-          reject(new Error(`Bravophone: timeout no comando "${command}"`))
+          reject(new Error(`BCVoz: timeout no comando "${command}"`))
         }, timeout)
         pending.set(id, { resolve, reject, timer })
         frame.contentWindow?.postMessage(
@@ -66,7 +66,7 @@ export function createBridge({ frame, origin, onEvent }) {
       window.removeEventListener('message', onMessage)
       pending.forEach(({ reject, timer }) => {
         clearTimeout(timer)
-        reject(new Error('Bravophone: widget destruído'))
+        reject(new Error('BCVoz: widget destruído'))
       })
       pending.clear()
     },

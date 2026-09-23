@@ -18,7 +18,7 @@
 const CDN = 'https://cdn.jsdelivr.net/npm'
 
 /** Base dos assets do host, travada na versão do próprio pacote. */
-export function hostBase(version, pkg = '@bravophone/webphone') {
+export function hostBase(version, pkg = '@bcvoz/webphone') {
   return `${CDN}/${pkg}@${version}/host/`
 }
 
@@ -57,7 +57,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Webphone BRAVOPHONE</title>
+<title>Webphone BCVOZ</title>
 <!-- CRÍTICO no modo srcdoc. O bundle referencia as imagens por caminho
      RELATIVO (src="images/answer.png"), fora do public_path. Sem <base>,
      elas resolvem contra a página do integrador — o documento herda o

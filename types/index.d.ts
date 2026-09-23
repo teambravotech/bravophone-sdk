@@ -1,7 +1,7 @@
 export type LauncherIcon = 'phone-waves' | 'waveform' | 'headset' | 'chat-phone'
 
 /** Resposta do `/api/voxfree/login`, repassada como está. */
-export interface BravophoneSession {
+export interface BCVozSession {
   vxToken: string
   /** Segundos até expirar; vira `bravophoneVxTokenExpiresAt`. */
   expiresIn?: number
@@ -38,13 +38,13 @@ export interface BravophoneSession {
  * de IP + nome do software. Tudo opcional: o que faltar não é enviado.
  * Uma linha, até 128 caracteres; o excesso é cortado.
  */
-export interface BravophoneDevice {
+export interface BCVozDevice {
   hostname?: string | null
   /** Expõe o usuário a quem administra a conta — informe só se for aceitável. */
   user?: string | null
 }
 
-export interface BravophoneOptions {
+export interface BCVozOptions {
   /** Origem do webphone hospedado. Só usado com `mode: 'hosted'`. */
   hostUrl?: string
   /**
@@ -78,7 +78,7 @@ export interface BravophoneOptions {
    * Sessão do `/api/voxfree/login`, repassada inteira. É o caminho correto:
    * o webphone precisa de `sip` e `ramal` para registrar.
    */
-  session?: BravophoneSession
+  session?: BCVozSession
   /**
    * Atalho para `{ vxToken: token }`. **Sozinho não basta** — sem `sip` e
    * `ramal` o webphone carrega, não registra, e o RouteSelector avisa
@@ -115,8 +115,8 @@ export interface BravophoneOptions {
    * continua disponível por `dock('max')`.
    */
   dockTop?: 'max' | 'top-half'
-  /** Identificação da máquina para o REGISTER. Ver `BravophoneDevice`. */
-  device?: BravophoneDevice
+  /** Identificação da máquina para o REGISTER. Ver `BCVozDevice`. */
+  device?: BCVozDevice
 }
 
 export interface CallInfo {
@@ -125,7 +125,7 @@ export interface CallInfo {
   direction: 'inbound' | 'outbound' | null
 }
 
-export interface BravophoneRoute {
+export interface BCVozRoute {
   id: string
   name: string
   /** Prefixo do tronco, somado ao destino do INVITE. '' quando não há. */
@@ -167,7 +167,7 @@ export interface Geometry {
   dock: Exclude<DockZone, 'float'> | null
 }
 
-export interface BravophoneEvents {
+export interface BCVozEvents {
   ready: { version: string }
   state: { state: 'connecting' | 'ready' | 'ringing' | 'incall' | 'error' }
   'call:incoming': CallInfo
@@ -188,7 +188,7 @@ export interface BravophoneEvents {
   error: { message: string }
 }
 
-export interface BravophoneInstance {
+export interface BCVozInstance {
   el: HTMLElement
   show(): void
   hide(): void
@@ -207,8 +207,8 @@ export interface BravophoneInstance {
   destroy(): void
 }
 
-export interface BravophoneAPI {
-  init(options?: BravophoneOptions): BravophoneInstance
+export interface BCVozAPI {
+  init(options?: BCVozOptions): BCVozInstance
 
   show(): void
   hide(): void
@@ -243,32 +243,49 @@ export interface BravophoneAPI {
    * A rota decide por qual provedora a ligação sai, e o prefixo dela entra
    * no destino do INVITE.
    */
-  getRoutes(): Promise<{ routes: BravophoneRoute[]; selected: BravophoneRoute | null; prefix: string }>
+  getRoutes(): Promise<{ routes: BCVozRoute[]; selected: BCVozRoute | null; prefix: string }>
   /** Troca a provedora pela qual as próximas ligações saem. */
-  setRoute(id: string): Promise<{ ok: true; selected: BravophoneRoute | null; prefix: string }>
-  setAuth(session: BravophoneSession | string): Promise<{ ok: true }>
+  setRoute(id: string): Promise<{ ok: true; selected: BCVozRoute | null; prefix: string }>
+  setAuth(session: BCVozSession | string): Promise<{ ok: true }>
   logout(): Promise<{ ok: true }>
   /** Informa (ou troca) o hostname/usuário enviados no REGISTER. */
-  setDevice(info: BravophoneDevice): Promise<{ ok: true; headers: number }>
+  setDevice(info: BCVozDevice): Promise<{ ok: true; headers: number }>
 
-  on<K extends keyof BravophoneEvents>(
+  on<K extends keyof BCVozEvents>(
     event: K,
-    handler: (payload: BravophoneEvents[K]) => void,
+    handler: (payload: BCVozEvents[K]) => void,
   ): () => void
-  off<K extends keyof BravophoneEvents>(
+  off<K extends keyof BCVozEvents>(
     event: K,
-    handler: (payload: BravophoneEvents[K]) => void,
+    handler: (payload: BCVozEvents[K]) => void,
   ): void
 
   destroy(): void
   readonly version: string
 }
 
-declare const Bravophone: BravophoneAPI
-export default Bravophone
+declare const BCVoz: BCVozAPI
+export default BCVoz
+
+/** @deprecated Use `BCVozSession`. */
+export type BravophoneSession = BCVozSession
+/** @deprecated Use `BCVozDevice`. */
+export type BravophoneDevice = BCVozDevice
+/** @deprecated Use `BCVozOptions`. */
+export type BravophoneOptions = BCVozOptions
+/** @deprecated Use `BCVozRoute`. */
+export type BravophoneRoute = BCVozRoute
+/** @deprecated Use `BCVozEvents`. */
+export type BravophoneEvents = BCVozEvents
+/** @deprecated Use `BCVozInstance`. */
+export type BravophoneInstance = BCVozInstance
+/** @deprecated Use `BCVozAPI`. */
+export type BravophoneAPI = BCVozAPI
 
 declare global {
   interface Window {
-    Bravophone: BravophoneAPI
+    BCVoz: BCVozAPI
+    /** @deprecated Nome anterior da marca. Use `window.BCVoz`. */
+    Bravophone: BCVozAPI
   }
 }

@@ -75,7 +75,7 @@ function serve({ port, root, index, headers = {}, label }) {
   }))
 }
 
-console.log('\nBravophone SDK — servidores de teste\n')
+console.log('\nBCVoz SDK — servidores de teste\n')
 
 await serve({
   port: 5173,

@@ -6,7 +6,7 @@
  *
  * O caminho óbvio seria:
  *
- *     <script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone"></script>
+ *     <script src="https://cdn.jsdelivr.net/npm/@bcvoz/webphone"></script>
  *
  * É a PIOR opção para "sempre a última". Os headers do CDN explicam:
  *
@@ -30,19 +30,19 @@
  * do cache na maior parte das vezes.
  */
 
-const PACOTE = '@bravophone/webphone'
+const PACOTE = '@bcvoz/webphone'
 const META = `https://data.jsdelivr.com/v1/packages/npm/${PACOTE}/resolved`
-const ARQUIVO = 'dist/bravophone.umd.js'
+const ARQUIVO = 'dist/bcvoz.umd.js'
 
 /**
  * @param {object} [opts]
  * @param {number} [opts.timeout=12000] Tempo total, em ms.
- * @returns {Promise<object>} a API `Bravophone`, já carregada
+ * @returns {Promise<object>} a API `BCVoz`, já carregada
  */
 export function carregarUltimaVersao(opts = {}) {
   const timeout = opts.timeout || 12000
 
-  if (window.Bravophone) return Promise.resolve(window.Bravophone)
+  if (window.BCVoz) return Promise.resolve(window.BCVoz)
   if (window.__bpCarregando) return window.__bpCarregando
 
   window.__bpCarregando = (async () => {
@@ -55,10 +55,10 @@ export function carregarUltimaVersao(opts = {}) {
 
     await injetar(url, timeout)
 
-    if (!window.Bravophone) {
-      throw new Error('Bravophone: o script carregou mas a API não apareceu')
+    if (!window.BCVoz) {
+      throw new Error('BCVoz: o script carregou mas a API não apareceu')
     }
-    return window.Bravophone
+    return window.BCVoz
   })()
 
   // Uma falha não pode deixar a promessa cacheada: a próxima chamada deve
@@ -93,12 +93,12 @@ function injetar(url, timeout) {
     s.async = true
     const t = setTimeout(() => {
       s.remove()
-      reject(new Error(`Bravophone: o CDN não respondeu em ${timeout} ms`))
+      reject(new Error(`BCVoz: o CDN não respondeu em ${timeout} ms`))
     }, timeout)
     s.onload = () => { clearTimeout(t); resolve() }
     s.onerror = () => {
       clearTimeout(t); s.remove()
-      reject(new Error('Bravophone: falha ao carregar (rede, bloqueador ou CSP)'))
+      reject(new Error('BCVoz: falha ao carregar (rede, bloqueador ou CSP)'))
     }
     document.head.appendChild(s)
   })
@@ -109,9 +109,9 @@ function injetar(url, timeout) {
 // ---------------------------------------------------------------------
 
 carregarUltimaVersao()
-  .then((Bravophone) => {
-    console.info('Bravophone', Bravophone.version)
-    Bravophone.init({
+  .then((BCVoz) => {
+    console.info('BCVoz', BCVoz.version)
+    BCVoz.init({
       token: 'TOKEN_DO_USUARIO_LOGADO',
       mode: 'srcdoc',
       open: false,

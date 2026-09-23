@@ -44,9 +44,11 @@ console.log('\npacote — os arquivos apontados existem:')
 console.log('\npacote — o UMD expõe a global:')
 {
   const umd = await readFile(join(ROOT, pkg.unpkg.replace(/^\.\//, '')), 'utf8')
-  check('atribui window.Bravophone', /window\.Bravophone\s*=/.test(umd))
+  check('atribui window.BCVoz', /window\.BCVoz\s*=/.test(umd))
+  // Nome anterior da marca: integrações antigas chamam window.Bravophone.
+  check('mantém window.Bravophone como alias', /defineProperty\(window,\s*["']Bravophone["']/.test(umd))
   // exports:'default' evita que a global vire o namespace do módulo, o que
-  // obrigaria o integrador a escrever Bravophone.default.call().
+  // obrigaria o integrador a escrever BCVoz.default.call().
   check('não exporta namespace com .default', !/exports\.default\s*=/.test(umd))
   check('sem referência a sourcemap (os .map não vão no pacote)',
     !/sourceMappingURL/.test(umd))
@@ -149,7 +151,7 @@ console.log('\nexemplos — as referências locais existem:')
 
 console.log('\npacote — metadados de publicação:')
 {
-  check('escopo @bravophone', pkg.name.startsWith('@bravophone/'), pkg.name)
+  check('escopo @bcvoz', pkg.name.startsWith('@bcvoz/'), pkg.name)
   check('access public (CDN não serve pacote privado)',
     pkg.publishConfig?.access === 'public', pkg.publishConfig?.access)
   check('repository preenchido', !!pkg.repository?.url)

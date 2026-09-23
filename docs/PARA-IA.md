@@ -1,11 +1,11 @@
-# Bravophone Webphone SDK — contexto para agentes
+# BCVoz Webphone SDK — contexto para agentes
 
-Você vai integrar o webphone BRAVOPHONE numa página web. Este documento é a
+Você vai integrar o webphone BCVOZ numa página web. Este documento é a
 referência completa: **não invente métodos, eventos ou opções que não estejam
 aqui.** Se algo que o usuário pede não existir na API, diga isso em vez de
 supor um nome plausível.
 
-Pacote: `@bravophone/webphone` · versão atual `0.2.1` · só browser, sem
+Pacote: `@bcvoz/webphone` · versão atual `0.2.1` · só browser, sem
 dependências.
 
 ---
@@ -22,21 +22,21 @@ volta.
 // no navegador e uma publicação recém-saída não aparece — foi o que exigiu
 // Ctrl+Shift+R nos testes. O bundle continua vindo de cache immutable, então
 // o custo é uma requisição pequena por carregamento, não 30 kB.
-fetch('https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved',
+fetch('https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webphone/resolved',
       { cache: 'no-store' })
   .then((r) => r.json())
   .then(({ version }) => {
     const s = document.createElement('script')
-    s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
-    s.onload = () => Bravophone.init({ session: SESSAO_DO_LOGIN })
-    s.onerror = () => console.error('Bravophone: falha ao carregar do CDN')
+    s.src = `https://cdn.jsdelivr.net/npm/@bcvoz/webphone@${version}/dist/bcvoz.umd.js`
+    s.onload = () => BCVoz.init({ session: SESSAO_DO_LOGIN })
+    s.onerror = () => console.error('BCVoz: falha ao carregar do CDN')
     document.head.appendChild(s)
   })
 </script>
 ```
 
 **Por que duas etapas, e não uma `<script src>` direta.** O CDN entrega a URL
-sem versão (`/npm/@bravophone/webphone`) e as faixas (`@0.2`) com
+sem versão (`/npm/@bcvoz/webphone`) e as faixas (`@0.2`) com
 `max-age=604800` — sete dias de cache **no navegador do usuário**. Uma
 publicação não alcança quem já carregou, e purgar o CDN não adianta: o cache
 está na máquina dele. Já a URL com versão exata é `immutable`.
@@ -50,16 +50,16 @@ explicitamente para travar a versão — integração de terceiros, política de
 build, ou SRI. Nesse caso:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@bravophone/webphone@0.2.1/dist/bravophone.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@bcvoz/webphone@0.7.1/dist/bcvoz.umd.js"></script>
 ```
 
-Nunca sugira `/npm/@bravophone/webphone` sem versão: é o pior dos dois mundos —
+Nunca sugira `/npm/@bcvoz/webphone` sem versão: é o pior dos dois mundos —
 cache longo e sem garantia de estar atualizado.
 
-Via npm: `import Bravophone from '@bravophone/webphone'` (default export; não
+Via npm: `import BCVoz from '@bcvoz/webphone'` (default export; não
 há named export).
 
-O UMD expõe `window.Bravophone`. **Não** use `Bravophone.default`.
+O UMD expõe `window.BCVoz`. **Não** use `BCVoz.default`.
 
 ---
 
@@ -82,7 +82,7 @@ O UMD expõe `window.Bravophone`. **Não** use `Bravophone.default`.
    ignora as novas opções. Para trocar de configuração: `destroy()` e `init()`.
 6. **Não existe `call:failed`.** Uma chamada que não completa chega como
    `call:ended`.
-7. **Nunca use a URL do CDN sem versão.** `/npm/@bravophone/webphone` vem com
+7. **Nunca use a URL do CDN sem versão.** `/npm/@bcvoz/webphone` vem com
    sete dias de cache no navegador; correções não chegam ao usuário. Use o
    trecho de duas etapas acima.
 8. **O widget vive em Shadow DOM.** `document.querySelector('.bp-root')` não
@@ -91,7 +91,7 @@ O UMD expõe `window.Bravophone`. **Não** use `Bravophone.default`.
 
 ---
 
-## `Bravophone.init(options)`
+## `BCVoz.init(options)`
 
 Chame uma vez, com o `<body>` já existindo. Devolve a instância.
 
@@ -108,15 +108,15 @@ Chame uma vez, com o `<body>` já existindo. Devolve a instância.
 | `launcherSide` | `'right' \| 'left'` | `'right'` | Borda em que a aba cola |
 | `launcherIcon` | `'phone-waves' \| 'waveform' \| 'headset' \| 'chat-phone'` | `'phone-waves'` | |
 | `dockTop` | `'max' \| 'top-half'` | `'max'` | O que arrastar até o topo faz |
-| `title` | `string` | `'BRAVOPHONE'` | Só com `frame: 'bar'` |
+| `title` | `string` | `'BCVOZ'` | Só com `frame: 'bar'` |
 | `device` | `{ hostname?: string, user?: string }` | — | Identifica a máquina no REGISTER (`X-Bravo-Device-Hostname/-User`). Só o que a página souber; `user` expõe o usuário ao administrador da conta |
 
 ### `mode`: escolha entre os dois
 
 - **`'srcdoc'`** — o iframe roda na origem da própria página e busca o webphone
   no CDN. Sem iframe de terceiro, sem storage particionado. **Exige que a
-  origem do site esteja na allowlist de CORS dos backends do Bravophone.**
-- **`'hosted'`** — o iframe navega para o domínio do Bravophone. Origem fixa,
+  origem do site esteja na allowlist de CORS dos backends do BCVoz.**
+- **`'hosted'`** — o iframe navega para o domínio do BCVoz. Origem fixa,
   então o CORS não precisa conhecer o integrador. É iframe de terceiro: sujeito
   a bloqueadores e a storage particionado (o login não atravessa domínios).
 
@@ -166,7 +166,7 @@ relatórios: `{ name, crm, photo, gateway, dealId, url }`.
 
 ### Propriedades
 
-`Bravophone.version` · `Bravophone.isOpen` · `Bravophone.geometry`
+`BCVoz.version` · `BCVoz.isOpen` · `BCVoz.geometry`
 (`{x, y, width, height, dock}` ou `null` antes do `init`).
 
 ---
@@ -174,9 +174,9 @@ relatórios: `{ name, crm, photo, gateway, dealId, url }`.
 ## Eventos
 
 ```js
-const off = Bravophone.on('call:incoming', (payload) => { … })
+const off = BCVoz.on('call:incoming', (payload) => { … })
 off()                     // remove
-Bravophone.off(evt, fn)   // equivalente
+BCVoz.off(evt, fn)   // equivalente
 ```
 
 | Evento | Payload | Quando |
@@ -205,7 +205,7 @@ deixar em produção.
 ```js
 document.querySelectorAll('[data-fone]').forEach((el) => {
   el.addEventListener('click', () => {
-    Bravophone.call(el.dataset.fone, {
+    BCVoz.call(el.dataset.fone, {
       name: el.dataset.nome,
       crm: el.dataset.empresa,
       gateway: 'nome-do-sistema',   // identifica a origem nos relatórios
@@ -219,20 +219,20 @@ document.querySelectorAll('[data-fone]').forEach((el) => {
 Mesma estratégia de duas etapas, agora idempotente e com tratamento de erro:
 
 ```js
-function carregarBravophone() {
-  if (window.Bravophone) return Promise.resolve(window.Bravophone)
+function carregarBCVoz() {
+  if (window.BCVoz) return Promise.resolve(window.BCVoz)
   if (window.__bpCarregando) return window.__bpCarregando
 
   window.__bpCarregando = fetch(
-    'https://data.jsdelivr.com/v1/packages/npm/@bravophone/webphone/resolved'
+    'https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webphone/resolved'
   )
     .then((r) => r.json())
     .then(({ version }) => new Promise((ok, erro) => {
       const s = document.createElement('script')
-      s.src = `https://cdn.jsdelivr.net/npm/@bravophone/webphone@${version}/dist/bravophone.umd.js`
+      s.src = `https://cdn.jsdelivr.net/npm/@bcvoz/webphone@${version}/dist/bcvoz.umd.js`
       s.async = true
-      s.onload = () => window.Bravophone
-        ? ok(window.Bravophone)
+      s.onload = () => window.BCVoz
+        ? ok(window.BCVoz)
         : erro(new Error('carregou mas a API não apareceu'))
       s.onerror = () => erro(new Error('falha ao carregar (rede, bloqueador ou CSP)'))
       document.head.appendChild(s)
@@ -255,11 +255,11 @@ tratamento o botão de ligar simplesmente não faz nada.
 - Se houver CSP, liberar `cdn.jsdelivr.net` em `script-src`, `style-src` e
   `font-src`. A maioria dos sites não tem CSP restritivo.
 - O usuário concede o microfone **uma vez, para a origem do integrador** — não
-  para o Bravophone. É consequência do modo `srcdoc`.
+  para o BCVoz. É consequência do modo `srcdoc`.
 
 ## Ao diagnosticar um problema
 
-1. `window.Bravophone` existe? Se não, o script não carregou — veja rede, CSP,
+1. `window.BCVoz` existe? Se não, o script não carregou — veja rede, CSP,
    bloqueador.
 2. O evento `ready` disparou? Se não, a ponte não conectou.
 3. `state` veio `'error'`? Então é registro SIP: token inválido, ou a origem
