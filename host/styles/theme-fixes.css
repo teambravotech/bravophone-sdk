@@ -90,3 +90,10 @@ body > [class*="modal"] .text-gray-900,
 body > [class*="modal"] .text-black { color: var(--bp-text) !important; }
 body > .fixed .text-gray-600,
 body > .fixed .text-gray-500 { color: var(--bp-text-dim) !important; }
+
+/* Logo BCVOZ menor no widget do SDK. O bundle da extensão traz o logo com
+   altura inline (28px no login, 20px no topo), pensada para o popup; na
+   janela do SDK isso fica grande demais. !important porque o estilo é
+   inline. A largura acompanha (width:auto no bundle). */
+#app .bcvoz-logo { height: 22px !important; }
+#app header .bcvoz-logo { height: 16px !important; }

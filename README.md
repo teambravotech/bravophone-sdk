@@ -374,6 +374,19 @@ Disponível em `cdn.jsdelivr.net/npm/@bcvoz/webphone` e `unpkg.com` logo após.
 Recomende aos integradores a versão travada — `@bcvoz/webphone@0.7` — para que
 um major não quebre a página deles.
 
+> **Pendente — descontinuar o pacote antigo.** O `@bravophone/webphone` ainda
+> não foi marcado como descontinuado. Rode isto **só depois** que
+> `npm view @bcvoz/webphone version` responder, para o aviso não apontar para
+> um pacote que ainda não existe:
+>
+> ```bash
+> npm deprecate @bravophone/webphone "Renomeado para @bcvoz/webphone. Troque o import e use window.BCVoz (window.Bravophone continua como alias)."
+> ```
+>
+> Não use `npm unpublish`: quem já instalou o pacote antigo continua
+> funcionando e só passa a ver o aviso no `npm install`. Feito isso, apague
+> esta nota.
+
 ---
 
 ## Manter o cliente sempre atualizado
