@@ -283,6 +283,8 @@
     auth: function (p) {
       var s = (p && p.session) || (p && p.token ? { vxToken: p.token } : null)
       if (!s || !s.vxToken) throw new Error('sessão ausente (precisa ao menos de vxToken)')
+      // Quem injeta a sessão é dono da identidade: sem troca de conta.
+      window.__bpContasDesligadas = true
 
       var dados = {
         bravophoneVxToken: s.vxToken,

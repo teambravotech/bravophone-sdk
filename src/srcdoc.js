@@ -85,6 +85,9 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
   // do bundle. Um token sozinho NÃO basta — sem sip e ramal o webphone não
   // tem o que registrar, e o RouteSelector avisa "faça login pelo webphone".
   if (cfg.session) {
+    // Sessão do integrador: a identidade é dele, não da pessoa. Trocar de
+    // conta aqui brigaria com a sessão que ele injeta a cada carga.
+    window.__bpContasDesligadas = true;
     var s = cfg.session;
     var mapa = {
       bravophoneVxToken: s.vxToken || null,
@@ -120,6 +123,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
 <script defer src="${b}js/bravophone-ping.js"><\/script>
 <script defer src="${b}js/bravophone-qualidade-envio.js"><\/script>
 <script defer src="${b}js/bravophone-janela.js"><\/script>
+<script defer src="${b}js/bravophone-contas.js"><\/script>
 <script defer src="${b}popup.js"><\/script>
 <script defer src="${b}js/bravophone-sem-ramal.js"><\/script>
 <script defer src="${b}js/bravophone-reconectar.js"><\/script>

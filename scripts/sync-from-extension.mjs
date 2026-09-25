@@ -61,6 +61,9 @@ const ASSETS = [
   { from: 'js/bravophone-ping.js', to: 'js/bravophone-ping.js', required: false },
   { from: 'js/bravophone-qualidade-envio.js', to: 'js/bravophone-qualidade-envio.js', required: false },
   { from: 'js/bravophone-janela.js', to: 'js/bravophone-janela.js', required: false },
+  // Várias contas no mesmo aparelho. Precisa vir antes do popup.js só para
+  // estar de pé quando o app montar; ele mesmo espera o store existir.
+  { from: 'js/bravophone-contas.js', to: 'js/bravophone-contas.js', required: false },
   // Tema claro/escuro: precisa rodar antes do primeiro quadro.
   { from: 'js/bravophone-tema.js', to: 'js/bravophone-tema.js', required: false },
   { from: 'js/noise', to: 'js/noise', required: false },
@@ -375,6 +378,7 @@ function buildHtml() {
 <script defer src="./js/bravophone-ping.js"></script>
 <script defer src="./js/bravophone-qualidade-envio.js"></script>
 <script defer src="./js/bravophone-janela.js"></script>
+<script defer src="./js/bravophone-contas.js"></script>
 <script defer src="./popup.js"></script>
 <script defer src="./js/bravophone-sem-ramal.js"></script>
 <script defer src="./js/bravophone-reconectar.js"></script>
