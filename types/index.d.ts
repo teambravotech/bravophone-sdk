@@ -282,8 +282,32 @@ export type BravophoneInstance = BCVozInstance
 /** @deprecated Use `BCVozAPI`. */
 export type BravophoneAPI = BCVozAPI
 
+/**
+ * A porta do host quando ele roda STANDALONE — o app móvel, que empacota
+ * `host/` e é o próprio webphone (sem iframe pai). Só existe nesse modo.
+ */
+export interface BCVozHostAPI {
+  versao: 1
+  /**
+   * Aplica uma sessão (a resposta de `/api/pabx/login` ou de
+   * `/api/pabx/dispositivos/entrar`) como o login bem-sucedido faz: grava a
+   * metade de storage e entrega `extension` ao store. Resolve quando a sessão
+   * foi aplicada — o registro SIP segue pelo bundle.
+   *
+   * `donoDaIdentidade: true` desliga a troca de contas (padrão `false`).
+   */
+  entrarComSessao(
+    session: BCVozSession & { extensionStatus?: unknown },
+    opcoes?: { donoDaIdentidade?: boolean },
+  ): Promise<{ ok: true; extension: boolean; extensionStatus: unknown }>
+  /** Remove a metade de storage da sessão (o mesmo que o comando `logout`). */
+  sair(): Promise<{ ok: true }>
+}
+
 declare global {
   interface Window {
+    /** Só no host standalone (app móvel). Ver `BCVozHostAPI`. */
+    BCVozHost?: BCVozHostAPI
     BCVoz: BCVozAPI
     /** @deprecated Nome anterior da marca. Use `window.BCVoz`. */
     Bravophone: BCVozAPI

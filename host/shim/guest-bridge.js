@@ -29,7 +29,44 @@
   } catch (_) {}
 
   if (!parentOrigin || window.parent === window) {
-    console.warn('[bp-bridge] sem origem pai; rodando standalone.')
+    // STANDALONE: o host rodando como o próprio app (o aplicativo móvel
+    // empacota host/ e É o webphone — não há iframe pai nem postMessage).
+    // Nada do canal com o site liga aqui, e de propósito: o resto deste
+    // arquivo (aviso de ramal, vigia do store, teclado, arraste) é interface
+    // de quem EMBUTE o webphone, e ligar isso no app mudaria a tela dele.
+    //
+    // Só uma porta é exposta — a mesma que o `auth` usa, para entrar com uma
+    // sessão já obtida (ex.: a do login por dispositivo/biometria). As funções
+    // que ela chama são declarações, e por isso já existem aqui em cima.
+    window.BCVozHost = {
+      versao: 1,
+      /**
+       * Aplica uma sessão como o login bem-sucedido faz: grava a metade de
+       * storage e entrega o `extension` ao store (addExtension).
+       *
+       * `donoDaIdentidade: true` desliga a troca de contas, como o `auth` faz
+       * para o integrador que impõe a identidade dele. No app a sessão é da
+       * própria pessoa (token de dispositivo dela), então o padrão é `false`.
+       *
+       * Resolve { ok, extension, extensionStatus } quando a sessão foi
+       * APLICADA — o registro SIP segue depois, pelo próprio bundle. O
+       * `extensionStatus` volta para o app decidir o que mostrar: o banner de
+       * ramal deste arquivo é do modo embutido e não é desenhado aqui.
+       */
+      entrarComSessao: function (session, opcoes) {
+        try {
+          var s = session || {}
+          if (!s.vxToken) throw new Error('sessão ausente (precisa ao menos de vxToken)')
+          if (opcoes && opcoes.donoDaIdentidade === true) window.__bpContasDesligadas = true
+          return gravarSessao(s).then(function () { return aplicarRamal(s) })
+        } catch (err) {
+          return Promise.reject(err)
+        }
+      },
+      /** O mesmo que o comando `logout`: tira a metade de storage da sessão. */
+      sair: function () { return removerSessao() },
+    }
+    console.info('[bp-bridge] standalone: window.BCVozHost disponível.')
     return
   }
 
@@ -276,6 +313,57 @@
     }
   }
 
+  // --- a sessão, compartilhada pelo `auth` (embutido) e pelo BCVozHost (app) ---
+  //
+  // As chaves saem do bpSaveSession do bundle — é ele quem define os nomes.
+  // Gravar 'vxToken' não serve para nada: ninguém lê essa chave.
+  //
+  // FUNÇÃO, e não `var`: o BCVozHost (standalone) roda ANTES desta linha — o
+  // `return` do topo sai antes de qualquer atribuição. Declarações de função
+  // sobem com o corpo; um `var` sobe vazio, e `sair()` receberia undefined.
+  function chavesSessao() {
+    return ['bravophoneVxToken', 'bravophoneVxTokenExpiresAt', 'bravophoneSip',
+            'bravophoneTenant', 'bravophoneRamal', 'bravophoneClienteId',
+            'bravophoneRamaisUrl']
+  }
+
+  function gravarSessao(s) {
+    var dados = {
+      bravophoneVxToken: s.vxToken,
+      bravophoneVxTokenExpiresAt: s.expiresIn
+        ? Date.now() + 1000 * Number(s.expiresIn) : null,
+      bravophoneSip: s.sip || null,
+      bravophoneTenant: s.tenant || null,
+      bravophoneRamal: s.ramal || null,
+      bravophoneClienteId: s.clienteId || null,
+      bravophoneRamaisUrl: s.ramaisUrl || null,
+    }
+    Object.keys(dados).forEach(function (k) { if (dados[k] === null) delete dados[k] })
+    return new Promise(function (resolve) { chrome.storage.local.set(dados, function () { resolve() }) })
+  }
+
+  // O ramal NÃO vai para o storage: o bundle o mantém apenas no store Vuex
+  // (mutation addExtension), em memória. E o checkToken exige as DUAS metades —
+  // `vxToken` da sessão E `extension` com username e password. Só a sessão
+  // deixa o app na tela de login. Chamar DEPOIS de gravarSessao: a mutation
+  // relê o storage para decidir se está logado.
+  function aplicarRamal(s) {
+    var status = s.extensionStatus || null
+    if (!s.extension) return Promise.resolve({ ok: true, extension: false, extensionStatus: status })
+    return waitFor(findStore, 20000).then(function (store) {
+      store.commit('addExtension', s.extension)
+      return { ok: true, extension: true, extensionStatus: status }
+    }).catch(function (err) {
+      throw new Error('sessão gravada, mas o ramal não pôde ser aplicado: ' + err.message)
+    })
+  }
+
+  function removerSessao() {
+    return new Promise(function (resolve) {
+      chrome.storage.local.remove(chavesSessao(), function () { resolve({ ok: true }) })
+    })
+  }
+
   // --- comandos aceitos do site hospedeiro ---
   var commands = {
     // As chaves saem do bpSaveSession do bundle — é ele quem define os nomes.
@@ -286,59 +374,29 @@
       // Quem injeta a sessão é dono da identidade: sem troca de conta.
       window.__bpContasDesligadas = true
 
-      var dados = {
-        bravophoneVxToken: s.vxToken,
-        bravophoneVxTokenExpiresAt: s.expiresIn
-          ? Date.now() + 1000 * Number(s.expiresIn) : null,
-        bravophoneSip: s.sip || null,
-        bravophoneTenant: s.tenant || null,
-        bravophoneRamal: s.ramal || null,
-        bravophoneClienteId: s.clienteId || null,
-        bravophoneRamaisUrl: s.ramaisUrl || null,
-      }
-      Object.keys(dados).forEach(function (k) { if (dados[k] === null) delete dados[k] })
-
-      return new Promise(function (resolve, reject) {
-        chrome.storage.local.set(dados, function () {
-          // O ramal NÃO vai para o storage: o bundle o mantém apenas no store
-          // Vuex (mutation addExtension), em memória. E o checkToken exige as
-          // DUAS metades — `vxToken` da sessão E `extension` com username e
-          // password. Só a sessão deixa o app na tela de login.
-          // A AUSÊNCIA de `extension` NÃO é prova de que não há ramal.
-          //
-          // Deduzir daí era o que acusava "nenhum ramal atribuído" para quem
-          // tem ramal: o integrador pode não ter as credenciais SIP em mãos, e
-          // no modo srcdoc elas são removidas do payload de propósito (o HTML
-          // vira atributo no DOM da página dele). Só a API sabe, e o SDK já
-          // pergunta — a resposta chega na primeira consulta.
-          //
-          // A evidência é assimétrica: `extensionStatus` é resposta direta, e
-          // `extension` presente é prova POSITIVA de que há ramal. Nenhum dos
-          // dois presente não prova nada, então não avisamos nada.
-          if (s.extensionStatus) aplicarStatusRamal(s.extensionStatus)
-          else if (s.extension) esconderAvisoSemRamal()
-
-          if (!s.extension) return resolve({ ok: true, extension: false })
-
-          waitFor(findStore, 20000).then(function (store) {
-            // Depois da sessão gravada, de propósito: a mutation relê o
-            // storage para decidir se está logado.
-            store.commit('addExtension', s.extension)
-            resolve({ ok: true, extension: true })
-          }).catch(function (err) {
-            reject(new Error('sessão gravada, mas o ramal não pôde ser aplicado: ' + err.message))
-          })
-        })
+      return gravarSessao(s).then(function () {
+        // A AUSÊNCIA de `extension` NÃO é prova de que não há ramal.
+        //
+        // Deduzir daí era o que acusava "nenhum ramal atribuído" para quem
+        // tem ramal: o integrador pode não ter as credenciais SIP em mãos, e
+        // no modo srcdoc elas são removidas do payload de propósito (o HTML
+        // vira atributo no DOM da página dele). Só a API sabe, e o SDK já
+        // pergunta — a resposta chega na primeira consulta.
+        //
+        // A evidência é assimétrica: `extensionStatus` é resposta direta, e
+        // `extension` presente é prova POSITIVA de que há ramal. Nenhum dos
+        // dois presente não prova nada, então não avisamos nada.
+        if (s.extensionStatus) aplicarStatusRamal(s.extensionStatus)
+        else if (s.extension) esconderAvisoSemRamal()
+        return aplicarRamal(s)
+      }).then(function (r) {
+        // O comando embutido sempre respondeu só { ok, extension }.
+        return { ok: r.ok, extension: r.extension }
       })
     },
 
     logout: function () {
-      var CHAVES = ['bravophoneVxToken', 'bravophoneVxTokenExpiresAt', 'bravophoneSip',
-                    'bravophoneTenant', 'bravophoneRamal', 'bravophoneClienteId',
-                    'bravophoneRamaisUrl']
-      return new Promise(function (resolve) {
-        chrome.storage.local.remove(CHAVES, function () { resolve({ ok: true }) })
-      })
+      return removerSessao()
     },
 
     call: function (p) {

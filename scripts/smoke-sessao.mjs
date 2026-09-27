@@ -56,8 +56,18 @@ console.log('\nsessão — o guest-bridge usa as mesmas chaves:')
 {
   const bridge = await readFile(join(ROOT, 'host/shim/guest-bridge.js'), 'utf8')
   for (const k of CHAVES) check(`auth grava ${k}`, bridge.includes(k))
+  // As chaves que o logout (e o BCVozHost.sair do host standalone) removem
+  // moram em chavesSessao() — FUNÇÃO porque a porta standalone roda antes de
+  // qualquer atribuição de `var` no arquivo. Todas as sete, e o remove usa ela.
+  const corpo = (bridge.match(/function chavesSessao\(\)\s*\{([\s\S]*?)\n  \}/) || [])[1] || ''
   check('logout remove as mesmas chaves',
-    /CHAVES\s*=\s*\[[^\]]*bravophoneVxToken/.test(bridge))
+    CHAVES.every((k) => corpo.includes(`'${k}'`)) &&
+    /storage\.local\.remove\(chavesSessao\(\)/.test(bridge),
+    corpo ? 'faltou chave ou o remove não usa chavesSessao()' : 'chavesSessao() não encontrada')
+  check('o host standalone expõe BCVozHost antes de sair',
+    /window\.BCVozHost\s*=\s*\{[\s\S]*?entrarComSessao[\s\S]*?\n    return\n  \}/.test(bridge))
+  check('e o BCVozHost NÃO desliga a troca de contas por padrão',
+    /donoDaIdentidade === true\) window\.__bpContasDesligadas = true/.test(bridge))
   check('não grava a chave antiga',
     !/storage\.local\.set\(\{\s*vxToken/.test(bridge))
 }

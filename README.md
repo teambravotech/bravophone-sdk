@@ -482,6 +482,37 @@ sessão já sobe autenticada, sem piscar a tela de login.
 basta**: o webphone carrega, não registra, e o RouteSelector avisa "faça login
 pelo webphone" — justamente o que a auto-autenticação existe para evitar.
 
+### Sem iframe: `window.BCVozHost` (o app móvel)
+
+Quem empacota `host/` e **é** o webphone — o app móvel (Capacitor) — não tem
+iframe pai, e por isso não tem `BCVoz.init` nem a ponte `postMessage`. Para esse
+caso o `shim/guest-bridge.js` expõe uma porta só:
+
+```js
+await window.BCVozHost.entrarComSessao(session, { donoDaIdentidade: false })
+await window.BCVozHost.sair()
+```
+
+`session` é a resposta de `/api/pabx/login` ou de
+`/api/pabx/dispositivos/entrar` (login por biometria), **com** `extension`. Faz o
+mesmo que o `auth` da ponte: grava as sete chaves no storage e, depois, aplica o
+`extension` no store (`addExtension`). Resolve com
+`{ ok, extension, extensionStatus }` quando a sessão foi aplicada; o registro
+SIP segue pelo bundle.
+
+Duas diferenças deliberadas em relação ao `auth` do modo embutido:
+
+- **`donoDaIdentidade` é `false` por padrão.** No embutido quem injeta a sessão
+  é o integrador, que impõe a identidade dele — lá a troca de contas é
+  desligada (`__bpContasDesligadas`). No app a sessão é da própria pessoa
+  (token de dispositivo dela), e o multi-login do app continua valendo. Passe
+  `true` para o comportamento do embutido.
+- **O banner de ramal não é desenhado.** Ele é interface de quem embute; o app
+  recebe o `extensionStatus` e decide o que mostrar.
+
+Nada mais da ponte liga nesse modo — ouvinte de mensagens, eventos, teclado e
+arraste continuam desligados, como sempre estiveram no host standalone.
+
 ## Documentação
 
 | Documento | Para quem |
