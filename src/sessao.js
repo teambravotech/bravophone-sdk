@@ -61,7 +61,15 @@ export function esperaEntreTentativas(retry) {
  * @param {object} [o.relogio]  injetável nos testes
  */
 export function manterSessao({ renovar, aplicar, emitir, relogio, margem, retry }) {
-  const r = relogio || { setTimeout, clearTimeout, now: () => Date.now() }
+  // Envelopadas, nunca desgrudadas: `{ setTimeout }` guarda a função sem o
+  // window, e o Chrome checa o receptor — chamar `r.setTimeout()` com um
+  // objeto qualquer no `this` dá "Illegal invocation". Era o que derrubava o
+  // init inteiro na 0.8.2.
+  const r = relogio || {
+    setTimeout: (fn, ms) => setTimeout(fn, ms),
+    clearTimeout: (id) => clearTimeout(id),
+    now: () => Date.now(),
+  }
   const espera = esperaEntreTentativas(retry)
   let timer = null
   let venceEm = null

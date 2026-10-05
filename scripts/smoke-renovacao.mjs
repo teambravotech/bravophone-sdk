@@ -217,6 +217,38 @@ console.log('\nopções — refreshMargin e refreshRetry:')
   check('e o intervalo de nova tentativa pedido', chamadas === 2 && t.nomes().includes('session:renewed'))
 }
 
+console.log('\nrelógio real — o Chrome checa o receptor:')
+{
+  // Todo teste acima injeta `relogio`, então o relógio de verdade — o que roda
+  // no browser — era ponto cego. `{ setTimeout }` guarda a função sem o window,
+  // e o Chrome recusa o receptor errado com "Illegal invocation": na 0.8.2 isso
+  // derrubava o init inteiro, porque o createWidget chama programar() na hora.
+  // O Node não checa receptor nenhum; aqui ele checa.
+  const setReal = globalThis.setTimeout
+  const clearReal = globalThis.clearTimeout
+  const agendados = []
+  const exigirGlobal = (receptor) => {
+    if (receptor !== undefined && receptor !== globalThis) throw new TypeError('Illegal invocation')
+  }
+  globalThis.setTimeout = function (fn, ms) { exigirGlobal(this); agendados.push(ms); return 1 }
+  globalThis.clearTimeout = function () { exigirGlobal(this) }
+
+  let erro = null
+  try {
+    const s = manterSessao({ aplicar: () => Promise.resolve(), emitir: () => {} })
+    s.programar(HORA)   // o mesmo que o createWidget faz dentro do init
+    s.parar()
+  } catch (e) {
+    erro = e
+  } finally {
+    globalThis.setTimeout = setReal
+    globalThis.clearTimeout = clearReal
+  }
+
+  check('programar() sobrevive sem relógio injetado', erro === null, erro && erro.message)
+  check('e agenda o prazo do token', agendados.length === 1 && agendados[0] === 55 * 60 * 1000, agendados)
+}
+
 console.log('\nfiação — o widget usa tudo isso:')
 {
   const widget = await readFile(join(ROOT, 'src/widget.js'), 'utf8')
