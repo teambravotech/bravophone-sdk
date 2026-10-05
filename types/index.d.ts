@@ -85,6 +85,14 @@ export interface BCVozOptions {
    */
   refreshSession?: () => Promise<Partial<BCVozSession> & { vxToken: string }>
   /**
+   * Quantos segundos antes do vencimento renovar. Padrão: 20% do prazo do
+   * token, no máximo 300 (um token de 1 h renova aos 55 min). Vale no
+   * máximo metade do prazo — mais que isso, o SDK renovaria sem parar.
+   */
+  refreshMargin?: number
+  /** Segundos entre tentativas quando a renovação falha. Padrão: 30. Mínimo: 5. */
+  refreshRetry?: number
+  /**
    * Sessão do `/api/voxfree/login`, repassada inteira. É o caminho correto:
    * o webphone precisa de `sip` e `ramal` para registrar.
    */

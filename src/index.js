@@ -47,6 +47,10 @@ const BCVoz = {
    * @param {() => Promise<object>} [opts.refreshSession]  Busca uma sessão
    *   nova no seu backend. Chamada antes do token vencer e quando a API
    *   devolve 401; sem ela o login cai quando o expiresIn acaba.
+   * @param {number} [opts.refreshMargin]  Segundos antes do vencimento para
+   *   renovar. Padrão: 20% do prazo, no máximo 5 min. Limitada a metade do prazo.
+   * @param {number} [opts.refreshRetry]  Segundos entre tentativas que
+   *   falharam. Padrão: 30. Mínimo: 5.
    */
   init(opts = {}) {
     if (instance) return instance

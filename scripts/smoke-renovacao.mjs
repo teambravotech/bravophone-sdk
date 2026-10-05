@@ -10,7 +10,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const { manterSessao, prazoDeRenovacao } = await import('../src/sessao.js')
+const { manterSessao, prazoDeRenovacao, esperaEntreTentativas } = await import('../src/sessao.js')
 
 let pass = 0, fail = 0
 const check = (nome, cond, extra) => {
@@ -47,7 +47,7 @@ function relogioFalso() {
   }
 }
 
-function montar({ renovar } = {}) {
+function montar({ renovar, margem, retry } = {}) {
   const relogio = relogioFalso()
   const eventos = []
   const aplicadas = []
@@ -56,6 +56,8 @@ function montar({ renovar } = {}) {
     aplicar: (nova) => { aplicadas.push(nova); return Promise.resolve({ ok: true }) },
     emitir: (nome, payload) => eventos.push({ nome, payload }),
     relogio,
+    margem,
+    retry,
   })
   const nomes = () => eventos.map((e) => e.nome)
   return { s, relogio, eventos, nomes, aplicadas }
@@ -186,6 +188,35 @@ console.log('\nsetAuth — recomeça a contagem:')
   check('um timer só', t.relogio.pendentes() === 1)
 }
 
+console.log('\nopções — refreshMargin e refreshRetry:')
+{
+  check('refreshMargin 600 renova 10 min antes', prazoDeRenovacao(3600, 600) === 50 * 60 * 1000,
+    prazoDeRenovacao(3600, 600))
+  check('folga maior que o token fica em metade do prazo',
+    prazoDeRenovacao(3600, 99999) === 30 * 60 * 1000, prazoDeRenovacao(3600, 99999))
+  check('refreshMargin inválida volta ao padrão',
+    prazoDeRenovacao(3600, -5) === 55 * 60 * 1000 && prazoDeRenovacao(3600, 'x') === 55 * 60 * 1000)
+  check('refreshRetry 10 espera 10 s', esperaEntreTentativas(10) === 10 * 1000)
+  check('refreshRetry tem piso de 5 s', esperaEntreTentativas(1) === 5 * 1000)
+  check('sem refreshRetry, 30 s', esperaEntreTentativas(undefined) === 30 * 1000)
+
+  let chamadas = 0
+  const t = montar({
+    margem: 600,
+    retry: 10,
+    renovar: async () => {
+      chamadas++
+      if (chamadas === 1) throw new Error('rede caiu')
+      return { vxToken: 'novo', expiresIn: 3600 }
+    },
+  })
+  t.s.programar(HORA)
+  await t.relogio.avancar(50 * 60 * 1000)
+  check('o widget aplica a folga pedida', chamadas === 1)
+  await t.relogio.avancar(10 * 1000)
+  check('e o intervalo de nova tentativa pedido', chamadas === 2 && t.nomes().includes('session:renewed'))
+}
+
 console.log('\nfiação — o widget usa tudo isso:')
 {
   const widget = await readFile(join(ROOT, 'src/widget.js'), 'utf8')
@@ -196,6 +227,8 @@ console.log('\nfiação — o widget usa tudo isso:')
   check('a validade não é herdada na renovação', /expiresIn:\s*nova\.expiresIn/.test(widget))
   check('setAuth passa pelo widget', /requireInstance\(\)\.setAuth\(/.test(index))
   check('destroy para a renovação', /sessaoViva\.parar\(\)/.test(widget))
+  check('repassa refreshMargin e refreshRetry',
+    /margem:\s*refreshMargin/.test(widget) && /retry:\s*refreshRetry/.test(widget))
 }
 
 console.log(`\n${pass} passaram, ${fail} falharam`)

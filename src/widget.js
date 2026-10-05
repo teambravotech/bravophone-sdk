@@ -74,6 +74,10 @@ export function createWidget(options) {
     // () => Promise<sessão>: busca uma sessão nova no backend do integrador.
     // Sem ela o token vence e o login cai (ver sessao.js).
     refreshSession,
+    // Ajustes da renovação, em segundos: quanto antes do vencimento renovar
+    // e o intervalo entre tentativas que falharam. Ver sessao.js.
+    refreshMargin,
+    refreshRetry,
     version,
     emit,
   } = options
@@ -323,6 +327,8 @@ export function createWidget(options) {
 
   const sessaoViva = manterSessao({
     renovar: refreshSession,
+    margem: refreshMargin,
+    retry: refreshRetry,
     aplicar: aplicarRenovada,
     emitir: emitirSessao,
   })

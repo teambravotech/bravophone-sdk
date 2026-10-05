@@ -8,7 +8,7 @@
 //
 // Dois gatilhos:
 //   · o prazo: com folga de 20%, limitada a 5 min (token de 1 h renova aos
-//     55 min);
+//     55 min) — ou a folga que o integrador pedir em refreshMargin;
 //   · o 401 da API: o expiresIn conta a partir do login, não do init, então um
 //     integrador que guardou a sessão por meia hora entrega um prazo otimista.
 //     O 401 é a prova de que venceu, e renova na hora.
@@ -19,13 +19,38 @@
 const FOLGA_MAX = 5 * 60 * 1000
 /** Entre tentativas que falharam, enquanto ainda houver prazo. */
 const ESPERA_RETRY = 30 * 1000
+/** Abaixo disto uma falha persistente vira martelada no backend. */
+const ESPERA_MIN = 5 * 1000
 
-/** Em quantos ms renovar uma sessão com este expiresIn (s); null se não há prazo. */
-export function prazoDeRenovacao(expiresIn) {
+/** Segundos vindos do integrador; null quando não é um número positivo. */
+function segundos(v) {
+  const n = Number(v)
+  return v != null && n > 0 ? n * 1000 : null
+}
+
+/**
+ * Em quantos ms renovar uma sessão com este expiresIn (s); null se não há prazo.
+ *
+ * @param {number} expiresIn  validade do token, em segundos
+ * @param {number} [margem]   refreshMargin: segundos antes do vencimento. Sem
+ *   ela, 20% do prazo, no máximo 5 min.
+ */
+export function prazoDeRenovacao(expiresIn, margem) {
   const total = Number(expiresIn) * 1000
   if (!(total > 0)) return null
-  const folga = Math.min(FOLGA_MAX, total * 0.2)
+  const pedida = segundos(margem)
+  // Folga pedida vale até metade do prazo: maior que isso, cada token novo
+  // já nasceria "para vencer" e o SDK renovaria sem parar.
+  const folga = pedida !== null
+    ? Math.min(pedida, total * 0.5)
+    : Math.min(FOLGA_MAX, total * 0.2)
   return Math.max(1000, Math.round(total - folga))
+}
+
+/** Intervalo entre tentativas (refreshRetry, em s), com piso de 5 s. */
+export function esperaEntreTentativas(retry) {
+  const pedida = segundos(retry)
+  return pedida === null ? ESPERA_RETRY : Math.max(ESPERA_MIN, pedida)
 }
 
 /**
@@ -35,8 +60,9 @@ export function prazoDeRenovacao(expiresIn) {
  * @param {(evento: string, payload: object) => void} o.emitir
  * @param {object} [o.relogio]  injetável nos testes
  */
-export function manterSessao({ renovar, aplicar, emitir, relogio }) {
+export function manterSessao({ renovar, aplicar, emitir, relogio, margem, retry }) {
   const r = relogio || { setTimeout, clearTimeout, now: () => Date.now() }
+  const espera = esperaEntreTentativas(retry)
   let timer = null
   let venceEm = null
   let expirada = false
@@ -54,7 +80,7 @@ export function manterSessao({ renovar, aplicar, emitir, relogio }) {
     venceEm = null
     expirada = false
     if (parado || !sessao) return
-    const ms = prazoDeRenovacao(sessao.expiresIn)
+    const ms = prazoDeRenovacao(sessao.expiresIn, margem)
     // Sem validade conhecida não há prazo a vigiar: só o 401 dispara.
     if (ms === null) return
     venceEm = r.now() + Number(sessao.expiresIn) * 1000
@@ -103,9 +129,9 @@ export function manterSessao({ renovar, aplicar, emitir, relogio }) {
         const motivo = (err && err.message) || String(err)
         // Ainda há prazo: tenta de novo. Uma falha de rede passageira não
         // pode virar logout.
-        if (gatilho === 'prazo' && venceEm !== null && venceEm - r.now() > ESPERA_RETRY) {
+        if (gatilho === 'prazo' && venceEm !== null && venceEm - r.now() > espera) {
           emitir('error', { message: 'falha ao renovar a sessão: ' + motivo })
-          timer = r.setTimeout(() => renovarAgora('prazo'), ESPERA_RETRY)
+          timer = r.setTimeout(() => renovarAgora('prazo'), espera)
         } else {
           avisarExpirada(motivo)
         }

@@ -484,7 +484,10 @@ Bravophone.init({
 O SDK a chama antes de vencer (com 20% de folga, no máximo 5 min antes; um
 token de 1 h renova aos 55 min) e também quando a API responde 401. Ela pode
 devolver só `{ vxToken, expiresIn }`, e o resto da sessão continua valendo. Uma
-falha com prazo sobrando é tentada de novo a cada 30 s. Eventos:
+falha com prazo sobrando é tentada de novo a cada 30 s. Os dois tempos são
+ajustáveis, em segundos: `refreshMargin` (quanto antes de vencer; no máximo
+metade do prazo do token) e `refreshRetry` (entre tentativas; mínimo 5).
+Para desligar a renovação, não passe `refreshSession`. Eventos:
 `session:renewed`, `session:expired` (não deu para renovar) e, sem
 `refreshSession`, `session:expiring` (chame `setAuth()` por conta própria).
 
