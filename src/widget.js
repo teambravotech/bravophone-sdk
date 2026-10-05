@@ -21,6 +21,28 @@ const DEFAULTS = {
   margin: 24,
 }
 
+/**
+ * Largura com o painel de Recentes aberto.
+ *
+ * O bundle desenha uma linha: a coluna do discador com 380px fixos
+ * (.webphone-shell-main) e, ao lado, o painel de Recentes ocupando o que
+ * sobrar. Em 380 o painel some; abrir os Recentes é dar a ele 280px.
+ */
+const LARGURA_RECENTES = 660
+const RECENTES_KEY = 'bravophone:widget:recentes'
+
+function lerRecentes() {
+  try { return localStorage.getItem(RECENTES_KEY) === '1' } catch { return false }
+}
+function gravarRecentes(aberto) {
+  try { localStorage.setItem(RECENTES_KEY, aberto ? '1' : '0') } catch { /* sem persistência */ }
+}
+
+const ICONE_RECENTES = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" ' +
+  'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ' +
+  'aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14 4v16"/>' +
+  '<path d="M17 9h1M17 12h1M17 15h1"/></svg>'
+
 function h(tag, attrs = {}, children = []) {
   const el = document.createElement(tag)
   for (const [k, v] of Object.entries(attrs)) {
@@ -78,6 +100,12 @@ export function createWidget(options) {
     // e o intervalo entre tentativas que falharam. Ver sessao.js.
     refreshMargin,
     refreshRetry,
+    // false (padrão): o tamanho fica travado em 380x640 — sem alças nas
+    // bordas e sem encaixe ao arrastar. A janela continua arrastável. A largura
+    // só muda pelo botão de Recentes. true devolve o redimensionamento livre.
+    resizable = false,
+    // Botão na barra que abre e fecha o painel de Recentes.
+    recents = true,
     version,
     emit,
   } = options
@@ -121,14 +149,29 @@ export function createWidget(options) {
     return clamp({ ...(map[position] ?? map['bottom-right']), width, height })
   })()
 
-  const geo = clamp(loadGeometry(geometryDefaults))
+  let recentesAbertos = recents && lerRecentes()
+  const larguraTravada = () => (recentesAbertos ? LARGURA_RECENTES : DEFAULTS.width)
+
+  const salva = loadGeometry(geometryDefaults)
+  const geo = clamp(resizable ? salva : {
+    ...salva,
+    // A posição de uma janela docada é a do encaixe (0,0 em 'max'), não a
+    // que a pessoa escolheu: volta para o canto padrão.
+    ...(salva.dock ? { x: geometryDefaults.x, y: geometryDefaults.y } : {}),
+    dock: null,
+    width: Math.min(larguraTravada(), window.innerWidth),
+    height: Math.min(DEFAULTS.height, window.innerHeight),
+  })
 
   const status = h('span', { class: 'bp-status', 'data-state': 'connecting' })
   const btnMin = h('button', { class: 'bp-btn bp-btn-min', title: 'Minimizar', text: '—' })
   const btnClose = h('button', { class: 'bp-btn bp-btn-close', title: 'Fechar', text: '×' })
+  const btnRecentes = h('button', { class: 'bp-btn bp-btn-recentes', type: 'button' })
+  btnRecentes.innerHTML = ICONE_RECENTES
   const header = h('div', { class: 'bp-header' }, [
     status,
     h('span', { class: 'bp-title', text: title }),
+    ...(recents ? [btnRecentes] : []),
     btnMin,
     btnClose,
   ])
@@ -153,8 +196,9 @@ export function createWidget(options) {
       buildSrc(new URL(hostUrl), { token, embed: '1', parent: location.origin }))
   }
 
-  // 8 alças: as laterais são o que resolve o histórico espremido.
-  const DIRS = ['n', 's', 'w', 'e', 'nw', 'ne', 'sw', 'se']
+  // 8 alças: as laterais são o que resolve o histórico espremido. Com o
+  // tamanho travado não há alça nenhuma.
+  const DIRS = resizable ? ['n', 's', 'w', 'e', 'nw', 'ne', 'sw', 'se'] : []
   const handles = DIRS.map((d) => ({
     el: h('div', { class: `bp-h bp-h-${d}` }),
     dir: d,
@@ -170,7 +214,9 @@ export function createWidget(options) {
   // deixando a janela sem como voltar. Recolher para o launcher já é o
   // equivalente a minimizar, e mantém um affordance visível.
   const ovClose = h('button', { class: 'bp-btn bp-btn-close', title: 'Fechar', text: '×' })
-  const overlay = h('div', { class: 'bp-overlay' }, [ovClose])
+  const ovRecentes = h('button', { class: 'bp-btn bp-btn-recentes', type: 'button' })
+  ovRecentes.innerHTML = ICONE_RECENTES
+  const overlay = h('div', { class: 'bp-overlay' }, [...(recents ? [ovRecentes] : []), ovClose])
 
   const body = h('div', { class: 'bp-body' }, [frameEl, overlay])
   const root = h('div', { class: 'bp-root' }, [header, body, ...handles.map((x) => x.el)])
@@ -223,6 +269,7 @@ export function createWidget(options) {
     geometry: geo,
     limits: DEFAULTS,
     topDock: dockTop,
+    canDock: resizable,
     onChange: (g) => emit('resize', { width: g.width, height: g.height, dock: g.dock || null }),
   })
 
@@ -392,6 +439,23 @@ export function createWidget(options) {
     setLauncherSide(side) { launcherCtl.setSide(side) },
     setLauncherIcon(name) { icon.innerHTML = ICONS[name] || ICONS[DEFAULT_ICON] },
     get geometry() { return drag.geometry },
+
+    /**
+     * Abre ou fecha o painel de Recentes ao lado do discador. Sem argumento,
+     * alterna. A borda direita fica no lugar: a janela cresce para a
+     * esquerda, que é para onde há espaço quando ela está no canto direito.
+     */
+    toggleRecents(force) {
+      const aberto = typeof force === 'boolean' ? force : !recentesAbertos
+      const g = drag.geometry
+      const largura = Math.min(aberto ? LARGURA_RECENTES : DEFAULTS.width, window.innerWidth)
+      recentesAbertos = aberto
+      gravarRecentes(aberto)
+      marcarRecentes()
+      if (g.width !== largura) drag.set({ x: g.x + g.width - largura, width: largura })
+      emit('recents', { open: aberto })
+    },
+    get recentsOpen() { return recentesAbertos },
     /**
      * Troca a sessão inteira (outro usuário, ou o integrador renovando por
      * conta própria). Substitui, não mescla: nada da sessão anterior vale.
@@ -412,6 +476,18 @@ export function createWidget(options) {
       mount.remove()
     },
   }
+
+  function marcarRecentes() {
+    for (const b of [btnRecentes, ovRecentes]) {
+      b.setAttribute('aria-pressed', String(recentesAbertos))
+      const rotulo = recentesAbertos ? 'Ocultar recentes' : 'Mostrar recentes'
+      b.title = rotulo
+      b.setAttribute('aria-label', rotulo)
+    }
+  }
+  marcarRecentes()
+  btnRecentes.addEventListener('click', () => api.toggleRecents())
+  ovRecentes.addEventListener('click', () => api.toggleRecents())
 
   btnClose.addEventListener('click', () => api.hide())
   btnMin.addEventListener('click', () => api.minimize())

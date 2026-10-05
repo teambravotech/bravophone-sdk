@@ -93,6 +93,9 @@ const BCVoz = {
   setLauncherSide(side) { requireInstance().setLauncherSide(side) },
   /** 'phone-waves' | 'waveform' | 'headset' | 'chat-phone' */
   setLauncherIcon(name) { requireInstance().setLauncherIcon(name) },
+  /** Abre (true), fecha (false) ou alterna o painel de Recentes. */
+  toggleRecents(open) { requireInstance().toggleRecents(open) },
+  get recentsOpen() { return instance ? instance.recentsOpen : false },
   get isOpen() { return instance ? instance.isOpen : false },
   get geometry() { return instance ? instance.geometry : null },
 

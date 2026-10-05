@@ -560,6 +560,8 @@ arraste continuam desligados, como sempre estiveram no host standalone.
 | `launcherSide` | `'right' \| 'left'` | `'right'` | Lado em que a aba fica colada |
 | `frame` | `'none' \| 'bar'` | `'none'` | Moldura da janela — ver abaixo |
 | `dockTop` | `'max' \| 'top-half'` | `'max'` | O que arrastar até a borda superior faz |
+| `resizable` | `boolean` | `false` | Travado em 380×640 por padrão; `true` libera alças e encaixe |
+| `recents` | `boolean` | `true` | Botão que abre o painel de Recentes (largura 660) |
 | `title` | `string` | `'BCVOZ'` | Texto da barra (só com `frame: 'bar'`) |
 | `device` | `{ hostname?, user? }` | — | Identifica a máquina no REGISTER (`X-Bravo-Device-*`) — ver abaixo |
 
@@ -582,7 +584,7 @@ Use `frame: 'bar'` se preferir a barra com título, indicador de estado e contro
 
 ### Métodos
 
-**Janela** — `show()` · `hide()` · `toggle()` · `minimize(force?)` · `move(x, y)` ·
+**Janela** — `show()` · `hide()` · `toggle()` · `toggleRecents(open?)` · `minimize(force?)` · `move(x, y)` ·
 `resize(w, h)` · `dock(zone)` · `destroy()` · `isOpen` · `geometry`
 
 **Aparelho** — `setDevice({ hostname, user })`. O webphone identifica o aparelho no

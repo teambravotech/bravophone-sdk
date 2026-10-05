@@ -103,7 +103,9 @@ function zoneFor(cx, cy, topDock) {
   return null
 }
 
-export function makeDraggable({ root, handle, handles, preview, geometry, limits: base, topDock, onChange }) {
+// `canDock: false` desliga o encaixe ao arrastar até a borda: docar muda o
+// tamanho, e com o tamanho travado a janela só muda de lugar.
+export function makeDraggable({ root, handle, handles, preview, geometry, limits: base, topDock, canDock = true, onChange }) {
   let geo = { ...geometry }
   let mode = null         // 'drag' | 'resize'
   let dir = ''            // combinação de n/s/e/w no resize
@@ -184,7 +186,7 @@ export function makeDraggable({ root, handle, handles, preview, geometry, limits
     }
     geo = clamp({ ...geo, x: start.x + dx, y: start.y + dy })
     apply()
-    zone = zoneFor(cursorX, cursorY, topDock)
+    zone = canDock ? zoneFor(cursorX, cursorY, topDock) : null
     showPreview(zone ? dockGeometry(zone, geo) : null)
   }
 

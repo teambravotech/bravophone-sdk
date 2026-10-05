@@ -134,6 +134,9 @@ export const WIDGET_CSS = `
 }
 .bp-btn:hover { background: var(--bpw-realce); color: var(--bpw-texto-forte); }
 .bp-btn-close:hover { background: #dc2626; color: #fff; }
+.bp-btn-recentes svg { display: block; }
+/* Aberto: a cor da marca diz "este painel está à mostra". */
+.bp-btn-recentes[aria-pressed="true"] { color: #8b7cf8; background: var(--bpw-realce); }
 
 .bp-body { flex: 1 1 auto; position: relative; min-height: 0; }
 .bp-frame {

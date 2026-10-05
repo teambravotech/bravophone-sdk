@@ -133,6 +133,17 @@ export interface BCVozOptions {
    * continua disponível por `dock('max')`.
    */
   dockTop?: 'max' | 'top-half'
+  /**
+   * Padrão: `false` — o tamanho fica travado em 380×640, sem alças nas bordas
+   * e sem encaixe ao arrastar (a janela continua arrastável). A largura só
+   * muda pelo botão de Recentes. `true` devolve o redimensionamento livre.
+   */
+  resizable?: boolean
+  /**
+   * Botão na barra que abre o painel de Recentes ao lado do discador
+   * (a janela vai de 380 para 660 de largura). Padrão: `true`.
+   */
+  recents?: boolean
   /** Identificação da máquina para o REGISTER. Ver `BCVozDevice`. */
   device?: BCVozDevice
 }
@@ -210,6 +221,8 @@ export interface BCVozEvents {
   'session:expiring': { expiresAt: number | null }
   /** O token venceu e não foi possível renovar; o login vai cair. */
   'session:expired': { reason: string }
+  /** O painel de Recentes abriu ou fechou. */
+  recents: { open: boolean }
 }
 
 export interface BCVozInstance {
@@ -227,6 +240,9 @@ export interface BCVozInstance {
   dock(zone: DockZone): void
   setLauncherSide(side: 'right' | 'left'): void
   setLauncherIcon(name: LauncherIcon): void
+  /** Abre (true), fecha (false) ou alterna o painel de Recentes. */
+  toggleRecents(open?: boolean): void
+  readonly recentsOpen: boolean
   readonly geometry: Geometry
   setAuth(session: BCVozSession): Promise<{ ok: true }>
   destroy(): void
@@ -245,6 +261,9 @@ export interface BCVozAPI {
   dock(zone: DockZone): void
   readonly isOpen: boolean
   readonly geometry: Geometry | null
+  /** Abre (true), fecha (false) ou alterna o painel de Recentes. */
+  toggleRecents(open?: boolean): void
+  readonly recentsOpen: boolean
 
   /** Disca um número. Formato livre; a normalização é a mesma da extensão. */
   call(number: string, meta?: Record<string, unknown>): Promise<{ ok: true }>
