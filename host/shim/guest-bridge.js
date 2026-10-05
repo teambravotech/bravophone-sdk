@@ -313,6 +313,44 @@
     }
   }
 
+  // --- DDD 55 x DDI 55 --------------------------------------------------------
+  //
+  // O 55 de Santa Maria (RS) é também o DDI do Brasil, e o watcher de
+  // callNumber do popup.js decide quem é quem só pelo começo do texto:
+  //
+  //     e.startsWith(String(this.defaultCallingCode())) ? `+${e}` : `+55${e}`
+  //
+  // "55999998888" (DDD 55 + celular) vira "+55999998888" — DDD 99 com sete
+  // dígitos. A libphonenumber do bundle reprova, isValidNumberCall fica false
+  // e makeOrAnswerCall sai calado: a ligação não acontece e ninguém é avisado.
+  //
+  // O bundle vem da extensão e não é editado aqui; a ponte só não entrega a
+  // ele um número ambíguo. 55 + 8 ou 9 dígitos nunca é número brasileiro com
+  // DDI (sobraria DDD + 6 ou 7), então 10 ou 11 dígitos começando com 55 são
+  // DDD 55 e saem com o DDI na frente. Com 12 ou 13 dígitos, ou com "+", o 55
+  // já é o do país e o número passa como veio.
+
+  /** País padrão do bundle (chrome.storage.sync), "BR" quando não há. */
+  function paisPadrao() {
+    var pais = null
+    try {
+      // No shim o callback volta na hora. Se um dia não voltar, fica o "BR",
+      // que é o mesmo padrão do loadDefaultCountry do bundle.
+      chrome.storage.sync.get('bravophoneDefaultCountry', function (r) {
+        pais = r && r.bravophoneDefaultCountry
+      })
+    } catch (e) {}
+    return pais || 'BR'
+  }
+
+  function desambiguarDdd55(numero, pais) {
+    if (pais !== 'BR') return numero        // outro país: 55 não é DDD de ninguém
+    if (/[+*#]/.test(numero)) return numero // DDI explícito, ou facilidade
+    var d = numero.replace(/\D/g, '')
+    if ((d.length === 10 || d.length === 11) && d.indexOf('55') === 0) return '55' + d
+    return numero
+  }
+
   // --- a sessão, compartilhada pelo `auth` (embutido) e pelo BCVozHost (app) ---
   //
   // As chaves saem do bpSaveSession do bundle — é ele quem define os nomes.
@@ -409,7 +447,7 @@
       var meta = p.meta || {}
       // Mesmo payload que a API pública da extensão monta para os CRMs.
       var payload = {
-        phone: String(p.number),
+        phone: desambiguarDdd55(String(p.number), paisPadrao()),
         name: meta.name || null,
         crm: meta.crm || null,
         photo: meta.photo || null,
