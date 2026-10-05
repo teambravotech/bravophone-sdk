@@ -44,6 +44,9 @@ const BCVoz = {
    * @param {{hostname?: string, user?: string}} [opts.device] O que a página
    *   sabe da máquina, para o REGISTER identificar o aparelho na tela
    *   "Aparelhos" de uma ligação. Opcional; o que faltar não vai.
+   * @param {() => Promise<object>} [opts.refreshSession]  Busca uma sessão
+   *   nova no seu backend. Chamada antes do token vencer e quando a API
+   *   devolve 401; sem ela o login cai quando o expiresIn acaba.
    */
   init(opts = {}) {
     if (instance) return instance
@@ -111,7 +114,8 @@ const BCVoz = {
   /** Aceita a sessão completa do login, ou só o vxToken (insuficiente sozinho). */
   setAuth(sessao) {
     const session = typeof sessao === 'string' ? { vxToken: sessao } : sessao
-    return requireInstance().bridge.call('auth', { session })
+    // Pelo widget, e não direto na ponte: ele recomeça a contagem do prazo.
+    return requireInstance().setAuth(session)
   },
   logout()            { return requireInstance().bridge.call('logout') },
   /**
@@ -122,7 +126,8 @@ const BCVoz = {
 
   // ---- Eventos ----
   /** Eventos: ready, state, call:dialing, call:incoming, call:answered,
-   *  call:ended, call:failed, resize, open, close, error. */
+   *  call:ended, call:blocked, resize, open, close, error, extension,
+   *  session:renewed, session:expiring, session:expired. */
   on(event, fn) {
     if (!listeners.has(event)) listeners.set(event, new Set())
     listeners.get(event).add(fn)

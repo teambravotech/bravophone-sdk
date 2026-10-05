@@ -376,7 +376,11 @@
       bravophoneClienteId: s.clienteId || null,
       bravophoneRamaisUrl: s.ramaisUrl || null,
     }
+    // A validade pertence ao token: sem expiresIn, a do token anterior
+    // tem de sair, senão o bundle julga o token novo vencido e desloga.
+    var semValidade = dados.bravophoneVxTokenExpiresAt === null
     Object.keys(dados).forEach(function (k) { if (dados[k] === null) delete dados[k] })
+    if (semValidade) chrome.storage.local.remove('bravophoneVxTokenExpiresAt')
     return new Promise(function (resolve) { chrome.storage.local.set(dados, function () { resolve() }) })
   }
 

@@ -102,6 +102,12 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
       for (var k in mapa) {
         if (mapa[k] !== null) localStorage.setItem('bp.local.' + k, JSON.stringify(mapa[k]));
       }
+      // A validade pertence ao token: token novo sem expiresIn não pode
+      // herdar a validade do anterior, senão o bundle o julga vencido e
+      // derruba o login.
+      if (mapa.bravophoneVxTokenExpiresAt === null) {
+        localStorage.removeItem('bp.local.bravophoneVxTokenExpiresAt');
+      }
     } catch (e) {}
   }
 })();

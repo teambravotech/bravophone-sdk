@@ -75,6 +75,16 @@ export interface BCVozOptions {
    */
   apiBase?: string
   /**
+   * Busca uma sessão nova no seu backend (o mesmo lugar de onde veio a do
+   * `init`). O SDK chama antes do `vxToken` vencer — com 20% de folga,
+   * no máximo 5 min antes — e também quando a API responde 401.
+   *
+   * Pode devolver só `{ vxToken, expiresIn }`: o resto da sessão continua
+   * valendo. **Sem esta opção o login cai quando o `expiresIn` acaba**; o SDK
+   * emite `session:expiring` para você chamar `setAuth()` por conta própria.
+   */
+  refreshSession?: () => Promise<Partial<BCVozSession> & { vxToken: string }>
+  /**
    * Sessão do `/api/voxfree/login`, repassada inteira. É o caminho correto:
    * o webphone precisa de `sip` e `ramal` para registrar.
    */
@@ -186,6 +196,12 @@ export interface BCVozEvents {
   close: undefined
   reveal: undefined
   error: { message: string }
+  /** O `refreshSession` trouxe uma sessão nova e ela já foi aplicada. */
+  'session:renewed': { expiresIn: number | null }
+  /** O token está para vencer e não há `refreshSession`: chame `setAuth()`. */
+  'session:expiring': { expiresAt: number | null }
+  /** O token venceu e não foi possível renovar; o login vai cair. */
+  'session:expired': { reason: string }
 }
 
 export interface BCVozInstance {
@@ -204,6 +220,7 @@ export interface BCVozInstance {
   setLauncherSide(side: 'right' | 'left'): void
   setLauncherIcon(name: LauncherIcon): void
   readonly geometry: Geometry
+  setAuth(session: BCVozSession): Promise<{ ok: true }>
   destroy(): void
 }
 

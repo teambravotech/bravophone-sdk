@@ -469,6 +469,25 @@ BCVoz.init({
 })
 ```
 
+**O token vence — passe `refreshSession`.** O `vxToken` vale `expiresIn`
+segundos. Sem renovação, o login do usuário cai quando esse prazo acaba. Dê ao
+SDK uma função que busca uma sessão nova no seu backend (o mesmo lugar de onde
+veio a do `init`):
+
+```js
+Bravophone.init({
+  session,
+  refreshSession: () => fetch('/me/webphone-session').then((r) => r.json()),
+})
+```
+
+O SDK a chama antes de vencer (com 20% de folga, no máximo 5 min antes; um
+token de 1 h renova aos 55 min) e também quando a API responde 401. Ela pode
+devolver só `{ vxToken, expiresIn }`, e o resto da sessão continua valendo. Uma
+falha com prazo sobrando é tentada de novo a cada 30 s. Eventos:
+`session:renewed`, `session:expired` (não deu para renovar) e, sem
+`refreshSession`, `session:expiring` (chame `setAuth()` por conta própria).
+
 **Onde a credencial SIP fica.** O `extension` viaja apenas pela ponte
 (`postMessage`) e é aplicado no store em memória do webphone. Ele **não** entra
 no HTML do iframe nem no `localStorage` — a senha não fica legível no DOM da sua

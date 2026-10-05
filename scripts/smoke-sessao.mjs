@@ -9,6 +9,7 @@
 // antes do usuário descobrir.
 
 import { readFile } from 'node:fs/promises'
+import vm from 'node:vm'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -70,6 +71,40 @@ console.log('\nsessão — o guest-bridge usa as mesmas chaves:')
     /donoDaIdentidade === true\) window\.__bpContasDesligadas = true/.test(bridge))
   check('não grava a chave antiga',
     !/storage\.local\.set\(\{\s*vxToken/.test(bridge))
+}
+
+console.log('\nsessão — token novo não herda a validade do anterior:')
+{
+  // O caso que derrubava o login: o storage guarda a validade (já vencida) de
+  // uma sessão antiga, e chega um token novo sem expiresIn. Pular o campo nulo
+  // deixava a validade velha colada no token novo, e o bundle deslogava.
+  const rodarSrcdoc = (session, inicial) => {
+    const store = new Map(Object.entries(inicial))
+    const localStorage = {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => store.set(k, String(v)),
+      removeItem: (k) => store.delete(k),
+    }
+    const html = buildSrcdoc({ version: '0.0.0', parentOrigin: 'https://x.com', session })
+    const script = html.match(/<script>([\s\S]*?)<\\?\/script>/)[1]
+    vm.runInNewContext(script, { window: {}, localStorage, Date, Number, JSON })
+    return store
+  }
+  const VELHA = { 'bp.local.bravophoneVxTokenExpiresAt': '1000' }
+
+  const semValidade = rodarSrcdoc({ vxToken: 'novo' }, VELHA)
+  check('sem expiresIn, a validade antiga é apagada',
+    !semValidade.has('bp.local.bravophoneVxTokenExpiresAt'),
+    semValidade.get('bp.local.bravophoneVxTokenExpiresAt'))
+  check('e o token novo é gravado', semValidade.get('bp.local.bravophoneVxToken') === '"novo"')
+
+  const comValidade = rodarSrcdoc({ vxToken: 'novo', expiresIn: 3600 }, VELHA)
+  check('com expiresIn, a validade é renovada',
+    Number(comValidade.get('bp.local.bravophoneVxTokenExpiresAt')) > Date.now())
+
+  const fonteBridge = await readFile(join(ROOT, 'host/shim/guest-bridge.js'), 'utf8')
+  check('o auth da ponte também apaga a validade antiga',
+    /storage\.local\.remove\('bravophoneVxTokenExpiresAt'\)/.test(fonteBridge))
 }
 
 console.log('\nsessão — o bundle do host realmente lê estas chaves:')

@@ -5,6 +5,7 @@ import { makeLauncher, loadLauncherState, clampY } from './launcher.js'
 import { ICONS, DEFAULT_ICON, GRIP_ICON } from './icons.js'
 import { buildSrcdoc } from './srcdoc.js'
 import { acompanharRamal } from './ramal.js'
+import { manterSessao } from './sessao.js'
 
 const DEFAULTS = {
   // 380x640 é a geometria da janela nativa da extensão — o layout do
@@ -70,9 +71,15 @@ export function createWidget(options) {
     // REGISTER (X-Bravo-Device-*). Uma página não descobre isso sozinha;
     // quem embute num sistema interno costuma saber.
     device = null,
+    // () => Promise<sessão>: busca uma sessão nova no backend do integrador.
+    // Sem ela o token vence e o login cai (ver sessao.js).
+    refreshSession,
     version,
     emit,
   } = options
+
+  // A sessão em vigor. Começa com a do init e muda a cada renovação ou setAuth.
+  let sessaoAtual = session || (token ? { vxToken: token } : null)
 
   const srcdoc = mode === 'srcdoc'
   // Em srcdoc o documento herda a origem do site, então é com ela que a ponte
@@ -228,8 +235,8 @@ export function createWidget(options) {
         launcherBtn.dataset.state = 'ready'
         // Reenvia pela ponte: no modo hospedado não há pré-gravação, e no
         // srcdoc isto confirma o que já foi gravado.
-        if (session || token) {
-          bridge.call('auth', { session: session || { vxToken: token } }).catch(() => {})
+        if (sessaoAtual) {
+          bridge.call('auth', { session: sessaoAtual }).catch(() => {})
         }
         // Antes do registro quando a sessão vai junto; se o webphone já
         // registrou (srcdoc com sessão pré-gravada), ele reenvia o REGISTER.
@@ -237,7 +244,7 @@ export function createWidget(options) {
 
         // O ramal pode ser atribuído ou trocado sem novo login. Só faz
         // sentido acompanhar se soubermos para onde perguntar.
-        const tokenApi = session?.vxToken || token
+        const tokenApi = sessaoAtual?.vxToken
         if (apiBase && tokenApi && !ramalWatcher) {
           ramalWatcher = acompanharRamal({
             apiBase,
@@ -249,7 +256,9 @@ export function createWidget(options) {
               bridge.call('extensionStatus', { status }).catch(() => {})
               emit('extension', status)
             },
-            onErroSessao: () => emit('state', { state: 'error' }),
+            // 401: o token venceu antes do previsto. Renova na hora; só se
+            // não der vira erro (ver emitirSessao).
+            onErroSessao: () => { sessaoViva.renovarAgora('401') },
           })
         }
       }
@@ -284,6 +293,41 @@ export function createWidget(options) {
   let minimized = false
   let revealTimer = null
   let ramalWatcher = null
+
+  /** Aplica no webphone uma sessão vinda do refreshSession. */
+  const aplicarRenovada = (nova) => {
+    const anterior = sessaoAtual
+    // Renovação costuma devolver só token e validade: sip, ramal e o resto
+    // continuam valendo. A validade NÃO é herdada — ela pertence ao token.
+    sessaoAtual = { ...anterior, ...nova, expiresIn: nova.expiresIn }
+    const envio = { ...sessaoAtual }
+    // Credencial SIP igual à atual não volta pela ponte: o auth a reaplica
+    // com addExtension no store, e não há garantia de que isso não mexa no
+    // registro SIP — a renovação pode cair no meio de uma ligação.
+    if (anterior?.extension &&
+        JSON.stringify(anterior.extension) === JSON.stringify(sessaoAtual.extension)) {
+      delete envio.extension
+    }
+    return bridge.call('auth', { session: envio })
+  }
+
+  const emitirSessao = (evento, payload) => {
+    // Mantém o sinal antigo: antes, o 401 virava state:error e era só isso.
+    if (evento === 'session:expired') {
+      status.dataset.state = 'error'
+      launcherBtn.dataset.state = 'error'
+      emit('state', { state: 'error' })
+    }
+    emit(evento, payload)
+  }
+
+  const sessaoViva = manterSessao({
+    renovar: refreshSession,
+    aplicar: aplicarRenovada,
+    emitir: emitirSessao,
+  })
+  // O expiresIn conta a partir de agora: é quando o srcdoc grava a validade.
+  sessaoViva.programar(sessaoAtual)
 
   const api = {
     el: mount,
@@ -342,8 +386,18 @@ export function createWidget(options) {
     setLauncherSide(side) { launcherCtl.setSide(side) },
     setLauncherIcon(name) { icon.innerHTML = ICONS[name] || ICONS[DEFAULT_ICON] },
     get geometry() { return drag.geometry },
+    /**
+     * Troca a sessão inteira (outro usuário, ou o integrador renovando por
+     * conta própria). Substitui, não mescla: nada da sessão anterior vale.
+     */
+    setAuth(nova) {
+      sessaoAtual = nova
+      sessaoViva.programar(nova)
+      return bridge.call('auth', { session: nova })
+    },
     destroy() {
       clearTimeout(revealTimer)
+      sessaoViva.parar()
       ramalWatcher?.parar()
       bridge.destroy()
       drag.destroy()
