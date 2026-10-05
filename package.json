@@ -1,6 +1,6 @@
 {
   "name": "@bcvoz/webphone",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "Webphone BCVOZ embutível em qualquer página web. Renderiza uma janela flutuante arrastável com todas as funcionalidades do softphone.",
   "main": "./dist/bcvoz.umd.js",
   "module": "./dist/bcvoz.mjs",
