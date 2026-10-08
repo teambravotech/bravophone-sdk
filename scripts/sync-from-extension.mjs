@@ -140,7 +140,8 @@ async function main() {
 
   if (process.argv.includes('--sem-ramal')) await permitirLoginSemRamal()
 
-  await writeFile(join(HOST, 'index.html'), buildHtml(), 'utf8')
+  const { version: versaoPacote } = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'))
+  await writeFile(join(HOST, 'index.html'), buildHtml(versaoPacote), 'utf8')
   console.log('  ✓ host/index.html gerado')
   console.log(`\n✓ ${copied} assets sincronizados em host/`)
   console.log(publicPath
@@ -334,7 +335,7 @@ async function rewritePublicPath(publicPath) {
   console.log(`  ✓ public path: "/" → "${publicPath}"`)
 }
 
-function buildHtml() {
+function buildHtml(versao) {
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -363,6 +364,9 @@ function buildHtml() {
      antes do primeiro quadro, senao o iframe pisca escuro e clareia. -->
 <script src="./js/bravophone-tema.js"></script>
 <script src="./shim/messages.js"></script>
+<!-- Versão do pacote (package.json), lida pelo chrome-shim em getManifest():
+     é o que aparece no rodapé do login, em Ajustes e no heartbeat. -->
+<script>window.__bcvozVersao = ${JSON.stringify(versao)};</script>
 <script src="./shim/chrome-shim.js"></script>
 <script src="./js/libwebphone.js"></script>
 <script src="./js/bravophone-route-selector.js"></script>
@@ -384,6 +388,9 @@ function buildHtml() {
 <script defer src="./js/bravophone-reconectar.js"></script>
 <!-- guest-bridge roda depois do app montar (defer preserva a ordem). -->
 <script defer src="./shim/guest-bridge.js"></script>
+<!-- Versão no fim da aba Ajustes. Fora do guest-bridge porque ele sai cedo
+     sem iframe, e o app nativo carrega este host/ direto. -->
+<script defer src="./shim/versao.js"></script>
 </head>
 <body>
 <noscript><strong>O webphone precisa de JavaScript habilitado.</strong></noscript>

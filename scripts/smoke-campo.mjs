@@ -779,7 +779,8 @@ console.log('\ncampo — o que conta como número válido:')
   const casos = [
     ['11987654321', true,  'celular com DDD'],
     ['1133334444',  true,  'fixo com DDD'],
-    ['1187654321',  false, 'celular sem o 9'],
+    ['1187654321',  true,  'celular antigo sem o 9'],
+    ['11876543210', false, 'celular de 11 sem o 9'],
     ['0099999999',  false, 'DDD que não existe'],
     ['119876543',   false, 'dígitos de menos'],
     ['1001',        true,  'ramal de 4 dígitos'],

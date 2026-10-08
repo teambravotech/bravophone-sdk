@@ -48,7 +48,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
   // quebrados ("atribu?do a este usu?rio"). Escapando para \uXXXX, o HTML fica
   // ASCII puro e o texto é reconstruído pelo parser de JSON, sem depender de
   // encoding em nenhum ponto do caminho.
-  const cfg = JSON.stringify({ parentOrigin, session: semRamal })
+  const cfg = JSON.stringify({ parentOrigin, session: semRamal, version })
     .replace(/[-￿]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'))
     .replace(/</g, '\\u003c')
 
@@ -77,6 +77,9 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
   // O guest-bridge lê daqui: em srcdoc não há query string para carregar a
   // origem do pai.
   window.__bpParentOrigin = cfg.parentOrigin;
+  // Versão do pacote: o chrome-shim a devolve em getManifest(), e é ela que
+  // aparece no rodapé do login, em Ajustes e no heartbeat.
+  window.__bcvozVersao = cfg.version;
   // Grava a sessão onde o bundle procura, ANTES dele avaliar, para já subir
   // autenticado em vez de piscar a tela de login.
   //
@@ -134,6 +137,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
 <script defer src="${b}js/bravophone-sem-ramal.js"><\/script>
 <script defer src="${b}js/bravophone-reconectar.js"><\/script>
 <script defer src="${b}shim/guest-bridge.js"><\/script>
+<script defer src="${b}shim/versao.js"><\/script>
 </head>
 <body>
 <noscript><strong>O webphone precisa de JavaScript habilitado.</strong></noscript>
