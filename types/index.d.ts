@@ -52,6 +52,19 @@ export interface BCVozDevice {
  */
 export interface BCVozBranding {
   /**
+   * O nome do cliente, escrito no lugar do logotipo — e usado também no
+   * título da janela e nas frases da interface que citam a marca
+   * ("Acesse seu webphone BCVOZ" vira "Acesse seu webphone Acme").
+   *
+   * `''` (ou `false`) quer dizer **nada**: o espaço do logotipo fica vazio, a
+   * barra fica sem título e a palavra some dos textos. Não passar a chave
+   * deixa tudo como está (BCVOZ).
+   *
+   * Uma linha, até 40 caracteres. `logo` tem precedência no espaço da imagem;
+   * `title` tem precedência na barra da janela.
+   */
+  name?: false | string
+  /**
    * O logotipo acima do "Entrar". `false` tira; uma URL (`https:` ou
    * `data:image/…`) põe a sua no lugar, limitada a 44px de altura.
    */
@@ -156,7 +169,12 @@ export interface BCVozOptions {
   launcherSide?: 'right' | 'left'
   /** Desenho da aba. Padrão: 'phone-waves'. */
   launcherIcon?: LauncherIcon
-  /** Texto da barra de título. Só usado quando `frame: 'bar'`. */
+  /**
+   * Texto da barra de título. Só usado quando `frame: 'bar'`.
+   *
+   * Padrão: `branding.name`, se houver, senão `'BCVOZ'`. String vazia tira o
+   * título da barra — nenhum elemento é renderizado no lugar.
+   */
   title?: string
   /**
    * Moldura da janela. Padrão: `'none'`.

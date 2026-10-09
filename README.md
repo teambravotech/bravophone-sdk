@@ -801,11 +801,41 @@ grupo de WhatsApp que não é o dele. `branding` resolve os dois:
 ```js
 BCVoz.init({
   branding: {
-    logo: false,          // ou 'https://cliente.com/marca.svg'
-    links: false,         // tira "Criar conta", "Suporte" e "Portal BCVOZ"
+    name: 'Acme Telecom',  // escrito no lugar do logotipo
+    links: false,          // tira "Criar conta", "Suporte" e "Portal BCVOZ"
   },
 })
 ```
+
+**`name` é o atalho que cobre a marca inteira.** Ele entra no lugar do
+logotipo, vira o título da barra da janela e substitui a palavra "BCVOZ" nas
+frases da interface — "Acesse seu webphone BCVOZ", logo abaixo do logotipo,
+vira "Acesse seu webphone Acme Telecom". Trocar a imagem e deixar a frase
+seria meio caminho.
+
+**`name: ''` quer dizer nada**, e nada é o que aparece: espaço do logotipo
+vazio, barra sem título (nem elemento vazio ocupando o flex) e a palavra fora
+dos textos — "Acesse seu webphone", e só. Não passar a chave deixa tudo como
+está.
+
+```js
+BCVoz.init({ branding: { name: '', links: false } })   // tela sem marca nenhuma
+```
+
+Uma imagem no lugar do nome:
+
+```js
+BCVoz.init({
+  branding: {
+    logo: false,          // ou 'https://cliente.com/marca.svg'
+    links: false,
+  },
+})
+```
+
+`logo` tem precedência sobre `name` no espaço da imagem — o nome continua
+valendo no título e nos textos. E `title`, se você passar, tem precedência na
+barra da janela.
 
 Por item, `false` tira e uma URL troca o destino:
 

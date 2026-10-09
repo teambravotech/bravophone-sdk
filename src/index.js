@@ -51,11 +51,15 @@ const BCVoz = {
    * @param {{hostname?: string, user?: string}} [opts.device] O que a página
    *   sabe da máquina, para o REGISTER identificar o aparelho na tela
    *   "Aparelhos" de uma ligação. Opcional; o que faltar não vai.
-   * @param {object} [opts.branding]  White-label da tela de login, para quem
-   *   revende o webphone: `{ logo: false|url, links: false|{ signup, support,
-   *   portal } }`. `false` tira; uma URL troca. `logo` aceita `https:` ou
-   *   `data:image/`; os links aceitam `https:`, `mailto:` e `tel:`. Só em
-   *   `mode: 'srcdoc'` (o padrão).
+   * @param {object} [opts.branding]  White-label, para quem revende o
+   *   webphone: `{ name, logo, links }`.
+   *   · `name`: o nome do cliente no lugar do logotipo, no título da janela e
+   *     nas frases que citam a marca. `''` deixa os três vazios.
+   *   · `logo`: `false` tira, ou uma URL (`https:`/`data:image/`) entra no
+   *     lugar — tem precedência sobre `name` no espaço da imagem.
+   *   · `links`: `false` tira os três do rodapé, ou `{ signup, support,
+   *     portal }` com `false` (tira) ou URL (troca) em cada um.
+   *   Só em `mode: 'srcdoc'` (o padrão).
    * @param {RTCIceServer[]} [opts.iceServers]  STUN/TURN para a negociação de
    *   mídia. Padrão: nenhum — o webphone usa só os candidatos que o navegador
    *   gera, o que basta quando o PABX anuncia IP público. Passe TURN (de

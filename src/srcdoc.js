@@ -15,7 +15,7 @@
 // funciona sem `allow=`, `localStorage` funciona, `document.baseURI` resolve
 // para a página pai e `@font-face` com URL absoluta do CDN carrega.
 
-import { cssDaMarca, trocasDeLink } from './marca.js'
+import { cssDaMarca, trocasDeLink, nomeNosTextos } from './marca.js'
 
 const CDN = 'https://cdn.jsdelivr.net/npm'
 
@@ -60,7 +60,8 @@ export function buildSrcdoc({ version, parentOrigin, session, base, email,
   // encoding em nenhum ponto do caminho.
   const cfg = JSON.stringify({ parentOrigin, session: semRamal, version,
     email: emailDeLogin, iceServers: iceServers || null,
-    marcaCss: cssDaMarca(marca) || null, marcaLinks: trocasDeLink(marca) })
+    marcaCss: cssDaMarca(marca) || null, marcaLinks: trocasDeLink(marca),
+    marcaNome: nomeNosTextos(marca) })
     .replace(/[-￿]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'))
     .replace(/</g, '\\u003c')
 
@@ -69,7 +70,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base, email,
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Webphone BCVOZ</title>
+<title>${nomeNosTextos(marca) === null ? 'Webphone BCVOZ' : ('Webphone ' + nomeNosTextos(marca)).trim()}</title>
 <!-- CRÍTICO no modo srcdoc. O bundle referencia as imagens por caminho
      RELATIVO (src="images/answer.png"), fora do public_path. Sem <base>,
      elas resolvem contra a página do integrador — o documento herda o
@@ -232,6 +233,24 @@ export function buildSrcdoc({ version, parentOrigin, session, base, email,
 <\/script>
 <script src="${b}js/bravophone-tema.js"><\/script>
 <script src="${b}shim/messages.js"><\/script>
+<script>
+(function () {
+  // A marca tambem mora nos textos: "Acesse seu webphone BCVOZ" fica logo
+  // abaixo do logotipo, e "Portal BCVOZ" no rodape. Trocar a imagem e deixar
+  // as frases seria meio caminho. O shim le daqui (chrome.i18n.getMessage),
+  // entao reescrever a tabela ANTES do bundle resolve tudo de uma vez.
+  var nome = ${JSON.stringify(nomeNosTextos(marca))};
+  if (nome === null || !window.__bpMessages) return;
+  var tabela = window.__bpMessages;
+  for (var k in tabela) {
+    var m = tabela[k] && tabela[k].message;
+    // Dominios como speedtest.bravophone.com ficam de fora de proposito: sao
+    // endereco, nao marca na tela.
+    if (typeof m !== 'string' || m.indexOf('BCV') < 0) continue;
+    tabela[k].message = m.replace(/BCVOZ|BCVoz/g, nome).replace(/[ ]{2,}/g, ' ').trim();
+  }
+})();
+<\/script>
 <script src="${b}shim/chrome-shim.js"><\/script>
 <script src="${b}js/libwebphone.js"><\/script>
 <script src="${b}js/bravophone-route-selector.js"><\/script>

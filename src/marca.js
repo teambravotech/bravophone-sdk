@@ -43,14 +43,23 @@ function url(valor, chave, aceita) {
   return texto
 }
 
+/** O nome do cliente: texto curto, uma linha. `''` quer dizer "nada". */
+function nomeDe(valor) {
+  if (valor === undefined) return null          // não configurado
+  if (valor === false || valor === null) return ''
+  const texto = String(valor).replace(/\s+/g, ' ').trim().slice(0, 40)
+  return texto
+}
+
 /**
  * @param {object|undefined} marca  o que veio em `init({ branding })`
- * @returns {{logo: string|false|null, links: object}|null} null quando não há
- *   nada a fazer — aí o srcdoc não carrega peso nenhum.
+ * @returns {{nome: string|null, logo: string|false|null, links: object}|null}
+ *   null quando não há nada a fazer — aí o srcdoc não carrega peso nenhum.
  */
 export function normalizarMarca(marca) {
   if (!marca || typeof marca !== 'object') return null
 
+  const nome = nomeDe(marca.name)
   const logo = url(marca.logo, 'logo', LOGO_OK)
   const links = {}
   // `links: false` é o atalho para "tire os três".
@@ -63,8 +72,8 @@ export function normalizarMarca(marca) {
     if (v !== null) links[chave] = v
   }
 
-  if (logo === null && !Object.keys(links).length) return null
-  return { logo, links }
+  if (nome === null && logo === null && !Object.keys(links).length) return null
+  return { nome, logo, links }
 }
 
 /**
@@ -79,12 +88,27 @@ export function cssDaMarca(marca) {
   if (!marca) return ''
   const regras = []
 
-  if (marca.logo === false) {
-    regras.push('img.bcvoz-logo{display:none!important}')
-  } else if (marca.logo) {
+  // Três caminhos para o mesmo espaço: imagem, nome escrito, ou nada. Pedir
+  // um nome (ou `name: ''`) já implica tirar o logotipo — ninguém quer os
+  // dois empilhados.
+  if (marca.logo) {
     // `content` troca a imagem no lugar, sem tocar no layout em volta.
     regras.push('img.bcvoz-logo{content:url("' + cssSeguro(marca.logo) + '")!important;' +
       'max-height:44px;width:auto;object-fit:contain}')
+  } else if (marca.logo === false || marca.nome !== null) {
+    regras.push('img.bcvoz-logo{display:none!important}')
+  }
+
+  // Imagem e nome disputam o mesmo espaço; a imagem manda. O nome não se
+  // perde: ele continua valendo no título da janela e nos textos.
+  if (marca.nome && !marca.logo) {
+    // O texto entra no PAI do logotipo: um <img> é elemento substituído e não
+    // desenha ::before/::after. `:has()` é o que permite subir um nível sem
+    // JavaScript — e sem ele o espaço só fica vazio, que é o pior caso aceito.
+    regras.push('.login-screen *:has(> img.bcvoz-logo)::after{' +
+      'content:"' + cssSeguro(marca.nome) + '";' +
+      'font:700 17px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;' +
+      'letter-spacing:.01em;color:currentColor}')
   }
 
   const escondidos = Object.keys(LINKS).filter((k) => marca.links[k] === false)
@@ -113,6 +137,19 @@ export function trocasDeLink(marca) {
   return Object.keys(LINKS)
     .filter((k) => typeof marca.links[k] === 'string')
     .map((k) => [LINKS[k], marca.links[k]])
+}
+
+/**
+ * O nome que substitui "BCVOZ" nos textos da interface, ou null para deixá-los
+ * como estão.
+ *
+ * Cinco frases do `_locales` carregam a marca, e uma delas fica logo abaixo do
+ * logotipo: "Acesse seu webphone BCVOZ". Trocar a imagem e deixar a frase seria
+ * meio caminho — o cliente do integrador continuaria lendo o nome de outra
+ * empresa. Com `name: ''` a palavra simplesmente sai.
+ */
+export function nomeNosTextos(marca) {
+  return marca && marca.nome !== null && marca.nome !== undefined ? marca.nome : null
 }
 
 /** Fecha aspas e barras que quebrariam o `url()`. */

@@ -68,7 +68,10 @@ export function createWidget(options) {
     position = 'bottom-right',
     open = false,
     launcher = true,
-    title = 'BCVOZ',
+    // Sem default aqui: `undefined` (não passou) é diferente de `''` (passou
+    // vazio, quer a barra sem título). O default entra depois, porque pode
+    // vir do branding.
+    title,
     // 'bar' por padrão: título, indicador de estado e controles visíveis.
     // 'none' preserva 100% da UI do webphone — sem barra, o arraste vem de
     // dentro do iframe e só um botão de fechar aparece no hover.
@@ -137,6 +140,13 @@ export function createWidget(options) {
   // um link quebrado na cara de quem for usar.
   const marca = normalizarMarca(branding)
 
+  // O título da barra segue a mesma marca do resto: quem deu um nome ao
+  // branding não deveria ter de repeti-lo aqui. `title` explícito ainda
+  // manda, e vazio quer dizer barra sem título — não "volte a escrever BCVOZ".
+  const titulo = title !== undefined
+    ? String(title)
+    : (marca && marca.nome !== null ? marca.nome : 'BCVOZ')
+
   const srcdoc = mode === 'srcdoc'
   // Em srcdoc o documento herda a origem do site, então é com ela que a ponte
   // valida as mensagens — não com a do hostUrl.
@@ -194,7 +204,9 @@ export function createWidget(options) {
   btnRecentes.innerHTML = ICONE_RECENTES
   const header = h('div', { class: 'bp-header' }, [
     status,
-    h('span', { class: 'bp-title', text: title }),
+    // Sem título não entra elemento nenhum: um <span> vazio ainda ocuparia o
+    // espaço do flex e empurraria os botões.
+    ...(titulo ? [h('span', { class: 'bp-title', text: titulo })] : []),
     ...(recents ? [btnRecentes] : []),
     btnMin,
     btnClose,
@@ -207,7 +219,8 @@ export function createWidget(options) {
     // allow= é obrigatório no modo hospedado (cross-origin). Em srcdoc o
     // microfone já é herdado do topo, mas declarar não custa e documenta.
     allow: 'microphone; autoplay; clipboard-write; speaker-selection',
-    title: 'Webphone BCVOZ',
+    // Nome acessível do iframe: acompanha a marca, como o <title> do documento.
+    title: titulo ? 'Webphone ' + titulo : 'Webphone',
   })
   if (srcdoc) {
     frameEl.setAttribute('srcdoc',

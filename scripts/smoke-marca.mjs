@@ -16,7 +16,8 @@ import { fileURLToPath } from 'node:url'
 import vm from 'node:vm'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const { normalizarMarca, cssDaMarca, trocasDeLink } = await import('../src/marca.js')
+const { normalizarMarca, cssDaMarca, trocasDeLink, nomeNosTextos } =
+  await import('../src/marca.js')
 const { buildSrcdoc } = await import('../src/srcdoc.js')
 
 let pass = 0, fail = 0
@@ -43,6 +44,38 @@ console.log('\nmarca — o que o integrador pede é o que sai:')
   }
   check('e a linha inteira do rodapé some junto',
     /\.footer > div:first-child\{display:none!important\}/.test(css))
+}
+
+console.log('\nmarca — o nome do cliente no lugar do logotipo:')
+{
+  const comNome = normalizarMarca({ name: 'Acme Telecom' })
+  const css = cssDaMarca(comNome)
+  check('o logotipo sai', /img\.bcvoz-logo\{display:none!important\}/.test(css))
+  // Um <img> é elemento substituído: ::after nele não desenha. O texto tem de
+  // entrar no pai, e `:has()` é o que permite subir um nível sem JavaScript.
+  check('o nome entra pelo pai do logotipo',
+    css.includes(':has(> img.bcvoz-logo)::after') && css.includes('content:"Acme Telecom"'))
+  check('e vira o nome nos textos da interface', nomeNosTextos(comNome) === 'Acme Telecom')
+
+  const vazio = normalizarMarca({ name: '' })
+  check('nome vazio não renderiza nada', !cssDaMarca(vazio).includes('::after'))
+  check('mas ainda tira o logotipo',
+    /img\.bcvoz-logo\{display:none!important\}/.test(cssDaMarca(vazio)))
+  check('e tira a palavra dos textos', nomeNosTextos(vazio) === '')
+  check('false é o mesmo que vazio', normalizarMarca({ name: false }).nome === '')
+  check('sem a chave, os textos ficam como estão',
+    nomeNosTextos(normalizarMarca({ links: false })) === null)
+
+  check('espaços e quebras viram uma linha só',
+    normalizarMarca({ name: '  Acme\n  Telecom  ' }).nome === 'Acme Telecom')
+  check('o nome é limitado a 40 caracteres',
+    normalizarMarca({ name: 'x'.repeat(80) }).nome.length === 40)
+
+  // Imagem e nome disputam o mesmo espaço: a imagem manda, senão apareceriam
+  // os dois empilhados.
+  const dois = cssDaMarca(normalizarMarca({ name: 'Acme', logo: 'https://c.com/a.svg' }))
+  check('com logo e nome, a imagem manda',
+    dois.includes('content:url("https://c.com/a.svg")') && !dois.includes('::after'))
 }
 
 console.log('\nmarca — esconder um link não deixa separador órfão:')
@@ -145,6 +178,63 @@ console.log('\nmarca — o srcdoc aplica antes do bundle:')
 
   const comTroca = rodar(normalizarMarca({ links: { portal: 'https://cliente.com' } }))
   check('com troca, o observador entra', comTroca.observou === true)
+}
+
+console.log('\nmarca — o nome alcança o título e os textos:')
+{
+  const html = buildSrcdoc({
+    version: '0', parentOrigin: 'https://x.com', marca: normalizarMarca({ name: 'Acme' }),
+  })
+  check('o <title> do documento acompanha', /<title>Webphone Acme<\/title>/.test(html))
+  check('a tabela de mensagens é reescrita antes do bundle',
+    html.indexOf('__bpMessages') < html.indexOf('popup.js'))
+  check('e depois do messages.js, que é quem a cria',
+    html.indexOf('shim/messages.js') < html.indexOf('tabela[k].message'))
+
+  const vazio = buildSrcdoc({
+    version: '0', parentOrigin: 'https://x.com', marca: normalizarMarca({ name: '' }),
+  })
+  check('nome vazio deixa o título sem marca', /<title>Webphone<\/title>/.test(vazio))
+
+  const sem = buildSrcdoc({ version: '0', parentOrigin: 'https://x.com' })
+  check('sem branding, o título segue BCVOZ', /<title>Webphone BCVOZ<\/title>/.test(sem))
+  check('e nenhuma mensagem é tocada', /var nome = null/.test(sem))
+
+  // A substituição roda de verdade, sobre a forma da tabela do _locales.
+  const rodarPatch = (htmlDoc) => {
+    const tabela = {
+      loginSubtitle: { message: 'Acesse seu webphone BCVOZ' },
+      loginPortal: { message: 'Portal BCVOZ' },
+      diag: { message: 'speedtest.bravophone.com' },
+    }
+    const trecho = htmlDoc.match(/<script>\s*\(function \(\) \{\s*\/\/ A marca tambem[\s\S]*?\}\)\(\);/)[0]
+      .replace('<script>', '')
+    vm.runInNewContext(trecho, { window: { __bpMessages: tabela } })
+    return tabela
+  }
+
+  const comNome = rodarPatch(html)
+  check('"Acesse seu webphone BCVOZ" vira o nome do cliente',
+    comNome.loginSubtitle.message === 'Acesse seu webphone Acme', comNome.loginSubtitle.message)
+  check('o domínio do speedtest fica intacto',
+    comNome.diag.message === 'speedtest.bravophone.com')
+
+  const semNome = rodarPatch(vazio)
+  check('com nome vazio, a palavra some sem deixar espaço',
+    semNome.loginSubtitle.message === 'Acesse seu webphone', semNome.loginSubtitle.message)
+  check('e "Portal BCVOZ" vira só "Portal"',
+    semNome.loginPortal.message === 'Portal', semNome.loginPortal.message)
+}
+
+console.log('\nmarca — o título da janela segue o nome:')
+{
+  const widget = await readFile(join(ROOT, 'src/widget.js'), 'utf8')
+  check('sem title explícito, o nome do branding vira o título',
+    /marca && marca\.nome !== null \? marca\.nome : 'BCVOZ'/.test(widget))
+  check('título vazio não renderiza elemento nenhum',
+    /\.\.\.\(titulo \? \[h\('span', \{ class: 'bp-title'/.test(widget))
+  check('e o nome acessível do iframe acompanha',
+    /title: titulo \? 'Webphone ' \+ titulo : 'Webphone'/.test(widget))
 }
 
 console.log('\nmarca — os seletores ainda batem com o host de verdade:')

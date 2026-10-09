@@ -245,7 +245,7 @@ fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webp
 <tr><td><code>token</code></td><td><code>string</code></td><td>—</td><td>Sessão do usuário, emitida pelo <strong>seu</strong> backend</td></tr>
 <tr><td><code>email</code></td><td><code>string</code></td><td>—</td><td>Só <strong>sem</strong> sessão: a tela de login sobe com este e-mail</td></tr>
 <tr><td><code>iceServers</code></td><td><code>RTCIceServer[]</code></td><td>—</td><td>STUN/TURN da mídia; sem eles, só os candidatos do navegador</td></tr>
-<tr><td><code>branding</code></td><td><code>object</code></td><td>—</td><td>Tira ou troca o logotipo e os links do BCVOZ no login</td></tr>
+<tr><td><code>branding</code></td><td><code>object</code></td><td>—</td><td><code>{ name, logo, links }</code> — nome do cliente no lugar do logotipo, no título e nos textos; vazio não renderiza nada</td></tr>
 <tr><td><code>mode</code></td><td><code>'hosted' | 'srcdoc'</code></td><td><code>'srcdoc'</code></td><td>Como o webphone é carregado</td></tr>
 <tr><td><code>hostBase</code></td><td><code>string</code></td><td>CDN da versão</td><td>Só em <code>srcdoc</code>. Deve terminar em <code>/</code></td></tr>
 <tr><td><code>hostUrl</code></td><td><code>string</code></td><td>domínio oficial</td><td>Só em <code>hosted</code></td></tr>

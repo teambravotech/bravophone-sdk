@@ -204,7 +204,7 @@ O UMD expõe `window.BCVoz`. **Não** use `BCVoz.default`.
 | `token` | `string` | — | Atalho para `{ vxToken }`; insuficiente sozinho |
 | `email` | `string` | — | **Só sem sessão**: a tela de login do webphone sobe preenchida. Só em `srcdoc` |
 | `iceServers` | `RTCIceServer[]` | — | STUN/TURN da mídia; sem eles o webphone usa só os candidatos do navegador |
-| `branding` | `object` | — | Tira a marca BCVOZ do login: `{ logo: false\|url, links: false\|{ signup, support, portal } }`. Só em `srcdoc` |
+| `branding` | `object` | — | Tira a marca BCVOZ: `{ name, logo, links }`. `name` escreve o nome do cliente no lugar do logotipo, no titulo e nos textos; `name: ''` nao renderiza nada. `{ logo: false\|url, links: false\|{ signup, support, portal } }`. Só em `srcdoc` |
 | `apiBase` | `string` | `https://pabx.teambravotech.com` | Acompanha o ramal do usuário |
 | `mode` | `'srcdoc' \| 'hosted'` | `'srcdoc'` | `'hosted'` **exige** `hostUrl` |
 | `hostUrl` | `string` | — | Só em `hosted`; sem default, de propósito |

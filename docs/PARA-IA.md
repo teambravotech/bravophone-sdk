@@ -100,7 +100,7 @@ Chame uma vez, com o `<body>` já existindo. Devolve a instância.
 | `token` | `string` | — | Sessão do usuário, emitida pelo backend do integrador |
 | `email` | `string` | — | **Só sem sessão.** A tela de login do webphone sobe com este e-mail preenchido; a pessoa digita só a senha. Só em `srcdoc` |
 | `iceServers` | `RTCIceServer[]` | — | STUN/TURN da mídia. Sem isto, o webphone usa só os candidatos do navegador — e fica mudo se ele não gerar nenhum |
-| `branding` | `{ logo?, links? }` | — | White-label do login: `logo: false\|url`, `links: false\|{ signup, support, portal }`. `false` tira, URL troca. Só em `srcdoc` |
+| `branding` | `{ name?, logo?, links? }` | — | White-label: `name` escreve o nome do cliente no lugar do logotipo, no titulo da janela e nos textos (`name: ''` deixa tudo vazio); `logo: false\|url`, `links: false\|{ signup, support, portal }`. `false` tira, URL troca. Só em `srcdoc` |
 | `mode` | `'srcdoc' \| 'hosted'` | `'srcdoc'` | `'hosted'` exige `hostUrl` e um host publicado |
 | `hostBase` | `string` | CDN desta versão | Só em `srcdoc`. Deve terminar em `/` |
 | `hostUrl` | `string` | domínio oficial | Só em `hosted` |
