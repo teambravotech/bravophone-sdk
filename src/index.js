@@ -51,6 +51,17 @@ const BCVoz = {
    * @param {{hostname?: string, user?: string}} [opts.device] O que a página
    *   sabe da máquina, para o REGISTER identificar o aparelho na tela
    *   "Aparelhos" de uma ligação. Opcional; o que faltar não vai.
+   * @param {object} [opts.branding]  White-label da tela de login, para quem
+   *   revende o webphone: `{ logo: false|url, links: false|{ signup, support,
+   *   portal } }`. `false` tira; uma URL troca. `logo` aceita `https:` ou
+   *   `data:image/`; os links aceitam `https:`, `mailto:` e `tel:`. Só em
+   *   `mode: 'srcdoc'` (o padrão).
+   * @param {RTCIceServer[]} [opts.iceServers]  STUN/TURN para a negociação de
+   *   mídia. Padrão: nenhum — o webphone usa só os candidatos que o navegador
+   *   gera, o que basta quando o PABX anuncia IP público. Passe TURN (de
+   *   preferência TCP/TLS 443) para cobrir NAT simétrico e rede que corta UDP.
+   *   Quando o navegador não gera candidato nenhum, o SDK emite
+   *   `media:blocked` em vez de deixar a chamada ficar muda.
    * @param {() => Promise<object>} [opts.refreshSession]  Busca uma sessão
    *   nova no seu backend. Chamada antes do token vencer e quando a API
    *   devolve 401; sem ela o login cai quando o expiresIn acaba.
@@ -140,8 +151,8 @@ const BCVoz = {
 
   // ---- Eventos ----
   /** Eventos: ready, state, call:dialing, call:incoming, call:answered,
-   *  call:ended, call:blocked, resize, open, close, error, extension,
-   *  session:renewed, session:expiring, session:expired. */
+   *  call:ended, call:blocked, media:blocked, resize, open, close, error,
+   *  extension, session:renewed, session:expiring, session:expired. */
   on(event, fn) {
     if (!listeners.has(event)) listeners.set(event, new Set())
     listeners.get(event).add(fn)

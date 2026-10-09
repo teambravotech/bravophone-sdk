@@ -44,6 +44,33 @@ export interface BCVozDevice {
   user?: string | null
 }
 
+/**
+ * White-label: o que da marca BCVOZ aparece na tela de login.
+ *
+ * Só em `mode: 'srcdoc'` (o padrão) — é lá que o documento é do SDK. Nada
+ * disto muda o que o webphone faz; muda o que ele mostra.
+ */
+export interface BCVozBranding {
+  /**
+   * O logotipo acima do "Entrar". `false` tira; uma URL (`https:` ou
+   * `data:image/…`) põe a sua no lugar, limitada a 44px de altura.
+   */
+  logo?: false | string
+  /**
+   * Os três links do rodapé do login. `false` tira os três de uma vez;
+   * por chave, `false` tira aquele e uma URL troca o destino.
+   *
+   * - `signup`: "Criar conta" (portal do BCVOZ)
+   * - `support`: "Suporte" (grupo de WhatsApp do BCVOZ)
+   * - `portal`: "Portal BCVOZ"
+   */
+  links?: false | {
+    signup?: false | string
+    support?: false | string
+    portal?: false | string
+  }
+}
+
 export interface BCVozOptions {
   /** Origem do webphone hospedado. Só usado com `mode: 'hosted'`. */
   hostUrl?: string
@@ -162,6 +189,29 @@ export interface BCVozOptions {
   recents?: boolean
   /** Identificação da máquina para o REGISTER. Ver `BCVozDevice`. */
   device?: BCVozDevice
+  /**
+   * Tira (ou troca) a marca BCVOZ da tela de login: o logotipo, o link de
+   * suporte no WhatsApp e os links para o portal. Para quem revende o
+   * webphone dentro do próprio produto. Ver `BCVozBranding`.
+   *
+   * Só em `mode: 'srcdoc'` (o padrão).
+   */
+  branding?: BCVozBranding
+  /**
+   * Servidores STUN/TURN para a negociação de mídia (WebRTC).
+   *
+   * Padrão: nenhum. O webphone usa apenas os candidatos que o navegador
+   * gera — o que funciona quando o PABX anuncia um IP público, e **falha em
+   * silêncio** quando o cliente não gera candidato algum: a chamada é
+   * atendida pelo SIP e fica muda dos dois lados. Acontece com NAT simétrico,
+   * rede que corta UDP e extensões de VPN que ligam
+   * `webrtc.ip_handling_policy = disable_non_proxied_udp`.
+   *
+   * TURN sobre TCP/TLS 443 é o que cobre esses casos; STUN sozinho não
+   * resolve rede que bloqueia UDP. Quando a coleta de candidatos termina
+   * vazia, o SDK emite `media:blocked` e mostra um aviso na janela.
+   */
+  iceServers?: RTCIceServer[]
 }
 
 export interface CallInfo {
@@ -237,6 +287,13 @@ export interface BCVozEvents {
   'session:expiring': { expiresAt: number | null }
   /** O token venceu e não foi possível renovar; o login vai cair. */
   'session:expired': { reason: string }
+  /**
+   * A negociação de mídia não tem caminho: o navegador terminou a coleta sem
+   * um único candidato ICE. A chamada conecta pelo SIP e fica **muda dos dois
+   * lados**. Quase sempre é extensão de VPN ou política do navegador; veja
+   * `iceServers` para o que o integrador pode fazer a respeito.
+   */
+  'media:blocked': { reason: 'no_ice_candidates'; message: string }
   /** O painel de Recentes abriu ou fechou. */
   recents: { open: boolean }
 }

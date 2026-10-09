@@ -663,6 +663,18 @@
       return { ok: true, headers: a.cabecalhos().length }
     },
 
+    /**
+     * Servidores ICE do integrador. Existe para o modo hospedado, onde o SDK
+     * nao alcanca o documento: em srcdoc eles ja chegam em
+     * `window.__bpIceServers`, antes de o bundle avaliar. Nos dois casos vem
+     * muito antes da primeira chamada, que e quando a conexao nasce.
+     */
+    ice: function (p) {
+      iceServers = (p && Array.isArray(p.iceServers)) ? p.iceServers : []
+      envolverPeerConnection()
+      return Promise.resolve({ ok: true, servers: iceServers.length })
+    },
+
     ping: function () { return Promise.resolve({ pong: Date.now() }) },
   }
 
@@ -724,6 +736,7 @@
       }
       // Terminou.
       if (!now.active && prev.active) {
+        esconderAvisoMidia()
         bridge.emit('call:ended', describe(prev))
       }
       prev = now
@@ -1120,6 +1133,145 @@
   vigiarEstadoDoApp()
 
   window.__bpSemRamal = function () { return !!avisoEl }
+
+
+  // --- WebRTC bloqueado pelo navegador ----------------------------------------
+  //
+  // Caso real (2026-10-09): chamada atendida, 42 s de duração, muda dos dois
+  // lados, sem um erro no console. Não era o webphone nem o PABX — o Chrome
+  // daquela máquina estava com `webrtc.ip_handling_policy` em
+  // "disable_non_proxied_udp", ligado por uma extensão de VPN. Com essa
+  // política e sem proxy, o navegador não emite candidato ICE nenhum: a oferta
+  // sai sem uma linha `a=candidate`, o PABX não tem para onde mandar RTP e o
+  // ICE fica parado em `new`.
+  //
+  // O SIP não enxerga nada disso: a sinalização completa normalmente, a
+  // chamada é atendida e o silêncio é a única pista. O sinal honesto é a
+  // coleta de candidatos terminar vazia — é o que vigiamos aqui, para virar
+  // mensagem em vez de mistério.
+  //
+  // O mesmo envelope carrega os `iceServers` do integrador: o JsSIP cria a
+  // conexão com `{iceServers: []}` fixo (`cloneObject(t.pcConfig, ...)`), e
+  // envolver o construtor é o único ponto de injeção que não toca no bundle.
+  // Envolver depois que o bundle carregou funciona porque a conexão só nasce
+  // quando há chamada, muito depois desta linha.
+
+  var iceServers = Array.isArray(window.__bpIceServers) ? window.__bpIceServers : []
+  var avisoMidiaEl = null
+  var jaAvisouIce = false
+
+  var TXT_ICE = 'O navegador bloqueou o WebRTC: a liga\u00e7\u00e3o conecta sem ' +
+    '\u00e1udio. Desative extens\u00f5es de VPN ou de "prote\u00e7\u00e3o contra ' +
+    'vazamento de WebRTC".'
+
+  function envolverPeerConnection() {
+    var Orig = window.RTCPeerConnection
+    if (typeof Orig !== 'function' || Orig.__bpEnvolvido) return
+    function Envolvida(cfg, constraints) {
+      var conf = cfg || {}
+      // Só completamos o que veio vazio: se um dia o bundle configurar os
+      // servidores por conta própria, a configuração dele manda.
+      if (iceServers.length && (!conf.iceServers || !conf.iceServers.length)) {
+        var copia = {}
+        for (var k in conf) {
+          if (Object.prototype.hasOwnProperty.call(conf, k)) copia[k] = conf[k]
+        }
+        copia.iceServers = iceServers
+        conf = copia
+      }
+      var pc = new Orig(conf, constraints)
+      vigiarCandidatos(pc)
+      return pc
+    }
+    // instanceof e os estáticos (generateCertificate) precisam continuar
+    // valendo: quem envolve um construtor do navegador herda a casa inteira.
+    Envolvida.prototype = Orig.prototype
+    for (var e in Orig) {
+      try { Envolvida[e] = Orig[e] } catch (err) { /* estático só de leitura */ }
+    }
+    if (typeof Orig.generateCertificate === 'function') {
+      Envolvida.generateCertificate = function () {
+        return Orig.generateCertificate.apply(Orig, arguments)
+      }
+    }
+    Envolvida.__bpEnvolvido = true
+    window.RTCPeerConnection = Envolvida
+    if (window.webkitRTCPeerConnection) window.webkitRTCPeerConnection = Envolvida
+  }
+
+  function vigiarCandidatos(pc) {
+    var achou = false
+    try {
+      pc.addEventListener('icecandidate', function (ev) {
+        if (ev && ev.candidate && ev.candidate.candidate) achou = true
+      })
+      pc.addEventListener('icegatheringstatechange', function () {
+        if (pc.iceGatheringState !== 'complete' || achou) return
+        // A oferta é a prova. O getStats ainda mostra "candidatos" TCP
+        // 0.0.0.0 porta 9 nesse estado — placeholders que não servem para
+        // nada —, então contar por lá daria falso negativo.
+        var sdp = (pc.localDescription && pc.localDescription.sdp) || ''
+        if (/^a=candidate:/m.test(sdp)) return
+        avisarMidiaBloqueada()
+      })
+    } catch (err) { /* conexão sem addEventListener: nada a vigiar */ }
+  }
+
+  function avisarMidiaBloqueada() {
+    if (!jaAvisouIce) {
+      jaAvisouIce = true
+      console.warn('[bp-bridge] WebRTC sem candidatos ICE: a chamada conecta e ' +
+        'fica muda. Extensao de VPN ou politica do navegador ' +
+        '(webrtc.ip_handling_policy = disable_non_proxied_udp).')
+    }
+    // O integrador decide o que fazer com isto; a faixa é o plano B, para
+    // quem não escuta o evento.
+    bridge.emit('media:blocked', { reason: 'no_ice_candidates', message: TXT_ICE })
+    mostrarAvisoMidia(TXT_ICE)
+  }
+
+  /**
+   * Cartão no rodapé da janela.
+   *
+   * Em baixo, e não em cima: o aviso de ramal já mora lá e reserva espaço no
+   * shell. Aqui o aviso é da chamada em curso, dura o tempo dela e não pode
+   * brigar com o outro pela mesma posição.
+   */
+  function mostrarAvisoMidia(texto) {
+    if (avisoMidiaEl) return
+    var css = document.createElement('style')
+    css.textContent =
+      '.bp-aviso-midia{position:fixed;left:8px;bottom:8px;' +
+      'width:calc(var(--bp-painel-larg,380px) - 16px);z-index:2147483000;' +
+      'display:flex;align-items:flex-start;gap:9px;padding:9px 12px;' +
+      'background:var(--bp-alerta-bg,#241a20);' +
+      'border:1px solid var(--bp-alerta-borda,#5a2b33);border-radius:10px;' +
+      'color:var(--bp-alerta-texto,#ffb3b3);' +
+      'font:600 11.5px/1.45 system-ui,-apple-system,sans-serif;' +
+      'box-shadow:0 10px 28px var(--bp-scrim,rgba(0,0,0,.5))}' +
+      '.bp-aviso-midia svg{flex:0 0 auto;width:15px;height:15px;margin-top:1px;' +
+      'color:var(--bp-alerta-titulo,#ff8a8a)}'
+    document.head.appendChild(css)
+
+    var el = document.createElement('div')
+    el.className = 'bp-aviso-midia'
+    el.setAttribute('role', 'alert')
+    el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>' +
+      '<path d="M12 9v4"/><path d="M12 17h.01"/></svg><span></span>'
+    el.querySelector('span').textContent = texto
+    document.body.appendChild(el)
+    avisoMidiaEl = el
+  }
+
+  function esconderAvisoMidia() {
+    if (!avisoMidiaEl) return
+    avisoMidiaEl.remove()
+    avisoMidiaEl = null
+  }
+
+  envolverPeerConnection()
 
 
   // --- digitar pelo teclado --------------------------------------------------

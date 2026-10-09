@@ -15,6 +15,8 @@
 // funciona sem `allow=`, `localStorage` funciona, `document.baseURI` resolve
 // para a página pai e `@font-face` com URL absoluta do CDN carrega.
 
+import { cssDaMarca, trocasDeLink } from './marca.js'
+
 const CDN = 'https://cdn.jsdelivr.net/npm'
 
 /** Base dos assets do host, travada na versão do próprio pacote. */
@@ -38,7 +40,8 @@ export function hostBase(version, pkg = '@bcvoz/webphone') {
  *   há sessão: aí não há tela de login, e regravar o e-mail lembrado faria o
  *   gerenciador de contas batizar a sessão com um endereço de fora.
  */
-export function buildSrcdoc({ version, parentOrigin, session, base, email }) {
+export function buildSrcdoc({ version, parentOrigin, session, base, email,
+  iceServers, marca }) {
   const b = base || hostBase(version)
   const emailDeLogin = session ? null : (email || null)
 
@@ -55,7 +58,9 @@ export function buildSrcdoc({ version, parentOrigin, session, base, email }) {
   // quebrados ("atribu?do a este usu?rio"). Escapando para \uXXXX, o HTML fica
   // ASCII puro e o texto é reconstruído pelo parser de JSON, sem depender de
   // encoding em nenhum ponto do caminho.
-  const cfg = JSON.stringify({ parentOrigin, session: semRamal, version, email: emailDeLogin })
+  const cfg = JSON.stringify({ parentOrigin, session: semRamal, version,
+    email: emailDeLogin, iceServers: iceServers || null,
+    marcaCss: cssDaMarca(marca) || null, marcaLinks: trocasDeLink(marca) })
     .replace(/[-￿]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'))
     .replace(/</g, '\\u003c')
 
@@ -87,6 +92,46 @@ export function buildSrcdoc({ version, parentOrigin, session, base, email }) {
   // Versão do pacote: o chrome-shim a devolve em getManifest(), e é ela que
   // aparece no rodapé do login, em Ajustes e no heartbeat.
   window.__bcvozVersao = cfg.version;
+  // STUN/TURN do integrador. O guest-bridge le daqui ao envolver o
+  // RTCPeerConnection: o JsSIP cria a conexao com iceServers vazio e
+  // sem isto o webphone depende so dos candidatos que o navegador gera.
+  if (cfg.iceServers) window.__bpIceServers = cfg.iceServers;
+
+  // White-label: o CSS vem pronto do SDK (ver src/marca.js). Entra antes do
+  // bundle para que o logotipo nunca chegue a piscar na tela.
+  if (cfg.marcaCss) {
+    try {
+      var estilo = document.createElement('style');
+      estilo.textContent = cfg.marcaCss;
+      document.head.appendChild(estilo);
+    } catch (e) {}
+  }
+
+  // Trocar o destino de um link exige o atributo; esconder nao. Por isso o
+  // observador so existe quando alguem pediu troca, e sai de cena assim que
+  // a tela de login some.
+  if (cfg.marcaLinks && cfg.marcaLinks.length) aplicarTrocasDeLink(cfg.marcaLinks);
+
+  function aplicarTrocasDeLink(trocas) {
+    var pendente = null;
+    function aplicar() {
+      pendente = null;
+      for (var i = 0; i < trocas.length; i++) {
+        var alvos = document.querySelectorAll('a[href*="' + trocas[i][0] + '"]');
+        for (var j = 0; j < alvos.length; j++) alvos[j].setAttribute('href', trocas[i][1]);
+      }
+    }
+    function agendar() {
+      // O Vue mexe no DOM a cada tecla digitada; sem juntar as mudancas, cada
+      // uma viraria uma varredura de seletor.
+      if (pendente === null) pendente = setTimeout(aplicar, 150);
+    }
+    aplicar();
+    if (window.MutationObserver) {
+      new window.MutationObserver(agendar).observe(document.documentElement,
+        { childList: true, subtree: true });
+    }
+  }
   // Grava a sessão onde o bundle procura, ANTES dele avaliar, para já subir
   // autenticado em vez de piscar a tela de login.
   //

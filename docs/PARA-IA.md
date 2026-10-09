@@ -99,6 +99,8 @@ Chame uma vez, com o `<body>` já existindo. Devolve a instância.
 |---|---|---|---|
 | `token` | `string` | — | Sessão do usuário, emitida pelo backend do integrador |
 | `email` | `string` | — | **Só sem sessão.** A tela de login do webphone sobe com este e-mail preenchido; a pessoa digita só a senha. Só em `srcdoc` |
+| `iceServers` | `RTCIceServer[]` | — | STUN/TURN da mídia. Sem isto, o webphone usa só os candidatos do navegador — e fica mudo se ele não gerar nenhum |
+| `branding` | `{ logo?, links? }` | — | White-label do login: `logo: false\|url`, `links: false\|{ signup, support, portal }`. `false` tira, URL troca. Só em `srcdoc` |
 | `mode` | `'srcdoc' \| 'hosted'` | `'srcdoc'` | `'hosted'` exige `hostUrl` e um host publicado |
 | `hostBase` | `string` | CDN desta versão | Só em `srcdoc`. Deve terminar em `/` |
 | `hostUrl` | `string` | domínio oficial | Só em `hosted` |
@@ -205,6 +207,7 @@ BCVoz.off(evt, fn)   // equivalente
 | `open` / `close` | — | Janela exibida ou recolhida |
 | `reveal` | — | `reveal()` foi chamado |
 | `error` | `{ message }` | Falha na ponte ou no carregamento |
+| `media:blocked` | `{ reason, message }` | A coleta de ICE terminou sem candidato: a chamada conecta e fica **muda dos dois lados**. Quase sempre extensão de VPN ou política do navegador |
 
 `CallInfo`: `{ id, number, direction }` — `direction` é `'inbound'` ou
 `'outbound'`.

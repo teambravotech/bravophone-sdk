@@ -7,6 +7,7 @@ import { buildSrcdoc } from './srcdoc.js'
 import { acompanharRamal } from './ramal.js'
 import { manterSessao } from './sessao.js'
 import { normalizarEmail } from './login.js'
+import { normalizarMarca } from './marca.js'
 
 const DEFAULTS = {
   // 380x640 é a geometria da janela nativa da extensão — o layout do
@@ -98,6 +99,16 @@ export function createWidget(options) {
     // REGISTER (X-Bravo-Device-*). Uma página não descobre isso sozinha;
     // quem embute num sistema interno costuma saber.
     device = null,
+    // STUN/TURN para a negociação de mídia. Sem isto o webphone depende dos
+    // candidatos que o próprio navegador gera — o que basta quando o PABX
+    // anuncia IP público, e falha calado quando o cliente não emite candidato
+    // nenhum (NAT simétrico, rede corporativa, extensão de VPN que liga
+    // `disable_non_proxied_udp`). Ver o aviso `media:blocked`.
+    iceServers = null,
+    // White-label: tira (ou troca) o logotipo e os links do BCVOZ na tela de
+    // login. Para quem revende o webphone dentro do próprio produto — ver
+    // src/marca.js.
+    branding = null,
     // () => Promise<sessão>: busca uma sessão nova no backend do integrador.
     // Sem ela o token vence e o login cai (ver sessao.js).
     refreshSession,
@@ -121,6 +132,10 @@ export function createWidget(options) {
   // Quem injeta sessão impõe a identidade: não há tela de login para preparar,
   // e o `email` não vale nada ali. Vale só no caminho oposto — sem sessão.
   const emailDeLogin = sessaoAtual ? null : normalizarEmail(email)
+
+  // A marca é validada uma vez, no init: URL torta vira aviso aqui, e não
+  // um link quebrado na cara de quem for usar.
+  const marca = normalizarMarca(branding)
 
   const srcdoc = mode === 'srcdoc'
   // Em srcdoc o documento herda a origem do site, então é com ela que a ponte
@@ -197,7 +212,7 @@ export function createWidget(options) {
   if (srcdoc) {
     frameEl.setAttribute('srcdoc',
       buildSrcdoc({ version, parentOrigin: origin, base: hostBase,
-        email: emailDeLogin,
+        email: emailDeLogin, iceServers, marca,
         // token sozinho vira uma sessão mínima; sem sip/ramal o webphone
         // carrega mas não registra.
         session: session || (token ? { vxToken: token } : null) }))
@@ -210,6 +225,11 @@ export function createWidget(options) {
       console.warn(
         "[BCVoz] email só vale em mode 'srcdoc': no hospedado a tela de login " +
         'é de outra origem, e um e-mail na URL do iframe acabaria em log de servidor.')
+    }
+    if (marca) {
+      console.warn(
+        "[BCVoz] branding só vale em mode 'srcdoc': no hospedado o documento é " +
+        'de outra origem e o SDK não alcança o CSS dele.')
     }
     frameEl.setAttribute('src',
       buildSrc(new URL(hostUrl), { token, embed: '1', parent: location.origin }))
@@ -311,6 +331,12 @@ export function createWidget(options) {
         // Antes do registro quando a sessão vai junto; se o webphone já
         // registrou (srcdoc com sessão pré-gravada), ele reenvia o REGISTER.
         if (device) bridge.call('device', device).catch(() => {})
+        // Em srcdoc os servidores já chegaram pelo documento; no hospedado
+        // esta é a única via. Em todo caso é antes da primeira chamada, que
+        // é quando a conexão de mídia nasce.
+        if (iceServers && !srcdoc) {
+          bridge.call('ice', { iceServers }).catch(() => {})
+        }
 
         // O ramal pode ser atribuído ou trocado sem novo login. Só faz
         // sentido acompanhar se soubermos para onde perguntar.

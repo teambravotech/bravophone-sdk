@@ -605,6 +605,8 @@ arraste continuam desligados, como sempre estiveram no host standalone.
 |---|---|---|---|
 | `token` | `string` | — | Token de sessão emitido pelo seu backend |
 | `email` | `string` | — | Sem sessão: a tela de login do webphone sobe com este e-mail — ver acima |
+| `iceServers` | `RTCIceServer[]` | — | STUN/TURN da negociação de mídia — ver abaixo |
+| `branding` | `object` | — | Tira (ou troca) o logotipo e os links do BCVOZ no login — ver abaixo |
 | `mode` | `'srcdoc' \| 'hosted'` | `'srcdoc'` | Como o webphone é carregado — ver abaixo |
 | `hostUrl` | `string` | `https://webphone.bravophone.com/` | Origem do webphone (só no modo `hosted`) |
 | `position` | `string` | `'bottom-right'` | Canto inicial |
@@ -784,11 +786,99 @@ off()  // remove o listener
 ```
 
 `ready` · `state` · `call:dialing` · `call:incoming` · `call:answered` ·
-`call:ended` · `resize` · `reveal` · `open` · `close` · `error`.
-Use `'*'` para receber todos como `{ event, payload }`.
+`call:ended` · `media:blocked` · `resize` · `reveal` · `open` · `close` ·
+`error`. Use `'*'` para receber todos como `{ event, payload }`.
 
 Uma chamada que não completa chega como `call:ended`: o estado do bundle não
 distingue desligar de falhar.
+
+### White-label: tirar a marca BCVOZ da tela
+
+Quem revende o webphone dentro do próprio produto não quer o logotipo de outra
+empresa na tela de login — nem um "Suporte" que manda o cliente dele para um
+grupo de WhatsApp que não é o dele. `branding` resolve os dois:
+
+```js
+BCVoz.init({
+  branding: {
+    logo: false,          // ou 'https://cliente.com/marca.svg'
+    links: false,         // tira "Criar conta", "Suporte" e "Portal BCVOZ"
+  },
+})
+```
+
+Por item, `false` tira e uma URL troca o destino:
+
+```js
+BCVoz.init({
+  branding: {
+    logo: 'data:image/svg+xml;base64,…',
+    links: {
+      signup: false,                            // "Criar conta"
+      support: 'https://wa.me/5511999999999',   // seu canal de suporte
+      portal: false,                            // "Portal BCVOZ"
+    },
+  },
+})
+```
+
+`logo` aceita `https:` ou `data:image/…` e é limitado a 44px de altura; os
+links aceitam `https:`, `mailto:` e `tel:`. URL fora disso é ignorada com aviso
+no console — vale como cerca contra erro de digitação, não como segurança: a
+página é sua.
+
+Como funciona, e o que isso implica: esconder é CSS no documento do `srcdoc`,
+aplicado **antes** de o bundle avaliar, então o logotipo não chega a piscar.
+Os seletores são os que não mudam entre builds — a classe `bcvoz-logo` e o
+domínio de cada link —, e há teste que falha se a extensão mexer neles. Trocar
+o destino de um link exige mexer no atributo, e só nesse caso um observador
+entra em cena. **Só em `mode: 'srcdoc'`** (o padrão): no hospedado o documento
+é de outra origem e o SDK não alcança o CSS dele.
+
+### Chamada muda: quando o navegador não gera candidato ICE
+
+O caso que deu origem a isto (2026-10-09): chamada atendida, 42 segundos, muda
+dos dois lados, **sem um erro no console**. O SIP tinha completado; o PABX
+tinha respondido com um SDP exemplar. O que faltava era do lado do navegador —
+uma extensão de VPN tinha ligado
+`webrtc.ip_handling_policy = "disable_non_proxied_udp"`, e com ela o Chrome não
+emite candidato ICE nenhum: a oferta sai sem uma linha `a=candidate` e o PABX
+não tem para onde mandar RTP.
+
+Nada disso aparece na sinalização, então o SDK passou a olhar o único sinal
+honesto: a coleta de candidatos terminar vazia. Quando isso acontece, ele emite
+`media:blocked` e mostra um aviso no rodapé da janela em vez de deixar a pessoa
+falando sozinha.
+
+```js
+BCVoz.on('media:blocked', ({ reason, message }) => {
+  // reason: 'no_ice_candidates'
+  mostreNoSeuApp(message)
+})
+```
+
+**`iceServers`** é o outro lado da moeda. O webphone criava a conexão com
+`{ iceServers: [] }` — ou seja, dependia inteiramente dos candidatos que o
+navegador gera, o que basta quando o PABX anuncia IP público e falha calado
+quando o cliente não gera nenhum. Passe os seus:
+
+```js
+BCVoz.init({
+  session,
+  iceServers: [
+    { urls: 'stun:stun.exemplo.com:3478' },
+    // TURN sobre TCP/TLS 443 é o que atravessa rede que corta UDP.
+    { urls: 'turn:turn.exemplo.com:443?transport=tcp',
+      username: '…', credential: '…' },
+  ],
+})
+```
+
+Vale nos dois modos: em `srcdoc` os servidores são entregues ao documento antes
+do bundle avaliar; em `hosted` vão pela ponte, sempre antes da primeira
+chamada. Não existe default — credencial de TURN é por cliente, e embutir uma
+no pacote a entregaria a qualquer integrador. **STUN sozinho não resolve rede
+que bloqueia UDP**; para esses casos só TURN em TCP/TLS.
 
 ---
 
