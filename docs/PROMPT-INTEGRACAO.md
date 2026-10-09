@@ -185,6 +185,13 @@ BCVoz.init({
   ramal: se um for atribuído ou trocado no painel, o webphone reage sem novo
   login.
 
+**Se não houver sessão para passar.** Sem `session` e sem `token`, o webphone
+sobe na tela de login dele — com o gerenciador de contas funcionando — e a
+pessoa entra por conta própria. Sabendo o e-mail dela, `init({ email })`
+entrega a tela preenchida e ela digita só a senha. A conta só entra no
+gerenciador depois de um login bem-sucedido, então endereço que não existe não
+vira conta. `email` vale só em `mode: 'srcdoc'` e é ignorado quando há sessão.
+
 ## Contrato da API (não invente nada fora daqui)
 
 O UMD expõe `window.BCVoz`. **Não** use `BCVoz.default`.
@@ -195,6 +202,7 @@ O UMD expõe `window.BCVoz`. **Não** use `BCVoz.default`.
 |---|---|---|---|
 | `session` | `object` | — | Resposta do login, inteira. O caminho correto |
 | `token` | `string` | — | Atalho para `{ vxToken }`; insuficiente sozinho |
+| `email` | `string` | — | **Só sem sessão**: a tela de login do webphone sobe preenchida. Só em `srcdoc` |
 | `apiBase` | `string` | `https://pabx.teambravotech.com` | Acompanha o ramal do usuário |
 | `mode` | `'srcdoc' \| 'hosted'` | `'srcdoc'` | `'hosted'` **exige** `hostUrl` |
 | `hostUrl` | `string` | — | Só em `hosted`; sem default, de propósito |

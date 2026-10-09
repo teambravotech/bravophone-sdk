@@ -31,9 +31,16 @@ export function hostBase(version, pkg = '@bcvoz/webphone') {
  * A ordem dos scripts é a mesma do host hospedado e não é negociável: as
  * mensagens precisam existir antes do shim, e o shim antes de qualquer código
  * que toque em `chrome.*` durante a avaliação do bundle.
+ *
+ * @param {object} o
+ * @param {string} [o.email]  Sem sessão, o webphone sobe na tela de login
+ *   dele. Este e-mail chega lá preenchido (ver src/login.js). Ignorado quando
+ *   há sessão: aí não há tela de login, e regravar o e-mail lembrado faria o
+ *   gerenciador de contas batizar a sessão com um endereço de fora.
  */
-export function buildSrcdoc({ version, parentOrigin, session, base }) {
+export function buildSrcdoc({ version, parentOrigin, session, base, email }) {
   const b = base || hostBase(version)
+  const emailDeLogin = session ? null : (email || null)
 
   // O srcdoc é HTML dentro de um atributo: aspas duplas quebrariam o atributo.
   // Serializamos os valores como JSON e usamos aspas simples no HTML.
@@ -48,7 +55,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
   // quebrados ("atribu?do a este usu?rio"). Escapando para \uXXXX, o HTML fica
   // ASCII puro e o texto é reconstruído pelo parser de JSON, sem depender de
   // encoding em nenhum ponto do caminho.
-  const cfg = JSON.stringify({ parentOrigin, session: semRamal, version })
+  const cfg = JSON.stringify({ parentOrigin, session: semRamal, version, email: emailDeLogin })
     .replace(/[-￿]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'))
     .replace(/</g, '\\u003c')
 
@@ -113,6 +120,69 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
       }
     } catch (e) {}
   }
+
+  // SÓ O E-MAIL: o login continua sendo o do webphone, feito pela pessoa.
+  //
+  // A tela de login do bundle lê este valor no mounted
+  // (chrome.storage.sync.get('bravophoneRememberEmail'), que o shim mapeia
+  // para 'bp.sync.') e sobe com o campo preenchido — falta a senha. Depois de
+  // um login bem-sucedido o próprio bundle regrava a chave com o e-mail que
+  // entrou, e o gerenciador de contas registra a conta por ela: só e-mail que
+  // de fato logou aparece na lista.
+  if (cfg.email) {
+    try {
+      // Já logado neste navegador? Então não há tela de login para preparar.
+      // E regravar o e-mail lembrado seria pior que inútil: o gerenciador de
+      // contas usa essa chave para batizar a sessão que encontra, e a conta
+      // entraria na lista com o endereço de outra pessoa.
+      if (!localStorage.getItem('bp.local.bravophoneVxToken')) {
+        localStorage.setItem('bp.sync.bravophoneRememberEmail', JSON.stringify(cfg.email));
+        focarSenhaQuandoDer();
+      }
+    } catch (e) {}
+  }
+
+  // O bundle QUER deixar o cursor na senha quando há e-mail lembrado:
+  //
+  //   mounted -> nextTick -> checkRememberEmail()  // preenche e foca a senha
+  //                       -> this.$refs.email.focus()
+  //
+  // Na extensão o callback do chrome.storage volta depois dessa segunda
+  // linha, e a senha fica focada. O shim responde na hora (localStorage é
+  // síncrono), então o focus() do e-mail é o último e ganha — a primeira
+  // tecla iria para um campo já preenchido. Isto devolve o cursor à senha,
+  // uma vez só, e nunca tomando o foco de onde a pessoa o colocou.
+  function focarSenhaQuandoDer() {
+    var limite = Date.now() + 20000;
+    var feito = false;
+    function tentar() {
+      if (feito) return;
+      if (Date.now() > limite) { feito = true; return; }
+      var tela = document.querySelector('.login-screen');
+      var form = tela && tela.querySelector('form');
+      // O campo de e-mail do bundle é type="text" (name="email"), não
+      // type="email": procurar pelo tipo não acha nada. O primeiro input do
+      // formulário é o caminho que o gerenciador de contas também usa.
+      var mail = form && (form.querySelector('input[type=email]') ||
+        form.querySelectorAll('input')[0]);
+      var senha = form && form.querySelector('input[type=password]');
+      // Campo já preenchido é o sinal de que o bundle leu o e-mail.
+      if (!senha || !mail || !mail.value) { setTimeout(tentar, 120); return; }
+      var onde = document.activeElement;
+      if (onde === senha) { feito = true; return; }
+      // A janela do widget costuma estar fechada quando o app monta: sem foco
+      // no documento, focar daqui roubaria o cursor da página do integrador.
+      if (document.hasFocus() && (!onde || onde === mail || onde === document.body)) {
+        feito = true;
+        senha.focus();
+        return;
+      }
+      setTimeout(tentar, 120);
+    }
+    setTimeout(tentar, 150);
+    // O momento útil é quando a pessoa abre o widget e clica nele.
+    window.addEventListener('focus', function () { setTimeout(tentar, 0); });
+  }
 })();
 <\/script>
 <script src="${b}js/bravophone-tema.js"><\/script>
@@ -136,6 +206,7 @@ export function buildSrcdoc({ version, parentOrigin, session, base }) {
 <script defer src="${b}popup.js"><\/script>
 <script defer src="${b}js/bravophone-sem-ramal.js"><\/script>
 <script defer src="${b}js/bravophone-reconectar.js"><\/script>
+<script defer src="${b}js/bravophone-registro.js"><\/script>
 <script defer src="${b}shim/guest-bridge.js"><\/script>
 <script defer src="${b}shim/versao.js"><\/script>
 </head>

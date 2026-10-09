@@ -98,6 +98,7 @@ Chame uma vez, com o `<body>` já existindo. Devolve a instância.
 | Opção | Tipo | Padrão | Observação |
 |---|---|---|---|
 | `token` | `string` | — | Sessão do usuário, emitida pelo backend do integrador |
+| `email` | `string` | — | **Só sem sessão.** A tela de login do webphone sobe com este e-mail preenchido; a pessoa digita só a senha. Só em `srcdoc` |
 | `mode` | `'srcdoc' \| 'hosted'` | `'srcdoc'` | `'hosted'` exige `hostUrl` e um host publicado |
 | `hostBase` | `string` | CDN desta versão | Só em `srcdoc`. Deve terminar em `/` |
 | `hostUrl` | `string` | domínio oficial | Só em `hosted` |
@@ -110,6 +111,19 @@ Chame uma vez, com o `<body>` já existindo. Devolve a instância.
 | `dockTop` | `'max' \| 'top-half'` | `'max'` | O que arrastar até o topo faz |
 | `title` | `string` | `'BCVOZ'` | Só com `frame: 'bar'` |
 | `device` | `{ hostname?: string, user?: string }` | — | Identifica a máquina no REGISTER (`X-Bravo-Device-Hostname/-User`). Só o que a página souber; `user` expõe o usuário ao administrador da conta |
+
+### Sem sessão: o login é do próprio webphone
+
+Se o integrador não tem como emitir a sessão, **não passe `session` nem
+`token`**: o webphone abre a tela de login dele, com o gerenciador de contas
+funcionando (várias contas no aparelho, troca em um toque). Sabendo o e-mail
+da pessoa, `init({ email: 'ana@empresa.com.br' })` entrega a tela preenchida.
+
+- O login é o do webphone: o SDK não vê senha e não emite token.
+- A conta só entra no gerenciador **depois de um login bem-sucedido** — e-mail
+  que não existe não vira conta. Formato inválido é ignorado com aviso.
+- `email` é ignorado quando há `session`/`token`, e vale só em `mode: 'srcdoc'`.
+- Sem token, o SDK não acompanha o ramal (`apiBase`); o resto funciona igual.
 
 ### `mode`: escolha entre os dois
 

@@ -48,7 +48,7 @@ export interface BCVozOptions {
   /** Origem do webphone hospedado. Só usado com `mode: 'hosted'`. */
   hostUrl?: string
   /**
-   * Como o webphone é carregado. Padrão: `'hosted'`.
+   * Como o webphone é carregado. Padrão: `'srcdoc'`.
    *
    * - `'hosted'`: o iframe navega para `hostUrl`. Todos os requests saem de uma
    *   origem fixa, então o CORS dos backends não cresce com o número de
@@ -103,6 +103,22 @@ export interface BCVozOptions {
    * "faça login pelo webphone".
    */
   token?: string
+  /**
+   * Para quem **não** injeta sessão: sem `session` nem `token`, o webphone sobe
+   * na tela de login dele e a pessoa entra por conta própria — com o
+   * gerenciador de contas do webphone funcionando (várias contas no mesmo
+   * aparelho, troca em um toque). Este e-mail chega à tela já preenchido, com
+   * o cursor na senha.
+   *
+   * Depois do login, o gerenciador registra a conta por esse endereço, então
+   * **só e-mail que de fato entrou aparece na lista** — um endereço que não
+   * existe não vira conta. Formato inválido é ignorado com aviso no console.
+   *
+   * Só em `mode: 'srcdoc'` (o padrão). Ignorado quando há sessão: aí não há
+   * tela de login, e regravar o e-mail lembrado faria o gerenciador batizar a
+   * sessão com um endereço vindo de fora.
+   */
+  email?: string
   /** Canto inicial da janela. Padrão: 'bottom-right'. */
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
   /** Abrir já visível. Padrão: false (mostra só o botão flutuante). */

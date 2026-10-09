@@ -44,6 +44,10 @@ const ASSETS = [
   { from: 'js/bravophone-sem-ramal.js', to: 'js/bravophone-sem-ramal.js', required: false },
   // Botao de presenca: re-registra ou procura ramal, com giro honesto.
   { from: 'js/bravophone-reconectar.js', to: 'js/bravophone-reconectar.js', required: false },
+  // Mantem o REGISTER vivo (OPTIONS a cada 45 s) e junta as falhas num aviso
+  // so. O bundle chama `window.__bpRegistro` com fallback: sem este arquivo
+  // ele volta a empilhar um toast por tentativa de registro.
+  { from: 'js/bravophone-registro.js', to: 'js/bravophone-registro.js', required: false },
   // Campo de discagem reformulado: vive na extensão e o host reaproveita.
   { from: 'js/bravophone-input.js', to: 'js/bravophone-input.js', required: false },
   { from: 'js/bravophone-presenca.js', to: 'js/bravophone-presenca.js', required: false },
@@ -386,6 +390,7 @@ function buildHtml(versao) {
 <script defer src="./popup.js"></script>
 <script defer src="./js/bravophone-sem-ramal.js"></script>
 <script defer src="./js/bravophone-reconectar.js"></script>
+<script defer src="./js/bravophone-registro.js"></script>
 <!-- guest-bridge roda depois do app montar (defer preserva a ordem). -->
 <script defer src="./shim/guest-bridge.js"></script>
 <!-- Versão no fim da aba Ajustes. Fora do guest-bridge porque ele sai cedo

@@ -32,6 +32,13 @@ const BCVoz = {
    *   É o que o webphone precisa para registrar sem passar pela tela de login.
    * @param {string} [opts.token]    Atalho para `{ vxToken }`. Sozinho não
    *   basta: sem sip e ramal o webphone carrega mas não registra.
+   * @param {string} [opts.email]  Para quem NÃO injeta sessão. Sem `session`
+   *   nem `token`, o webphone sobe na tela de login dele e a pessoa entra por
+   *   conta própria; este e-mail chega lá preenchido e ela digita só a senha.
+   *   Depois do login, o gerenciador de contas do webphone registra a conta
+   *   por esse e-mail — então só endereço que de fato logou entra na lista.
+   *   Formato inválido é ignorado com aviso no console. Só em `mode: 'srcdoc'`
+   *   (o padrão), e ignorado quando há sessão: aí não há tela de login.
    * @param {'bottom-right'|'bottom-left'|'top-right'|'top-left'} [opts.position]
    * @param {boolean} [opts.open]     Abrir já visível (padrão: false, só o launcher).
    * @param {boolean} [opts.launcher] Exibir a aba de abertura (padrão: true).

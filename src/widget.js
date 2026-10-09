@@ -6,6 +6,7 @@ import { ICONS, DEFAULT_ICON, GRIP_ICON } from './icons.js'
 import { buildSrcdoc } from './srcdoc.js'
 import { acompanharRamal } from './ramal.js'
 import { manterSessao } from './sessao.js'
+import { normalizarEmail } from './login.js'
 
 const DEFAULTS = {
   // 380x640 é a geometria da janela nativa da extensão — o layout do
@@ -59,6 +60,10 @@ export function createWidget(options) {
     hostUrl,
     token,
     session,
+    // Sem sessão nenhuma, o webphone sobe na tela de login dele e a pessoa
+    // entra por conta própria. Este e-mail chega lá preenchido — é a metade
+    // que o sistema do integrador já sabe. Ver src/login.js.
+    email,
     position = 'bottom-right',
     open = false,
     launcher = true,
@@ -112,6 +117,10 @@ export function createWidget(options) {
 
   // A sessão em vigor. Começa com a do init e muda a cada renovação ou setAuth.
   let sessaoAtual = session || (token ? { vxToken: token } : null)
+
+  // Quem injeta sessão impõe a identidade: não há tela de login para preparar,
+  // e o `email` não vale nada ali. Vale só no caminho oposto — sem sessão.
+  const emailDeLogin = sessaoAtual ? null : normalizarEmail(email)
 
   const srcdoc = mode === 'srcdoc'
   // Em srcdoc o documento herda a origem do site, então é com ela que a ponte
@@ -188,10 +197,20 @@ export function createWidget(options) {
   if (srcdoc) {
     frameEl.setAttribute('srcdoc',
       buildSrcdoc({ version, parentOrigin: origin, base: hostBase,
+        email: emailDeLogin,
         // token sozinho vira uma sessão mínima; sem sip/ramal o webphone
         // carrega mas não registra.
         session: session || (token ? { vxToken: token } : null) }))
   } else {
+    // No hospedado o documento é de outra origem: o SDK não alcança o
+    // localStorage dele para deixar o e-mail pronto. Pela URL seria possível,
+    // mas um e-mail em query string termina em log de servidor e proxy — o
+    // mesmo motivo que mantém o token fora dela. A tela de login sobe vazia.
+    if (emailDeLogin) {
+      console.warn(
+        "[BCVoz] email só vale em mode 'srcdoc': no hospedado a tela de login " +
+        'é de outra origem, e um e-mail na URL do iframe acabaria em log de servidor.')
+    }
     frameEl.setAttribute('src',
       buildSrc(new URL(hostUrl), { token, embed: '1', parent: location.origin }))
   }

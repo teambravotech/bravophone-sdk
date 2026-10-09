@@ -146,7 +146,7 @@ no webphone em `clienteA.com` **não** estará logado em `clienteB.com` — mesm
 mesmo iframe, o mesmo usuário e a mesma origem. A extensão nunca teve esse problema
 porque tinha um storage único.
 
-Três caminhos, em ordem de recomendação:
+Quatro caminhos, em ordem de recomendação:
 
 1. **Token do integrador (recomendado).** O backend do cliente emite um token de sessão
    e passa em `BCVoz.init({ token })`. O SDK entrega ao iframe pela ponte e o
@@ -158,8 +158,13 @@ Três caminhos, em ordem de recomendação:
    backend do lado do cliente.
 3. **Storage Access API.** Exige gesto do usuário e o suporte varia entre navegadores.
    Serve como *fallback*, não como plano principal.
+4. **Login do próprio webphone.** Para quem não tem backend nenhum do seu lado:
+   não passe sessão e o webphone sobe na tela de login dele, com o gerenciador
+   de contas funcionando. Se você souber o e-mail da pessoa, `init({ email })`
+   entrega a tela preenchida e ela digita só a senha. Ver
+   [Sem sessão: o login é da pessoa](#sem-sessão-o-login-é-da-pessoa).
 
-O SDK já implementa o caminho 1 de ponta a ponta.
+O SDK implementa o caminho 1 de ponta a ponta, e o 4 sem nenhum backend.
 
 ### Funcionalidades que não portam
 
@@ -504,6 +509,53 @@ sessão já sobe autenticada, sem piscar a tela de login.
 basta**: o webphone carrega, não registra, e o RouteSelector avisa "faça login
 pelo webphone" — justamente o que a auto-autenticação existe para evitar.
 
+### Sem sessão: o login é da pessoa
+
+Nem todo integrador tem como emitir a sessão. **Não passe `session` nem
+`token`** e o webphone sobe na tela de login dele — a mesma da extensão, com o
+gerenciador de contas de pé: várias contas no mesmo aparelho, troca em um
+toque enquanto a sessão de cada uma vive, "Adicionar conta" sem derrubar a
+atual.
+
+```js
+BCVoz.init({})                              // a pessoa entra do zero
+BCVoz.init({ email: 'ana@empresa.com.br' }) // a tela já vem com o e-mail
+```
+
+Com `email`, a tela de login nasce preenchida e o cursor vai para a senha: a
+pessoa digita só ela. **O login continua sendo o do webphone** — mesma
+validação, mesmas mensagens, mesma gravação de sessão. O SDK não vê senha
+nenhuma.
+
+Onde o e-mail entra: a tela de login lê `bravophoneRememberEmail` do
+`chrome.storage.sync` (que o shim mapeia para `bp.sync.`) no `mounted`, e o
+SDK grava essa chave antes de o bundle avaliar. É a mesma porta que o próprio
+webphone usa para lembrar quem entrou da última vez.
+
+O que isso implica, e é o ponto principal:
+
+- **Só e-mail que de fato logou vira conta.** Quem registra a conta no
+  gerenciador é o `bravophone-contas.js`, depois de um login bem-sucedido,
+  lendo essa mesma chave. Um endereço que não existe não passa do erro da tela
+  de login e nunca entra na lista.
+- **Formato inválido é recusado antes disso**, com aviso no console: o
+  gerenciador exige o `@` e descartaria a conta em silêncio.
+- **Quem já está logado neste navegador não é renomeado.** Havendo sessão no
+  storage, o SDK não toca no e-mail lembrado — sobrescrever faria o
+  gerenciador batizar a sessão de uma pessoa com o endereço de outra.
+- **Com `session` ou `token`, `email` é ignorado.** Aí não há tela de login, e
+  a identidade é a do integrador (o gerenciador de contas fica desligado).
+- **Só em `mode: 'srcdoc'`** (o padrão). No hospedado o documento é de outra
+  origem, fora do alcance do SDK; a URL do iframe resolveria, mas um e-mail em
+  query string termina em log de servidor — o mesmo motivo que mantém o token
+  fora dela. O SDK avisa no console em vez de fingir que funcionou.
+
+Duas consequências de não haver sessão: o login sai da **origem do seu site**
+(mesma exigência de CORS do resto do modo `srcdoc`), e o SDK não conhece o
+token — então o acompanhamento de ramal do `apiBase` fica de fora. O aviso de
+"sem ramal" continua correto, porque quem o decide é o próprio host, olhando o
+estado do app. Os eventos de janela e de chamada funcionam normalmente.
+
 ### Sem iframe: `window.BCVozHost` (o app móvel)
 
 Quem empacota `host/` e **é** o webphone — o app móvel (Capacitor) — não tem
@@ -552,6 +604,7 @@ arraste continuam desligados, como sempre estiveram no host standalone.
 | Opção | Tipo | Padrão | Descrição |
 |---|---|---|---|
 | `token` | `string` | — | Token de sessão emitido pelo seu backend |
+| `email` | `string` | — | Sem sessão: a tela de login do webphone sobe com este e-mail — ver acima |
 | `mode` | `'srcdoc' \| 'hosted'` | `'srcdoc'` | Como o webphone é carregado — ver abaixo |
 | `hostUrl` | `string` | `https://webphone.bravophone.com/` | Origem do webphone (só no modo `hosted`) |
 | `position` | `string` | `'bottom-right'` | Canto inicial |

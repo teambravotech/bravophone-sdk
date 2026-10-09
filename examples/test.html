@@ -142,6 +142,27 @@
       </p>
       <pre id="instalacao"></pre>
     </section>
+    <section>
+      <div class="cab"><h2>Quem entra: você ou a pessoa</h2></div>
+      <p class="sub">
+        O <code>init()</code> aceita os dois caminhos. Com sessão, o webphone sobe
+        autenticado e a identidade é a do seu sistema. <strong>Sem sessão</strong>, ele
+        abre a tela de login dele — com o gerenciador de contas funcionando: várias
+        contas no mesmo aparelho, troca em um toque, "Adicionar conta". Se você souber
+        o e-mail, <code>email</code> entrega a tela preenchida e a pessoa digita só a
+        senha; o SDK não vê senha nenhuma.
+      </p>
+      <pre id="entrada"></pre>
+      <p class="dica">
+        A conta só entra no gerenciador <strong>depois de um login bem-sucedido</strong>:
+        endereço que não existe nunca vira conta na lista. Formato inválido é recusado
+        antes disso, com aviso no console. <code>email</code> vale só em
+        <code>mode: 'srcdoc'</code> (o padrão), é ignorado quando há sessão, e não
+        sobrescreve o e-mail de quem já está logado neste navegador. O webphone também
+        lembra sozinho o último e-mail que entrou no aparelho — a tela pode vir
+        preenchida mesmo sem a opção.
+      </p>
+    </section>
     <div id="grupos"></div>
   </div>
 
@@ -179,6 +200,11 @@
     linha.textContent = texto
     elLog.appendChild(linha)
     elLog.scrollTop = elLog.scrollHeight
+  }
+
+  /** Nomeada porque o destroy() apaga os ouvintes e ela precisa ser reatada. */
+  function aoEvento(ev) {
+    log('◆ ' + ev.event + (ev.payload ? ' ' + JSON.stringify(ev.payload) : ''), 'ev')
   }
 
   function campo(id) {
@@ -245,6 +271,26 @@
           } },
         { nome: 'logout', fn: function () {
             return bp.logout()
+          } },
+      ],
+    },
+    {
+      titulo: 'Login pela pessoa (sem sessão)',
+      sub: 'O email só é lido no init: por isso estes botões remontam o widget — ' +
+        'destroy() + init(), o caminho documentado para trocar de opção. Havendo ' +
+        'sessão neste navegador o webphone volta logado: use logout antes. ' +
+        'O hostBase do exemplo é só deste playground; em produção o padrão já ' +
+        'é o CDN desta versão.',
+      campos: [{ id: 'email', rotulo: 'E-mail da pessoa', valor: 'ana@empresa.com.br' }],
+      acoes: [
+        { nome: 'init com email', primario: true, fn: function () {
+            bp.destroy()
+            bp.init({ email: campo('email'), open: true, mode: 'srcdoc',
+              hostBase: 'http://localhost:5174/' })
+          } },
+        { nome: 'init sem nada', fn: function () {
+            bp.destroy()
+            bp.init({ open: true, mode: 'srcdoc', hostBase: 'http://localhost:5174/' })
           } },
       ],
     },
@@ -348,6 +394,10 @@
             if (a.nome === 'getRoutes' && r && r.routes) preencherRotas(r)
           })
           .catch(function (e) { log('✗ ' + a.nome + ': ' + e.message, 'erro') })
+          // destroy() limpa TODOS os ouvintes, inclusive o do log aqui de
+          // baixo. Reatar sempre é de graça: on() guarda num Set, então a
+          // mesma função não entra duas vezes.
+          .then(function () { bp.on('*', aoEvento) })
       }
       caixa.appendChild(b)
     })
@@ -400,8 +450,22 @@
     '<' + '/script>',
   ].join('\n')
 
+  document.getElementById('entrada').textContent = [
+    '// Voce emite a sessao: sobe autenticado, sem tela de login. A identidade',
+    '// e a do seu sistema, e o gerenciador de contas fica desligado.',
+    'BCVoz.init({ session: SESSAO_DO_LOGIN })',
+    '',
+    '// Voce nao emite nada: a pessoa entra pela tela do proprio webphone.',
+    'BCVoz.init({})',
+    '',
+    '// Voce so sabe o e-mail: a tela sobe preenchida, o cursor vai para a',
+    '// senha, e o login continua sendo o do webphone.',
+    "BCVoz.init({ email: 'ana@empresa.com.br' })",
+  ].join('\n')
+
   // --- sobe o webphone ------------------------------------------------------
-  var comBarra = new URLSearchParams(location.search).get('bar') !== '0'
+  var params = new URLSearchParams(location.search)
+  var comBarra = params.get('bar') !== '0'
 
   bp.init({
     // Em desenvolvimento os assets vêm do host local; em produção o padrão já
@@ -411,11 +475,13 @@
     position: 'bottom-right',
     open: true,
     frame: comBarra ? undefined : 'none',
+    // Sem sessão o webphone sobe na tela de login dele — é o que este
+    // playground exercita. Com ?email=... a tela já vem preenchida e só falta
+    // a senha: `http://localhost:5173/?email=ana@empresa.com.br`.
+    email: params.get('email') || undefined,
   })
 
-  bp.on('*', function (ev) {
-    log('◆ ' + ev.event + (ev.payload ? ' ' + JSON.stringify(ev.payload) : ''), 'ev')
-  })
+  bp.on('*', aoEvento)
 
   log('SDK v' + bp.version + ' carregado')
 })()

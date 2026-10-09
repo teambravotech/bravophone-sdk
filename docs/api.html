@@ -243,7 +243,8 @@ fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webp
 <thead><tr><th>Opção</th><th>Tipo</th><th>Padrão</th><th>Descrição</th></tr></thead>
 <tbody>
 <tr><td><code>token</code></td><td><code>string</code></td><td>—</td><td>Sessão do usuário, emitida pelo <strong>seu</strong> backend</td></tr>
-<tr><td><code>mode</code></td><td><code>'hosted' | 'srcdoc'</code></td><td><code>'hosted'</code></td><td>Como o webphone é carregado</td></tr>
+<tr><td><code>email</code></td><td><code>string</code></td><td>—</td><td>Só <strong>sem</strong> sessão: a tela de login sobe com este e-mail</td></tr>
+<tr><td><code>mode</code></td><td><code>'hosted' | 'srcdoc'</code></td><td><code>'srcdoc'</code></td><td>Como o webphone é carregado</td></tr>
 <tr><td><code>hostBase</code></td><td><code>string</code></td><td>CDN da versão</td><td>Só em <code>srcdoc</code>. Deve terminar em <code>/</code></td></tr>
 <tr><td><code>hostUrl</code></td><td><code>string</code></td><td>domínio oficial</td><td>Só em <code>hosted</code></td></tr>
 <tr><td><code>frame</code></td><td><code>'bar' | 'none'</code></td><td><code>'bar'</code></td><td><code>'none'</code> preserva 100% da UI do webphone</td></tr>
@@ -262,6 +263,24 @@ fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webp
   <p>
     Ele identifica um usuário. Gere no seu backend e injete no template, como
     faria com qualquer credencial de sessão.
+  </p>
+</div>
+
+<div class="nota">
+  <p><span class="rot">Sem token: o login é da pessoa.</span></p>
+  <p>
+    Não passe <code>session</code> nem <code>token</code> e o webphone abre a
+    tela de login dele, com o gerenciador de contas funcionando — várias contas
+    no mesmo aparelho, troca em um toque. Sabendo o e-mail,
+    <code>init({ email: 'ana@empresa.com.br' })</code> entrega a tela
+    preenchida e a pessoa digita só a senha.
+  </p>
+  <p>
+    A conta só entra no gerenciador <strong>depois de um login
+    bem-sucedido</strong>: um endereço que não existe nunca vira conta, e um
+    formato inválido é ignorado com aviso no console. <code>email</code> vale
+    só em <code>mode: 'srcdoc'</code> e é ignorado quando há sessão — aí não há
+    tela de login.
   </p>
 </div>
 
