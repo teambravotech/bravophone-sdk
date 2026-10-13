@@ -197,6 +197,7 @@ Bravophone-SDK/
 │   ├── widget.js             Shadow DOM, iframe, launcher
 │   ├── draggable.js          arraste/resize com Pointer Events + persistência
 │   ├── bridge.js             RPC postMessage (lado host)
+│   ├── clonavel.js           o que o postMessage aceita (e o conserto)
 │   └── styles.js             CSS isolado do widget
 │
 ├── host/                   ← vira webphone.bravophone.com (RAIZ do domínio)

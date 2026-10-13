@@ -5,6 +5,8 @@
 //  - todo recebimento valida event.origin E event.source antes de olhar o payload.
 // Sem isso qualquer iframe/aba da página consegue forjar eventos de chamada.
 
+import { postar } from './clonavel.js'
+
 const PROTOCOL = 'bravophone/v1'
 
 export function createBridge({ frame, origin, onEvent }) {
@@ -50,10 +52,24 @@ export function createBridge({ frame, origin, onEvent }) {
           reject(new Error(`BCVoz: timeout no comando "${command}"`))
         }, timeout)
         pending.set(id, { resolve, reject, timer })
-        frame.contentWindow?.postMessage(
+        // O payload vem do integrador: `session` e `meta` podem chegar como
+        // objeto reativo do framework dele (Proxy não é clonável) ou com um nó
+        // do DOM pendurado. O postar sanea e tenta de novo.
+        //
+        // E se nem assim sair, rejeita AGORA. Antes a mensagem morria calada e
+        // a promessa ficava pendurada até o timeout: 15 s para dizer o que já
+        // se sabia na hora do envio — era o "timeout no comando" que o
+        // integrador via sem nenhuma pista da causa.
+        const saiu = postar(
+          frame.contentWindow,
           { protocol: PROTOCOL, type: 'command', id, command, payload },
           origin,
         )
+        if (!saiu) {
+          clearTimeout(timer)
+          pending.delete(id)
+          reject(new Error(`BCVoz: o comando "${command}" não pôde ser enviado ao webphone`))
+        }
       }
       ready ? send() : queue.push(send)
     })
