@@ -48,9 +48,52 @@ function tokensDo(css, seletor) {
 const escuroCss = readFileSync(join(EXT, 'css', 'dark-theme.css'), 'utf8')
 const claroCss = readFileSync(join(EXT, 'css', 'tema-claro.css'), 'utf8')
 
-// O `:root` puro dos dois arquivos é o tema escuro.
-const escuro = { ...tokensDo(escuroCss, ':root'), ...tokensDo(claroCss, ':root') }
-const claro = tokensDo(claroCss, ':root[data-bp-tema="claro"]')
+// DESDE A PALETA CENTRAL, os valores dos tokens moram em `css/cores.css`, que
+// o `dark-theme.css` importa: os dois temas lado a lado, e os tokens
+// semânticos (`--bp-accent`) apontando para a paleta (`var(--bp-cor-primaria)`).
+// Lemos de lá quando existe — e dos dois arquivos de sempre também, para o
+// teste continuar valendo contra uma extensão anterior à mudança.
+//
+// O bloco @supports fica de fora: ele só troca as tintas por `color-mix` da
+// mesma cor, e o valor literal de reserva é o que dá para comparar com um
+// fallback.
+const coresPath = join(EXT, 'css', 'cores.css')
+const coresCss = existsSync(coresPath)
+  ? readFileSync(coresPath, 'utf8')
+    // Comentários antes: eles citam "@supports" e "{" em prosa.
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/@supports[^{]*\{(?:[^{}]*\{[^}]*\})*[^{}]*\}/g, '')
+  : ''
+
+const CLARO = ':root[data-bp-tema="claro"]'
+
+// O `:root` puro é o tema escuro.
+const escuroBruto = { ...tokensDo(escuroCss, ':root'), ...tokensDo(coresCss, ':root'), ...tokensDo(claroCss, ':root') }
+const claroBruto = { ...tokensDo(coresCss, CLARO), ...tokensDo(claroCss, CLARO) }
+
+/** Troca `var(--bp-x)` pelo valor de `--bp-x`, até não sobrar referência. */
+function resolver(valor, mapa, profundidade = 0) {
+  if (profundidade > 10) return valor
+  const novo = valor.replace(/var\(\s*(--bp-[a-z0-9-]+)\s*\)/g, (m, t) => (t in mapa ? mapa[t] : m))
+  return novo === valor ? valor : resolver(novo, mapa, profundidade + 1)
+}
+
+const escuro = {}
+for (const t in escuroBruto) escuro[t] = resolver(escuroBruto[t], escuroBruto)
+const claro = claroBruto
+
+/**
+ * Um token tem valor claro se o bloco claro o define — ou se ele só aponta
+ * para tokens que o bloco claro define (`--bp-accent: var(--bp-cor-primaria)`
+ * troca de valor sozinho quando a paleta troca).
+ */
+function temClaro(t, visitados = new Set()) {
+  if (t in claro) return true
+  if (visitados.has(t)) return false
+  visitados.add(t)
+  const refs = [...String(escuroBruto[t] || '').matchAll(/var\(\s*(--bp-[a-z0-9-]+)\s*\)/g)].map((m) => m[1])
+  return refs.length > 0 && refs.every((r) => temClaro(r, visitados))
+}
 
 console.log('\ntema — o escuro segue intocado:')
 {
@@ -59,7 +102,14 @@ console.log('\ntema — o escuro segue intocado:')
   check('dark-theme.css não menciona data-bp-tema',
     !/data-bp-tema/.test(escuroCss))
   check('dark-theme.css continua com o :root original',
-    /--bp-bg:\s*#10131c/.test(escuroCss) && /--bp-panel:\s*#171b28/.test(escuroCss))
+    norma(escuro['--bp-bg']) === '#10131c' && norma(escuro['--bp-panel']) === '#171b28',
+    `${escuro['--bp-bg']} / ${escuro['--bp-panel']}`)
+  if (coresCss) {
+    // Um @import depois de qualquer outra regra é ignorado em silêncio: os
+    // tokens sumiriam e a tela inteira cairia nos fallbacks.
+    check('dark-theme.css importa cores.css antes de qualquer regra',
+      /^﻿?\s*(\/\*[\s\S]*?\*\/\s*)*@import\s+url\(\s*["']?cores\.css["']?\s*\)/.test(escuroCss))
+  }
   check('o claro só age sob o atributo',
     (claroCss.match(/^\s*#app\s/gm) || []).length === 0,
     'há regra do claro fora de :root[data-bp-tema]')
@@ -111,7 +161,7 @@ console.log('\ntema — o claro cobre todos os tokens:')
 
   const semClaro = Object.keys(escuro)
     .filter((t) => !IGUAIS_NOS_DOIS.has(t))
-    .filter((t) => !(t in claro))
+    .filter((t) => !temClaro(t))
 
   check('todo token de cor tem valor claro', semClaro.length === 0, semClaro.join(', '))
   check('o bloco claro não inventa token que o escuro não tem',
