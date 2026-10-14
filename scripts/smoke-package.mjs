@@ -10,6 +10,7 @@ import { readFile, readdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { naExtensao } from './extensao.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const pkg = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'))
@@ -187,7 +188,7 @@ console.log('\naviso de sem ramal — os dois arquivos andam juntos:')
   // foram editados em paralelo mais de uma vez — quando um dos dois fica para
   // trás, o aviso sai com outra cara em um dos produtos.
   const daExtensao = await readFile(
-    resolve(ROOT, '..', 'Bravophone', 'js', 'bravophone-sem-ramal.js'), 'utf8')
+    naExtensao('js', 'bravophone-sem-ramal.js'), 'utf8')
   const doSdk = await readFile(join(ROOT, 'host/shim/guest-bridge.js'), 'utf8')
 
   const recorte = (fonte) => {
@@ -274,14 +275,15 @@ console.log('\nnenhum dos nossos arquivos derruba o app:')
   // Qualquer commit nosso que desligue essa flag vira recarga; e como o motivo
   // do commit sobrevive à recarga, vira recarga em LOOP. Já aconteceu: o
   // heartbeat tomava 401 e mandava para o login.
+  // A extensão pode faltar (checkout só do SDK), e aí o par dela é pulado —
+  // mas pulado por ausência de verdade, não por nome de pasta diferente.
   const NOSSOS = [
-    ['extensão', '../Bravophone/js'],
-    ['sdk', 'host/js'],
+    ['extensão', naExtensao('js')],
+    ['sdk', join(ROOT, 'host/js')],
   ]
   const PROIBIDOS = ['setIsLogged', 'clearToken', 'clearUser', 'clearExtension']
 
-  for (const [nome, dir] of NOSSOS) {
-    const base = resolve(ROOT, dir)
+  for (const [nome, base] of NOSSOS) {
     if (!existsSync(base)) continue
     for (const arq of await readdir(base)) {
       if (!arq.startsWith('bravophone-') || !arq.endsWith('.js')) continue

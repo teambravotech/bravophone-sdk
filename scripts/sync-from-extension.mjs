@@ -16,19 +16,12 @@ import { readFile, writeFile, mkdir, cp, rm, readdir } from 'node:fs/promises'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { caminhoDaExtensao, NOMES } from './extensao.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
-// Onde a extensão costuma estar, em ordem. Dois nomes porque os dois existem
-// em máquina de gente: a pasta do repositório ('bravophone-extension') e o
-// nome curto de quem clonou antes ('Bravophone'). O `npm publish` chama o
-// prepare:host SEM argumento, então um nome fora desta lista fazia o release
-// abortar no último passo — ou, pior, sair sem o webphone dentro.
-const CAMINHOS = ['Bravophone', 'bravophone-extension']
 const pedido = process.argv.find((a, i) => i >= 2 && !a.startsWith('--'))
-const EXT = pedido
-  ? resolve(pedido)
-  : resolve(CAMINHOS.map((n) => join(ROOT, '..', n)).find(existsSync) || join(ROOT, '..', CAMINHOS[0]))
+const EXT = caminhoDaExtensao(pedido)
 const HOST = join(ROOT, 'host')
 
 /**
@@ -104,7 +97,7 @@ async function main() {
 
   if (!existsSync(EXT)) {
     console.error(`✗ Extensão não encontrada em: ${EXT}`)
-    if (!pedido) console.error(`  Procurei por: ${CAMINHOS.join(', ')}`)
+    if (!pedido) console.error(`  Procurei por: ${NOMES.join(', ')}`)
     console.error('  Passe o caminho: node scripts/sync-from-extension.mjs <caminho>')
     process.exit(1)
   }
