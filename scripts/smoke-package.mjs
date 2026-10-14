@@ -77,6 +77,27 @@ console.log('\nhost — o que o modo srcdoc carrega:')
     'host/fonts/Audiowide-Regular.ttf', 'host/fonts/Seguiemj.ttf',
   ]
   for (const rel of precisa) check(`existe ${rel}`, existsSync(join(ROOT, rel)))
+
+  // E agora a lista COMPLETA, tirada do próprio buildSrcdoc em vez de escrita
+  // à mão: tudo que o documento carrega tem de estar no pacote.
+  //
+  // Existe por causa de um sumiço real: o shim/versao.js foi publicado no
+  // 0.8.3 mas nunca entrou no git, e no 0.8.4 ia embora junto com a linha de
+  // versão em Ajustes e a versão do heartbeat. A lista acima tinha 10 nomes e
+  // não o incluía; a conferência de paridade com o index.html também não
+  // acusou, porque os dois perderam o arquivo ao mesmo tempo. Derivar a lista
+  // é o que fecha esse buraco para sempre.
+  const { buildSrcdoc: montar } = await import('../src/srcdoc.js')
+  // base './' e não '': o buildSrcdoc trata string vazia como ausente e cai
+  // no CDN, e aí tudo viraria URL absoluta — o teste passaria sem olhar nada.
+  const doc = montar({ version: '0', parentOrigin: 'https://x', base: './' })
+  const refs = [...doc.matchAll(/(?:src|href)="\.\/([^"]+)"/g)]
+    .map((m) => m[1])
+    .filter((u) => /\.(js|css|ttf|png|svg|ico)$/.test(u))
+  check('o srcdoc referencia arquivos locais', refs.length >= 15, refs.length)
+  for (const rel of [...new Set(refs)]) {
+    check(`o srcdoc carrega host/${rel} e ele existe`, existsSync(join(ROOT, 'host', rel)))
+  }
 }
 
 // --strict: usado no prepublishOnly. Sem ele, um host apontando para

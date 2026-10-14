@@ -171,7 +171,10 @@
           onDisconnect: makeEvent([]),
         }
       },
-      getManifest: function () { return { version: '0.1.0', name: 'Bravophone Embed' } },
+      // A versão é a do pacote npm (package.json): o host a grava em
+      // window.__bcvozVersao antes deste shim — o index.html gerado pelo sync
+      // no modo hospedado, o srcdoc no outro. Era '0.1.0' fixo.
+      getManifest: function () { return { version: window.__bcvozVersao || '0.0.0', name: 'Bravophone Embed' } },
     },
 
     tabs: {
