@@ -9,15 +9,26 @@
  * Rode este script sempre que a extensão for atualizada.
  *
  *   node scripts/sync-from-extension.mjs [caminho-da-extensao] [--public-path=/embed/]
+ *
+ * Sem caminho, procura ao lado do SDK: ../Bravophone ou ../bravophone-extension.
  */
 import { readFile, writeFile, mkdir, cp, rm, readdir } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
-const EXT = resolve(process.argv.find((a, i) => i >= 2 && !a.startsWith('--')) || join(ROOT, '..', 'Bravophone'))
+// Onde a extensão costuma estar, em ordem. Dois nomes porque os dois existem
+// em máquina de gente: a pasta do repositório ('bravophone-extension') e o
+// nome curto de quem clonou antes ('Bravophone'). O `npm publish` chama o
+// prepare:host SEM argumento, então um nome fora desta lista fazia o release
+// abortar no último passo — ou, pior, sair sem o webphone dentro.
+const CAMINHOS = ['Bravophone', 'bravophone-extension']
+const pedido = process.argv.find((a, i) => i >= 2 && !a.startsWith('--'))
+const EXT = pedido
+  ? resolve(pedido)
+  : resolve(CAMINHOS.map((n) => join(ROOT, '..', n)).find(existsSync) || join(ROOT, '..', CAMINHOS[0]))
 const HOST = join(ROOT, 'host')
 
 /**
@@ -93,6 +104,7 @@ async function main() {
 
   if (!existsSync(EXT)) {
     console.error(`✗ Extensão não encontrada em: ${EXT}`)
+    if (!pedido) console.error(`  Procurei por: ${CAMINHOS.join(', ')}`)
     console.error('  Passe o caminho: node scripts/sync-from-extension.mjs <caminho>')
     process.exit(1)
   }
@@ -140,7 +152,7 @@ async function main() {
 
   if (process.argv.includes('--sem-ramal')) await permitirLoginSemRamal()
 
-  await writeFile(join(HOST, 'index.html'), buildHtml(), 'utf8')
+  await writeFile(join(HOST, 'index.html'), buildHtml(versaoDoPacote()), 'utf8')
   console.log('  ✓ host/index.html gerado')
   console.log(`\n✓ ${copied} assets sincronizados em host/`)
   console.log(publicPath
@@ -334,7 +346,22 @@ async function rewritePublicPath(publicPath) {
   console.log(`  ✓ public path: "/" → "${publicPath}"`)
 }
 
-function buildHtml() {
+/**
+ * A versão do pacote npm, que o host grava em window.__bcvozVersao.
+ *
+ * É daí que o chrome-shim tira o getManifest(), e dele saem o rodapé do login,
+ * a linha de versão em Ajustes e o heartbeat de presença. Lida aqui, e não só
+ * no ramo --cdn, porque o host hospedado precisa dela igual.
+ */
+function versaoDoPacote() {
+  try {
+    return JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version
+  } catch (_) {
+    return '0.0.0'
+  }
+}
+
+function buildHtml(versao) {
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -363,6 +390,9 @@ function buildHtml() {
      antes do primeiro quadro, senao o iframe pisca escuro e clareia. -->
 <script src="./js/bravophone-tema.js"></script>
 <script src="./shim/messages.js"></script>
+<!-- Versão do pacote (package.json), lida pelo chrome-shim em getManifest():
+     é o que aparece no rodapé do login, em Ajustes e no heartbeat. -->
+<script>window.__bcvozVersao = ${JSON.stringify(versao)};</script>
 <script src="./shim/chrome-shim.js"></script>
 <script src="./js/libwebphone.js"></script>
 <script src="./js/bravophone-route-selector.js"></script>
@@ -384,6 +414,9 @@ function buildHtml() {
 <script defer src="./js/bravophone-reconectar.js"></script>
 <!-- guest-bridge roda depois do app montar (defer preserva a ordem). -->
 <script defer src="./shim/guest-bridge.js"></script>
+<!-- Versão no fim da aba Ajustes. Fora do guest-bridge porque ele sai cedo
+     sem iframe, e o app nativo carrega este host/ direto. -->
+<script defer src="./shim/versao.js"></script>
 </head>
 <body>
 <noscript><strong>O webphone precisa de JavaScript habilitado.</strong></noscript>
