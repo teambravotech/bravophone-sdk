@@ -303,8 +303,16 @@ export interface BCVozEvents {
   'session:renewed': { expiresIn: number | null }
   /** O token está para vencer e não há `refreshSession`: chame `setAuth()`. */
   'session:expiring': { expiresAt: number | null }
-  /** O token venceu e não foi possível renovar; o login vai cair. */
-  'session:expired': { reason: string }
+  /**
+   * O token venceu e não foi possível renovar; o login vai cair.
+   *
+   * Vem de dois lugares: da renovação que falhou, aqui no SDK, e do próprio
+   * webphone, quando a API recusa o token (401) e não há `refreshSession` que
+   * o substitua. No segundo caso a pessoa vê o aviso de "você foi
+   * desconectado" dentro do widget e volta à tela de login; `origin` diz que
+   * consulta tomou o 401 (`ramal`, `rotas`, `presenca`, `qualidade`).
+   */
+  'session:expired': { reason: string; origin?: string | null }
   /**
    * A negociação de mídia não tem caminho: o navegador terminou a coleta sem
    * um único candidato ICE. A chamada conecta pelo SIP e fica **muda dos dois

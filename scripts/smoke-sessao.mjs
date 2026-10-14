@@ -105,6 +105,29 @@ console.log('\nsessão — token novo não herda a validade do anterior:')
   const fonteBridge = await readFile(join(ROOT, 'host/shim/guest-bridge.js'), 'utf8')
   check('o auth da ponte também apaga a validade antiga',
     /storage\.local\.remove\('bravophoneVxTokenExpiresAt'\)/.test(fonteBridge))
+
+  // O TOKEN MORTO NÃO RESSUSCITA NO RELOAD. O webphone, ao tomar 401, avisa a
+  // pessoa e recarrega para a tela de login — mas em srcdoc a sessão mora
+  // dentro do próprio documento, reavaliado a cada carga. Sem esta guarda o
+  // reload sobe "logado" com o token recusado, toma 401 de novo e repete o
+  // aviso para sempre: a queixa original noutro invólucro.
+  const MORTA = { 'bp:sessao:morta': 'vx-morto' }
+  const recusado = rodarSrcdoc({ vxToken: 'vx-morto', sip: 'sip.exemplo.com' }, MORTA)
+  check('token marcado como morto não é reinjetado',
+    !recusado.has('bp.local.bravophoneVxToken'),
+    recusado.get('bp.local.bravophoneVxToken'))
+  const renovado = rodarSrcdoc({ vxToken: 'vx-novo', sip: 'sip.exemplo.com' }, MORTA)
+  check('e a marca não atrapalha uma sessão nova',
+    renovado.get('bp.local.bravophoneVxToken') === '"vx-novo"',
+    renovado.get('bp.local.bravophoneVxToken'))
+
+  // A outra metade do mesmo loop, no modo hospedado: ali a sessão volta pelo
+  // comando `auth` no `ready`, e não pelo documento.
+  const fonteWidget = await readFile(join(ROOT, 'src/widget.js'), 'utf8')
+  check('o widget esquece a sessão expirada',
+    /evento === 'session:expired'\)[\s\S]{0,700}sessaoAtual = null/.test(fonteWidget))
+  check('e o aviso vindo do webphone passa pelo mesmo funil',
+    /name === 'session:expired'\) \{ emitirSessao\(name, payload\); return \}/.test(fonteWidget))
 }
 
 console.log('\nsessão — o bundle do host realmente lê estas chaves:')

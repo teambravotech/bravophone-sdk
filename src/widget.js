@@ -371,6 +371,10 @@ export function createWidget(options) {
           })
         }
       }
+      // O webphone também descobre sozinho que o token morreu — é ele quem
+      // toma o 401 nas consultas de dentro. Mesmo tratamento do nosso aviso,
+      // num funil só, para o integrador não receber o evento duas vezes.
+      if (name === 'session:expired') { emitirSessao(name, payload); return }
       if (name === 'state') {
         const st = payload?.state ?? 'ready'
         status.dataset.state = st
@@ -426,6 +430,12 @@ export function createWidget(options) {
       status.dataset.state = 'error'
       launcherBtn.dataset.state = 'error'
       emit('state', { state: 'error' })
+      // A SESSÃO MORTA NÃO VOLTA PELA PONTE. O webphone leva a pessoa à tela
+      // de login e recarrega; se `sessaoAtual` continuasse aqui, o `ready`
+      // seguinte a reinjetaria, a API recusaria de novo e o aviso de sessão
+      // expirada voltaria em loop. `setAuth()` com uma sessão nova religa
+      // tudo. Ver js/bravophone-sessao.js na extensão.
+      sessaoAtual = null
     }
     emit(evento, payload)
   }

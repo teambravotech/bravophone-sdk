@@ -48,6 +48,10 @@ const ASSETS = [
   // so. O bundle chama `window.__bpRegistro` com fallback: sem este arquivo
   // ele volta a empilhar um toast por tentativa de registro.
   { from: 'js/bravophone-registro.js', to: 'js/bravophone-registro.js', required: false },
+  // Sessão recusada pela API (401 "Sessão inválida ou expirada"): avisa a
+  // pessoa e leva ao login. Os outros módulos só RELATAM o 401 para ele, então
+  // sem este arquivo o app volta a ficar logado sem direito a nada.
+  { from: 'js/bravophone-sessao.js', to: 'js/bravophone-sessao.js', required: false },
   // Campo de discagem reformulado: vive na extensão e o host reaproveita.
   { from: 'js/bravophone-input.js', to: 'js/bravophone-input.js', required: false },
   { from: 'js/bravophone-presenca.js', to: 'js/bravophone-presenca.js', required: false },
@@ -377,6 +381,8 @@ function buildHtml(versao) {
 <!-- ANTES do popup.js de proposito: o campo precisa observar
      chrome.runtime.onMessage e o construtor do libwebphone antes de o app
      registrar o listener e instanciar o webphone. -->
+<!-- Antes dos demais: é para ele que todo módulo relata um 401. -->
+<script defer src="./js/bravophone-sessao.js"></script>
 <script defer src="./js/bravophone-input.js"></script>
 <script defer src="./js/bravophone-presenca.js"></script>
 <script defer src="./js/bravophone-aparelho.js"></script>

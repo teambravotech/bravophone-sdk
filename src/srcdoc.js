@@ -145,26 +145,41 @@ export function buildSrcdoc({ version, parentOrigin, session, base, email,
     // conta aqui brigaria com a sessão que ele injeta a cada carga.
     window.__bpContasDesligadas = true;
     var s = cfg.session;
-    var mapa = {
-      bravophoneVxToken: s.vxToken || null,
-      bravophoneVxTokenExpiresAt: s.expiresIn ? Date.now() + 1000 * Number(s.expiresIn) : null,
-      bravophoneSip: s.sip || null,
-      bravophoneTenant: s.tenant || null,
-      bravophoneRamal: s.ramal || null,
-      bravophoneClienteId: s.clienteId || null,
-      bravophoneRamaisUrl: s.ramaisUrl || null
-    };
-    try {
-      for (var k in mapa) {
-        if (mapa[k] !== null) localStorage.setItem('bp.local.' + k, JSON.stringify(mapa[k]));
-      }
-      // A validade pertence ao token: token novo sem expiresIn não pode
-      // herdar a validade do anterior, senão o bundle o julga vencido e
-      // derruba o login.
-      if (mapa.bravophoneVxTokenExpiresAt === null) {
-        localStorage.removeItem('bp.local.bravophoneVxTokenExpiresAt');
-      }
-    } catch (e) {}
+    // O TOKEN QUE A API JÁ RECUSOU NÃO VOLTA. O documento é reescrito a cada
+    // carga, então reinjetar o token morto faria o webphone subir "logado" de
+    // novo, tomar 401 de novo e repetir o aviso de sessão expirada em loop —
+    // a queixa original, só que em outro invólucro. Quem deixa a marca é o
+    // bravophone-sessao.js, no OK do aviso; um token novo não casa com ela e
+    // entra normalmente.
+    var morta = null;
+    try { morta = localStorage.getItem('bp:sessao:morta'); } catch (e) {}
+    if (morta && s.vxToken && morta === s.vxToken) {
+      // Sobe deslogado de propósito: a tela de login é o lugar certo para quem
+      // perdeu a sessão, e o integrador pode mandar outra por setAuth a
+      // qualquer momento.
+      try { localStorage.removeItem('bp.local.bravophoneVxToken'); } catch (e) {}
+    } else {
+      var mapa = {
+        bravophoneVxToken: s.vxToken || null,
+        bravophoneVxTokenExpiresAt: s.expiresIn ? Date.now() + 1000 * Number(s.expiresIn) : null,
+        bravophoneSip: s.sip || null,
+        bravophoneTenant: s.tenant || null,
+        bravophoneRamal: s.ramal || null,
+        bravophoneClienteId: s.clienteId || null,
+        bravophoneRamaisUrl: s.ramaisUrl || null
+      };
+      try {
+        for (var k in mapa) {
+          if (mapa[k] !== null) localStorage.setItem('bp.local.' + k, JSON.stringify(mapa[k]));
+        }
+        // A validade pertence ao token: token novo sem expiresIn não pode
+        // herdar a validade do anterior, senão o bundle o julga vencido e
+        // derruba o login.
+        if (mapa.bravophoneVxTokenExpiresAt === null) {
+          localStorage.removeItem('bp.local.bravophoneVxTokenExpiresAt');
+        }
+      } catch (e) {}
+    }
   }
 
   // SÓ O E-MAIL: o login continua sendo o do webphone, feito pela pessoa.
@@ -254,6 +269,8 @@ export function buildSrcdoc({ version, parentOrigin, session, base, email,
 <script src="${b}shim/chrome-shim.js"><\/script>
 <script src="${b}js/libwebphone.js"><\/script>
 <script src="${b}js/bravophone-route-selector.js"><\/script>
+<!-- Antes dos demais: é para ele que todo módulo relata um 401. -->
+<script defer src="${b}js/bravophone-sessao.js"><\/script>
 <!-- ANTES do popup.js de proposito: o campo precisa observar
      chrome.runtime.onMessage e o construtor do libwebphone antes de
      o app registrar o listener e instanciar o webphone. -->
