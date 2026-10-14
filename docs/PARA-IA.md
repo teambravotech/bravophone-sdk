@@ -283,3 +283,8 @@ tratamento o botão de ligar simplesmente não faz nada.
    fora da allowlist de CORS dos backends.
 4. Erros do webphone aparecem no console **de dentro do iframe** — nas
    devtools, troque o contexto do console.
+5. `DataCloneError` no console: algo não serializável entrou no canal. A
+   ponte copia tudo pelo algoritmo de clonagem estruturada, então passe **dado
+   simples** em `session` e em `meta` — um objeto reativo (Vue, Svelte) é
+   copiado para dado comum, mas função, nó do DOM e MediaStream são
+   descartados, com aviso no console. A mensagem em si não se perde mais.

@@ -12,6 +12,7 @@
 import { readFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { naExtensao } from './extensao.mjs'
 import vm from 'node:vm'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -63,7 +64,7 @@ console.log('\njanela — as larguras são as do bundle:')
 {
   // Se o bundle mudar CN/kN/_N e este arquivo não, o ímã passa a encaixar em
   // tamanhos que cortam algo — o oposto do que ele existe para fazer.
-  const bundle = await readFile(resolve(ROOT, '..', 'Bravophone', 'popup.js'), 'utf8')
+  const bundle = await readFile(naExtensao('popup.js'), 'utf8')
   for (const [nome, valor] of [['CN', 380], ['kN', 640], ['_N', 920]]) {
     check(`${nome} continua ${valor} no bundle`,
       new RegExp(`\\b${nome}=${valor}\\b`).test(bundle))

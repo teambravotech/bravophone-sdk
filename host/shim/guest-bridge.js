@@ -70,11 +70,125 @@
     return
   }
 
-  function post(msg) {
+  // --- serialização do canal ------------------------------------------------
+  //
+  // O postMessage copia o valor pelo algoritmo de clonagem estruturada, e ele
+  // NÃO aceita tudo: função, nó do DOM, MediaStream, RTCPeerConnection, a
+  // sessão SIP crua — e qualquer Proxy, que é o que o Vue devolve em todo
+  // estado reativo. Um único campo desses lança DataCloneError e a mensagem
+  // INTEIRA se perde, calada. Era o que fazia o `getStatus()` do host esperar
+  // os 15 s do timeout e eventos de chamada nunca chegarem ao integrador.
+  //
+  // Então o canal não confia no payload: tenta mandar como veio (caminho
+  // normal, custo zero) e, se o navegador recusar, remonta uma cópia só com o
+  // que atravessa. Perder campos é ruim; perder a mensagem é pior.
+  //
+  // O gêmeo disto é src/clonavel.js, do lado do host. Este arquivo é script
+  // solto dentro do iframe e não importa nada — mudança aqui pede a mesma
+  // mudança lá.
+
+  // Payload mais fundo que isto não é dado de telefonia: é uma estrutura
+  // inteira que vazou para a ponte por engano.
+  var NIVEL_MAX = 8
+
+  function sanear(valor) { return limpar(valor, [], 0) }
+
+  function limpar(valor, vistos, nivel) {
+    if (valor === null || valor === undefined) return valor
+
+    var tipo = typeof valor
+    if (tipo === 'string' || tipo === 'number' || tipo === 'boolean' || tipo === 'bigint') {
+      return valor
+    }
+    // Função e símbolo nunca atravessam, e não há cópia possível deles.
+    if (tipo !== 'object') return undefined
+
+    if (nivel > NIVEL_MAX) return undefined
+    // Ciclo: o mesmo objeto reapareceu na própria descida. `vistos` guarda só
+    // o caminho atual, então um objeto repetido em dois ramos continua indo.
+    if (vistos.indexOf(valor) !== -1) return undefined
+
+    // Data e Error são clonáveis e carregam informação útil.
+    if (valor instanceof Date) {
+      return isNaN(valor.getTime()) ? null : new Date(valor.getTime())
+    }
+    if (valor instanceof Error) {
+      return { name: String(valor.name || 'Error'), message: String(valor.message || '') }
+    }
+
+    // A FORMA decide, não o nome da classe: '[object Object]' e
+    // '[object Array]' são dado e seguem como dado. Qualquer outra etiqueta
+    // (HTMLDivElement, MediaStream, RTCPeerConnection, Window, Map...) é
+    // objeto de plataforma e sai de cena. Um Proxy do Vue sobre dado simples
+    // se declara '[object Object]' e por isso é remontado em objeto comum —
+    // que é justamente o ponto.
+    var etiqueta = Object.prototype.toString.call(valor)
+    var lista = etiqueta === '[object Array]'
+    if (!lista && etiqueta !== '[object Object]') return undefined
+
+    vistos.push(valor)
     try {
-      window.parent.postMessage(Object.assign({ protocol: PROTOCOL }, msg), parentOrigin)
+      var saida, i
+      if (lista) {
+        saida = []
+        for (i = 0; i < valor.length; i++) saida.push(ler(valor, i, vistos, nivel))
+        return saida
+      }
+      saida = {}
+      var chaves = Object.keys(valor)
+      for (i = 0; i < chaves.length; i++) {
+        var v = ler(valor, chaves[i], vistos, nivel)
+        if (v !== undefined) saida[chaves[i]] = v
+      }
+      return saida
+    } finally {
+      vistos.pop()
+    }
+  }
+
+  // Ler uma propriedade pode EXECUTAR código: getter do bundle, computed do
+  // Vue, acessor de uma conexão já fechada. Se estourar, o campo sai de cena
+  // em vez de derrubar a mensagem toda.
+  function ler(obj, chave, vistos, nivel) {
+    var v
+    try { v = obj[chave] } catch (_) { return undefined }
+    return limpar(v, vistos, nivel + 1)
+  }
+
+  function recusaDeClonagem(err) {
+    if (!err) return true
+    if (err.name === 'DataCloneError') return true
+    return /could not be cloned|n[ãa]o p[ôo]de ser clonad/i.test(String(err.message || ''))
+  }
+
+  /**
+   * Manda uma mensagem ao host e devolve se ela SAIU.
+   *
+   * Devolver isso não é detalhe: quem responde a um comando precisa saber, ou
+   * o host espera o timeout inteiro por uma resposta que nunca foi enviada.
+   */
+  function post(msg) {
+    var corpo = Object.assign({ protocol: PROTOCOL }, msg)
+    try {
+      window.parent.postMessage(corpo, parentOrigin)
+      return true
     } catch (err) {
-      console.error('[bp-bridge] postMessage falhou:', err)
+      // Origem errada (SecurityError) é configuração: tentar de novo não muda
+      // nada, e sanear esconderia a causa real atrás de um aviso errado.
+      if (!recusaDeClonagem(err)) {
+        console.error('[bp-bridge] postMessage falhou:', err)
+        return false
+      }
+    }
+    try {
+      window.parent.postMessage(sanear(corpo), parentOrigin)
+      console.warn('[bp-bridge] payload não clonável em "' +
+        String((msg && (msg.command || msg.name || msg.type)) || 'mensagem') +
+        '" — os campos não serializáveis foram descartados.')
+      return true
+    } catch (err2) {
+      console.error('[bp-bridge] postMessage falhou mesmo depois de sanear:', err2)
+      return false
     }
   }
 
@@ -693,7 +807,16 @@
     }
     Promise.resolve()
       .then(function () { return fn(msg.payload || {}) })
-      .then(function (payload) { post({ type: 'reply', id: msg.id, payload: payload }) })
+      .then(function (payload) {
+        if (post({ type: 'reply', id: msg.id, payload: payload })) return
+        // Nem saneada a resposta atravessou. O host precisa de UMA mensagem,
+        // qualquer que seja: sem ela o integrador só descobre o problema 15 s
+        // depois, como "timeout", que é o sintoma errado da causa errada.
+        post({
+          type: 'reply', id: msg.id,
+          error: 'resposta de "' + msg.command + '" não pôde ser serializada',
+        })
+      })
       .catch(function (err) { post({ type: 'reply', id: msg.id, error: String(err && err.message || err) }) })
   })
 
@@ -707,12 +830,29 @@
   ;(function watchCallState() {
     var prev = null
 
+    /**
+     * O número como TEXTO, que é o que o contrato público promete.
+     *
+     * `callDisplay` costuma ser string, mas em algumas telas o bundle guarda
+     * ali um objeto (nome + número). Mandar o objeto cru faz o integrador
+     * imprimir "[object Object]" — e, se ele vier reativo, o Proxy do Vue não
+     * é clonável e a mensagem nem sai da ponte.
+     */
+    function texto(v) {
+      if (v === null || v === undefined) return null
+      if (typeof v === 'object') {
+        var c = v.number || v.phone || v.display || v.label || v.name
+        return c === null || c === undefined ? null : String(c)
+      }
+      return String(v) || null
+    }
+
     function snapshot(st) {
       return {
         active: !!(st.callActive || st.callPhase),
-        phase: st.callPhase || null,
+        phase: texto(st.callPhase),
         incoming: !!st.callIsIncoming,
-        number: st.callDisplay || null,
+        number: texto(st.callDisplay),
       }
     }
 

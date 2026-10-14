@@ -9,15 +9,19 @@
  * Rode este script sempre que a extensão for atualizada.
  *
  *   node scripts/sync-from-extension.mjs [caminho-da-extensao] [--public-path=/embed/]
+ *
+ * Sem caminho, procura ao lado do SDK: ../Bravophone ou ../bravophone-extension.
  */
 import { readFile, writeFile, mkdir, cp, rm, readdir } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { caminhoDaExtensao, NOMES } from './extensao.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
-const EXT = resolve(process.argv.find((a, i) => i >= 2 && !a.startsWith('--')) || join(ROOT, '..', 'Bravophone'))
+const pedido = process.argv.find((a, i) => i >= 2 && !a.startsWith('--'))
+const EXT = caminhoDaExtensao(pedido)
 const HOST = join(ROOT, 'host')
 
 /**
@@ -101,6 +105,7 @@ async function main() {
 
   if (!existsSync(EXT)) {
     console.error(`✗ Extensão não encontrada em: ${EXT}`)
+    if (!pedido) console.error(`  Procurei por: ${NOMES.join(', ')}`)
     console.error('  Passe o caminho: node scripts/sync-from-extension.mjs <caminho>')
     process.exit(1)
   }
@@ -148,8 +153,7 @@ async function main() {
 
   if (process.argv.includes('--sem-ramal')) await permitirLoginSemRamal()
 
-  const { version: versaoPacote } = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'))
-  await writeFile(join(HOST, 'index.html'), buildHtml(versaoPacote), 'utf8')
+  await writeFile(join(HOST, 'index.html'), buildHtml(versaoDoPacote()), 'utf8')
   console.log('  ✓ host/index.html gerado')
   console.log(`\n✓ ${copied} assets sincronizados em host/`)
   console.log(publicPath
@@ -341,6 +345,21 @@ async function rewritePublicPath(publicPath) {
   }
   await writeFile(file, js.replace(needle, `n.p="${publicPath}"`), 'utf8')
   console.log(`  ✓ public path: "/" → "${publicPath}"`)
+}
+
+/**
+ * A versão do pacote npm, que o host grava em window.__bcvozVersao.
+ *
+ * É daí que o chrome-shim tira o getManifest(), e dele saem o rodapé do login,
+ * a linha de versão em Ajustes e o heartbeat de presença. Lida aqui, e não só
+ * no ramo --cdn, porque o host hospedado precisa dela igual.
+ */
+function versaoDoPacote() {
+  try {
+    return JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version
+  } catch (_) {
+    return '0.0.0'
+  }
 }
 
 function buildHtml(versao) {

@@ -12,6 +12,7 @@
 import { readFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { naExtensao } from './extensao.mjs'
 import vm from 'node:vm'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -397,7 +398,7 @@ console.log('\npresença — a saída limpa não é só ao fechar a janela:')
 console.log("\npresenca — o microfone esta liberado?")
 {
   const fonte = await readFile(
-    resolve(ROOT, '..', 'Bravophone', 'js', 'bravophone-presenca.js'), 'utf8')
+    naExtensao('js', 'bravophone-presenca.js'), 'utf8')
   const corpo = fonte.slice(fonte.indexOf('function microfoneLiberado'),
     fonte.indexOf('function permissaoMicrofone'))
   const liberado = new Function(corpo + '; return microfoneLiberado')()
@@ -433,7 +434,7 @@ console.log("\npresenca — o microfone esta liberado?")
 console.log("\npresenca — em que involucro estamos:")
 {
   const fonte = await readFile(
-    resolve(ROOT, '..', 'Bravophone', 'js', 'bravophone-presenca.js'), 'utf8')
+    naExtensao('js', 'bravophone-presenca.js'), 'utf8')
   const corpo = fonte.slice(fonte.indexOf('function plataformaDoInvolucro'),
     fonte.indexOf('function perfil()'))
   const qual = (janela) => new Function('window', corpo + '; return plataformaDoInvolucro()')(janela)
