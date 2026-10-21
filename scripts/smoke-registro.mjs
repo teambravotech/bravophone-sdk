@@ -20,10 +20,11 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { caminhoDaExtensao } from './extensao.mjs'
 
 const AQUI = dirname(fileURLToPath(import.meta.url))
 const SDK = resolve(AQUI, '..')
-const EXT = resolve(SDK, '..', 'Bravophone')
+const EXT = caminhoDaExtensao()
 const ARQUIVO = join(EXT, 'js', 'bravophone-registro.js')
 
 let pass = 0, fail = 0

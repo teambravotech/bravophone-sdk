@@ -26,7 +26,11 @@ export const NOMES = ['Bravophone', 'bravophone-extension']
  */
 export function caminhoDaExtensao(pedido) {
   if (pedido) return resolve(pedido)
-  const achado = NOMES.map((n) => join(ROOT, '..', n)).find(existsSync)
+  // Só conta a pasta que É a extensão (tem o manifest). No Windows os nomes não
+  // diferenciam maiúsculas: uma `Documents\bravophone` vazia era tomada por
+  // `Bravophone`, vencia a `bravophone-extension` de verdade e o publish saía
+  // sem popup.js (21/10/2026).
+  const achado = NOMES.map((n) => join(ROOT, '..', n)).find((p) => existsSync(join(p, 'manifest.json')))
   return resolve(achado || join(ROOT, '..', NOMES[0]))
 }
 
