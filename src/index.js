@@ -1,4 +1,17 @@
 import { createWidget } from './widget.js'
+import { PALETAS as PALETAS_CRUAS } from './marca.js'
+
+/**
+ * As paletas sugeridas, congeladas: são sugestão nossa, não estado do
+ * integrador. Quem monta um seletor de marca itera nisto em vez de repetir os
+ * hexadecimais na própria página — e assim um ajuste de contraste aqui chega
+ * lá sozinho.
+ */
+const PALETAS = Object.freeze(
+  Object.fromEntries(
+    Object.entries(PALETAS_CRUAS).map(([id, p]) => [id, Object.freeze({ id, ...p })]),
+  ),
+)
 
 // Sem default: o modo 'hosted' exige que o integrador diga qual é o host.
 // Um default apontando para um domínio não publicado falha em DNS e o erro
@@ -52,14 +65,20 @@ const BCVoz = {
    *   sabe da máquina, para o REGISTER identificar o aparelho na tela
    *   "Aparelhos" de uma ligação. Opcional; o que faltar não vai.
    * @param {object} [opts.branding]  White-label, para quem revende o
-   *   webphone: `{ name, logo, links }`.
+   *   webphone: `{ name, logo, titleLogo, palette, links }`.
    *   · `name`: o nome do cliente no lugar do logotipo, no título da janela e
    *     nas frases que citam a marca. `''` deixa os três vazios.
-   *   · `logo`: `false` tira, ou uma URL (`https:`/`data:image/`) entra no
-   *     lugar — tem precedência sobre `name` no espaço da imagem.
+   *   · `logo` (+ `logoLight`, `logoHeight`): o logotipo da tela de login.
+   *     `false` tira, ou uma URL (`https:`/`data:image/`) entra no lugar —
+   *     tem precedência sobre `name` no espaço da imagem.
+   *   · `titleLogo` (+ `titleLogoLight`, `titleLogoHeight`): a versão compacta,
+   *     na barra de título da janela. Não herda de `logo`: ali cabem 16px.
+   *   · `palette`: uma de `BCVoz.palettes`, ou as cores avulsas `color`,
+   *     `colorHover`, `surface` e `surfaceLight` (hexadecimal).
    *   · `links`: `false` tira os três do rodapé, ou `{ signup, support,
    *     portal }` com `false` (tira) ou URL (troca) em cada um.
-   *   Só em `mode: 'srcdoc'` (o padrão).
+   *   `name`, `logo` e `links` só valem em `mode: 'srcdoc'` (o padrão); as
+   *   cores e o `titleLogo` são da moldura e valem nos dois modos.
    * @param {RTCIceServer[]} [opts.iceServers]  STUN/TURN para a negociação de
    *   mídia. Padrão: nenhum — o webphone usa só os candidatos que o navegador
    *   gera, o que basta quando o PABX anuncia IP público. Passe TURN (de
@@ -169,6 +188,12 @@ const BCVoz = {
     instance = null
     listeners.clear()
   },
+
+  /**
+   * As paletas sugeridas para `branding.palette`, por id:
+   * `{ id, label, color, colorHover, surface, surfaceLight }`.
+   */
+  get palettes() { return PALETAS },
 
   // Substituída em build time pelo valor do package.json (ver vite.config.js).
   version: __BP_VERSION__,

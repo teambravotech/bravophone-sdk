@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BCVoz SDK — marca do integrador</title>
+<style>
+  body { font: 15px/1.6 system-ui, sans-serif; max-width: 820px; margin: 40px auto; padding: 0 20px 80px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: #64748b;
+       margin: 30px 0 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+  h3 { font-size: 13px; margin: 0 0 2px; }
+  label { display: block; font-size: 13px; color: #475569; margin: 12px 0 2px; }
+  label code { color: #0f172a; }
+  input[type=text] { padding: 7px 9px; font-size: 13px; width: 100%; box-sizing: border-box;
+                     font-family: ui-monospace, monospace; border: 1px solid #cbd5e1; border-radius: 5px; }
+  input[type=number] { padding: 7px 9px; font-size: 13px; width: 90px;
+                       border: 1px solid #cbd5e1; border-radius: 5px; }
+  input[type=color] { width: 44px; height: 30px; padding: 0; vertical-align: middle;
+                      border: 1px solid #cbd5e1; border-radius: 5px; }
+  button { padding: 8px 14px; margin: 14px 6px 0 0; font-size: 14px; cursor: pointer;
+           border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; }
+  button.primario { background: #0f172a; color: #fff; border-color: #0f172a; }
+  .linha { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; }
+  .linha > div { flex: 1 1 240px; }
+  .paletas { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .paleta { display: flex; align-items: center; gap: 7px; padding: 6px 11px 6px 7px;
+            border: 1px solid #cbd5e1; border-radius: 999px; background: #fff;
+            cursor: pointer; font-size: 13px; margin: 0; }
+  .paleta[aria-pressed=true] { border-color: #0f172a; box-shadow: 0 0 0 2px #0f172a22; }
+  .bolinha { width: 16px; height: 16px; border-radius: 50%; flex: 0 0 auto; }
+
+  /* A galeria dos desenhos: cada arte sobre os dois fundos em que ela tem de
+     funcionar, porque e ai que a versao clara deixa de ser detalhe. */
+  .galeria { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; }
+  .cartao { flex: 1 1 290px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 13px 14px 16px; }
+  .cartao .nota { margin: 0; }
+  .cartao button { margin: 12px 0 0; }
+  .amostras { display: flex; gap: 8px; margin-top: 11px; }
+  .amostra { flex: 1 1 0; min-height: 46px; border-radius: 7px; padding: 10px 12px;
+             display: flex; align-items: center; justify-content: center; }
+  .amostra.escuro { background: #1e1e2d; }
+  .amostra.claro { background: #fff; box-shadow: inset 0 0 0 1px #e2e8f0; }
+  .amostra img { display: block; width: auto; max-width: 100%; }
+  .amostra span { font: 11px/1 ui-monospace, monospace; color: #94a3b8; }
+  .rotulos { display: flex; gap: 8px; margin-top: 5px; }
+  .rotulos span { flex: 1 1 0; text-align: center; font-size: 10px; letter-spacing: .06em;
+                  text-transform: uppercase; color: #94a3b8; }
+
+  pre { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px; overflow: auto;
+        font: 12px/1.6 ui-monospace, monospace; }
+  .nota { font-size: 13px; color: #64748b; }
+  .nota code { background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<h1>Marca do integrador</h1>
+<p class="nota">
+  <code>npm run dev</code> e abra <code>http://localhost:5173/examples/marca.html</code>.
+  Mexa e clique em <strong>Aplicar</strong> — o widget é remontado com a marca nova.
+  O logotipo da tela de login, o nome nos textos e os links do rodapé só valem no
+  <code>mode: 'srcdoc'</code>; as cores e o logotipo da barra valem nos dois modos.
+</p>
+
+<h2>Começar de um cenário</h2>
+<div>
+  <button data-cenario="dois">Dois logos (mini + inteiro)</button>
+  <button data-cenario="um">Um logo só</button>
+  <button data-cenario="sem">Sem logo nenhum</button>
+  <button data-cenario="cor">Só a paleta</button>
+  <button data-cenario="bcvoz">De volta ao BCVOZ</button>
+</div>
+
+<h2>Os desenhos de exemplo</h2>
+<p class="nota">
+  A marca fictícia <strong>ACME</strong> desta página são dois SVG desenhados aqui mesmo, sem rede —
+  é o que as caixas de texto abaixo recebem. Cada arte aparece sobre fundo escuro e sobre fundo claro,
+  os dois em que ela precisa funcionar. Clique para carregar no lugar certo.
+</p>
+<div class="galeria" id="galeria"></div>
+<p class="nota" style="margin-top:10px">
+  O símbolo acompanha a paleta escolhida só para a demonstração ficar coerente — na vida real
+  o desenho é seu, e a paleta do SDK não mexe nele.
+</p>
+
+<h2>Logotipo da barra de título — a versão mini</h2>
+<label for="titleLogo"><code>branding.titleLogo</code> — símbolo/monograma, lido a 16px de altura</label>
+<input type="text" id="titleLogo">
+<div class="linha">
+  <div>
+    <label for="titleLogoLight"><code>branding.titleLogoLight</code> — versão para o tema claro</label>
+    <input type="text" id="titleLogoLight">
+  </div>
+  <div style="flex:0 0 auto">
+    <label for="logoHeight"><code>branding.titleLogoHeight</code></label>
+    <input type="number" id="logoHeight" min="8" max="24" value="16">
+  </div>
+</div>
+<label><input type="checkbox" id="semTitleLogo"> sem <code>titleLogo</code> — a barra volta ao texto</label>
+<div class="amostras" id="previaTitle"></div>
+<div class="rotulos"><span>na barra, tema escuro</span><span>na barra, tema claro</span></div>
+
+<h2>Logotipo da tela de login — a versão inteira</h2>
+<label for="appLogo"><code>branding.logo</code> — logotipo completo, acima do "Entrar"</label>
+<input type="text" id="appLogo">
+<div class="linha">
+  <div>
+    <label for="appLogoLight"><code>branding.logoLight</code> — versão para o tema claro</label>
+    <input type="text" id="appLogoLight">
+  </div>
+  <div style="flex:0 0 auto">
+    <label for="appLogoHeight"><code>branding.logoHeight</code></label>
+    <input type="number" id="appLogoHeight" min="10" max="72" value="44">
+  </div>
+</div>
+<label><input type="checkbox" id="semAppLogo"> <code>logo: false</code> — login sem logotipo</label>
+<div class="amostras" id="previaApp"></div>
+<div class="rotulos"><span>no app, tema escuro</span><span>no app, tema claro</span></div>
+
+<h2>Paleta sugerida <code>branding.palette</code></h2>
+<div class="paletas" id="paletas"></div>
+<p class="nota">
+  A paleta define cor, hover e a superfície da moldura de uma vez. Qualquer campo
+  abaixo informado à parte vence o da paleta.
+</p>
+
+<h2>Ajuste fino das cores</h2>
+<div class="linha">
+  <div>
+    <label for="color"><code>branding.color</code> — aba, badge, realces</label>
+    <input type="color" id="color"> <input type="text" id="colorHex" style="width:110px;display:inline-block">
+  </div>
+  <div>
+    <label for="surface"><code>branding.surface</code> — moldura no tema escuro</label>
+    <input type="color" id="surface"> <input type="text" id="surfaceHex" style="width:110px;display:inline-block">
+  </div>
+</div>
+
+<h2>Nome</h2>
+<label for="name"><code>branding.name</code> — a barra sem logotipo, o título da janela e as frases que citam a marca (vazio = tira a palavra)</label>
+<input type="text" id="name" value="ACME Telecom">
+
+<p>
+  <button class="primario" id="aplicar">Aplicar</button>
+  <button id="abrir">Abrir/fechar janela</button>
+  <button id="tema">Alternar tema do webphone</button>
+</p>
+
+<h2>O que isso vira no init()</h2>
+<pre id="codigo"></pre>
+
+<!-- O bundle construído, não o src/: a versão entra no build (__BP_VERSION__),
+     e um servidor estático entregaria o módulo cru sem ela. Rode "npm run build"
+     depois de mexer em src/ para ver a mudança aqui. -->
+<script src="../dist/bcvoz.umd.js"></script>
+<script>
+  // Logos de exemplo desenhados aqui para a página funcionar sem rede: um
+  // símbolo redondo (mini) e o logotipo por extenso (inteiro). Em produção isto
+  // é a URL do seu CDN — data: serve para arquivo pequeno, em base64.
+  const svg = (corpo, w) => 'data:image/svg+xml;base64,' + btoa(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' 24">' + corpo + '</svg>')
+  const SIMBOLO = (cor) => '<circle cx="12" cy="12" r="11" fill="' + cor + '"/>' +
+    '<path d="M8 11a6 6 0 0 0 5 5l1.4-1.4 2.6.6v2.3A1.5 1.5 0 0 1 15.4 19 11 11 0 0 1 5 8.6 1.5 1.5 0 0 1 6.5 7h2.3l.6 2.6z" fill="#fff"/>'
+  const TEXTO = (cor) => '<text x="28" y="17" font-family="Segoe UI,Arial" font-size="14" ' +
+    'font-weight="700" letter-spacing=".5" fill="' + cor + '">ACME</text>'
+
+  // O texto do logotipo inteiro muda de cor por tema; o símbolo, não — ele já
+  // tem o branco por cima da cor da marca e se lê nos dois fundos.
+  const logosDe = (cor) => ({
+    mini: svg(SIMBOLO(cor), 24),
+    miniClaro: svg(SIMBOLO(cor), 24),
+    inteiro: svg(SIMBOLO(cor) + TEXTO('#e6e6f0'), 120),
+    inteiroClaro: svg(SIMBOLO(cor) + TEXTO('#161a24'), 120),
+  })
+
+  const $ = (id) => document.getElementById(id)
+  const paletas = BCVoz.palettes
+  let paletaAtual = 'teal'
+  let LOGOS = logosDe(paletas[paletaAtual].color)
+
+  // Qual desenho cada caixa está carregando. Serve para redesenhar o SVG na cor
+  // nova quando a paleta troca — e some assim que a pessoa digita, porque dali
+  // em diante o conteúdo é dela, não nosso.
+  const CAIXAS = ['titleLogo', 'titleLogoLight', 'appLogo', 'appLogoLight']
+  const porPapel = (id, papel) => { $(id).value = LOGOS[papel]; $(id).dataset.papel = papel }
+  for (const id of CAIXAS) {
+    $(id).addEventListener('input', () => { delete $(id).dataset.papel })
+  }
+
+  // --- a galeria: o desenho em tamanho de arte, sobre os dois fundos ---
+  const DESENHOS = [
+    { titulo: 'Símbolo — a versão mini', altura: 30, escuro: 'mini', claro: 'miniClaro',
+      nota: 'Quadrado, legível pequeno. É o que cabe na barra de título.',
+      acao: 'Usar na barra de título',
+      carregar: () => {
+        porPapel('titleLogo', 'mini')
+        porPapel('titleLogoLight', 'miniClaro')
+        $('semTitleLogo').checked = false
+      } },
+    { titulo: 'Logotipo — a versão inteira', altura: 30, escuro: 'inteiro', claro: 'inteiroClaro',
+      nota: 'Símbolo + nome por extenso. É o que vai acima do "Entrar".',
+      acao: 'Usar na tela de login',
+      carregar: () => {
+        porPapel('appLogo', 'inteiro')
+        porPapel('appLogoLight', 'inteiroClaro')
+        $('semAppLogo').checked = false
+      } },
+  ]
+  for (const d of DESENHOS) {
+    const cartao = document.createElement('div')
+    cartao.className = 'cartao'
+    cartao.innerHTML =
+      '<h3>' + d.titulo + '</h3><p class="nota">' + d.nota + '</p>' +
+      '<div class="amostras">' +
+        '<div class="amostra escuro"><img data-arte="' + d.escuro +
+          '" style="height:' + d.altura + 'px" alt=""></div>' +
+        '<div class="amostra claro"><img data-arte="' + d.claro +
+          '" style="height:' + d.altura + 'px" alt=""></div>' +
+      '</div><div class="rotulos"><span>fundo escuro</span><span>fundo claro</span></div>'
+    const b = document.createElement('button')
+    b.type = 'button'
+    b.textContent = d.acao
+    b.onclick = () => { d.carregar(); aplicar() }
+    cartao.appendChild(b)
+    $('galeria').appendChild(cartao)
+  }
+
+  // --- as prévias: o que está nas caixas agora, no tamanho real do SDK ---
+  const previa = (alvo, campoEscuro, campoClaro, vazio, altura, semArte) => {
+    const val = (id) => $(id).value.trim()
+    const escuro = vazio ? '' : val(campoEscuro)
+    const claro = vazio ? '' : (val(campoClaro) || escuro)
+    $(alvo).innerHTML = ['escuro', 'claro'].map((t, i) => {
+      const src = i ? claro : escuro
+      return '<div class="amostra ' + t + '">' + (src
+        ? '<img src="' + src + '" style="height:' + altura + 'px" alt="">'
+        : '<span>' + semArte() + '</span>') + '</div>'
+    }).join('')
+  }
+  const atualizarPrevias = () => {
+    // Sem logotipo os dois lugares caem em coisas diferentes: a barra volta ao
+    // texto, a tela de login fica sem nada (ou com o nome, que o SDK escreve
+    // no lugar da imagem).
+    previa('previaTitle', 'titleLogo', 'titleLogoLight', $('semTitleLogo').checked,
+      Number($('logoHeight').value) || 16,
+      () => 'texto: ' + ($('name').value.trim() || '(barra limpa)'))
+    previa('previaApp', 'appLogo', 'appLogoLight', $('semAppLogo').checked,
+      Number($('appLogoHeight').value) || 44,
+      () => ($('semAppLogo').checked ? 'sem logotipo'
+        : 'nome: ' + ($('name').value.trim() || '(nada)')))
+  }
+
+  // Redesenha os SVG na cor corrente: a galeria, e as caixas que ainda carregam
+  // um desenho nosso.
+  const redesenhar = () => {
+    const pedida = $('colorHex').value.trim()
+    const cor = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(pedida) ? pedida : paletas[paletaAtual].color
+    LOGOS = logosDe(cor)
+    for (const img of document.querySelectorAll('[data-arte]')) img.src = LOGOS[img.dataset.arte]
+    for (const id of CAIXAS) if ($(id).dataset.papel) $(id).value = LOGOS[$(id).dataset.papel]
+    atualizarPrevias()
+  }
+
+  // --- as sugestões vêm do próprio SDK, não repetidas aqui ---
+  for (const [id, p] of Object.entries(paletas)) {
+    const b = document.createElement('button')
+    b.className = 'paleta'
+    b.type = 'button'
+    b.dataset.paleta = id
+    b.innerHTML = '<span class="bolinha" style="background:' + p.color + '"></span>' + p.label
+    b.onclick = () => {
+      paletaAtual = id
+      $('colorHex').value = ''
+      $('surfaceHex').value = ''
+      $('color').value = p.color
+      $('surface').value = p.surface
+      marcarPaleta()
+      redesenhar()
+      aplicar()
+    }
+    $('paletas').appendChild(b)
+  }
+  const marcarPaleta = () => {
+    for (const b of document.querySelectorAll('[data-paleta]')) {
+      b.setAttribute('aria-pressed', String(b.dataset.paleta === paletaAtual))
+    }
+  }
+
+  const CENARIOS = {
+    dois: { name: 'ACME Telecom', title: 'mini', app: 'inteiro', paleta: 'teal', semTitle: false, semApp: false },
+    um:   { name: 'ACME Telecom', title: 'inteiro', app: 'inteiro', paleta: 'teal', semTitle: false, semApp: false },
+    sem:  { name: '', title: null, app: null, paleta: 'slate', semTitle: true, semApp: true },
+    cor:  { name: 'ACME Telecom', title: null, app: null, paleta: 'crimson', semTitle: false, semApp: false },
+    bcvoz:{ name: 'BCVOZ', title: null, app: null, paleta: 'violet', semTitle: false, semApp: false },
+  }
+  const parClaro = (papel) => (papel === 'mini' ? 'miniClaro' : 'inteiroClaro')
+
+  function montarBrand() {
+    const branding = { palette: paletaAtual, name: $('name').value }
+
+    if (!$('semTitleLogo').checked && $('titleLogo').value.trim()) {
+      branding.titleLogo = $('titleLogo').value.trim()
+      if ($('titleLogoLight').value.trim()) branding.titleLogoLight = $('titleLogoLight').value.trim()
+    }
+    const h = Number($('logoHeight').value)
+    if (h && h !== 16) branding.titleLogoHeight = h
+
+    if ($('semAppLogo').checked) branding.logo = false
+    else if ($('appLogo').value.trim()) {
+      branding.logo = $('appLogo').value.trim()
+      if ($('appLogoLight').value.trim()) branding.logoLight = $('appLogoLight').value.trim()
+    }
+    const ha = Number($('appLogoHeight').value)
+    if (ha && ha !== 44) branding.logoHeight = ha
+
+    if ($('colorHex').value.trim()) branding.color = $('colorHex').value.trim()
+    if ($('surfaceHex').value.trim()) branding.surface = $('surfaceHex').value.trim()
+    return branding
+  }
+
+  function aplicar() {
+    const branding = montarBrand()
+    atualizarPrevias()
+    // Encurta o data: no código mostrado — a ideia é ler, não copiar 2 KB.
+    const amostra = JSON.parse(JSON.stringify(branding), (k, v) =>
+      typeof v === 'string' && v.startsWith('data:') ? v.slice(0, 32) + '…' : v)
+    $('codigo').textContent =
+      'BCVoz.init({\n  session,\n  branding: ' +
+      JSON.stringify(amostra, null, 2).replace(/\n/g, '\n  ') + ',\n})'
+
+    BCVoz.destroy()
+    BCVoz.init({
+      mode: 'srcdoc',
+      hostBase: 'http://localhost:5174/',
+      branding,
+      open: true,
+    })
+  }
+
+  for (const b of document.querySelectorAll('[data-cenario]')) {
+    b.onclick = () => {
+      const c = CENARIOS[b.dataset.cenario]
+      $('name').value = c.name
+      $('semTitleLogo').checked = c.semTitle
+      $('semAppLogo').checked = c.semApp
+      $('logoHeight').value = 16
+      $('appLogoHeight').value = 44
+      $('colorHex').value = ''
+      $('surfaceHex').value = ''
+      paletaAtual = c.paleta
+      $('color').value = paletas[c.paleta].color
+      $('surface').value = paletas[c.paleta].surface
+      marcarPaleta()
+      redesenhar()
+      for (const id of CAIXAS) { $(id).value = ''; delete $(id).dataset.papel }
+      if (c.title) {
+        porPapel('titleLogo', c.title)
+        porPapel('titleLogoLight', parClaro(c.title))
+      }
+      if (c.app) {
+        porPapel('appLogo', c.app)
+        porPapel('appLogoLight', parClaro(c.app))
+      }
+      aplicar()
+    }
+  }
+
+  const liga = (cor, hex) => {
+    $(cor).oninput = () => { $(hex).value = $(cor).value; redesenhar() }
+    $(hex).oninput = () => {
+      if (/^#[0-9a-f]{6}$/i.test($(hex).value)) { $(cor).value = $(hex).value; redesenhar() }
+    }
+  }
+  liga('color', 'colorHex')
+  liga('surface', 'surfaceHex')
+
+  for (const id of CAIXAS.concat(['name', 'logoHeight', 'appLogoHeight'])) {
+    $(id).addEventListener('input', atualizarPrevias)
+  }
+  for (const id of ['semTitleLogo', 'semAppLogo']) {
+    $(id).addEventListener('change', atualizarPrevias)
+  }
+
+  $('aplicar').onclick = aplicar
+  $('abrir').onclick = () => BCVoz.toggle()
+  // Troca o tema pelo caminho de verdade: a API do próprio webphone. Ela emite
+  // theme:changed, o SDK ouve e a moldura acompanha — é assim que o logo claro
+  // entra no lugar do escuro. Forçar o atributo por fora pularia o aviso e o
+  // logo ficaria no tema anterior, dando um falso "funciona".
+  $('tema').onclick = () => {
+    const janela = document.querySelector('[data-bravophone]')
+      .shadowRoot.querySelector('.bp-frame').contentWindow
+    if (!janela.__bpTema) return alert('O webphone ainda está carregando.')
+    janela.__bpTema.definir(janela.__bpTema.efetivo() === 'claro' ? 'escuro' : 'claro')
+  }
+
+  document.querySelector('[data-cenario="dois"]').click()
+</script>
+</body>
+</html>

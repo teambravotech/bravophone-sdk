@@ -612,7 +612,7 @@ arraste continuam desligados, como sempre estiveram no host standalone.
 | `token` | `string` | — | Token de sessão emitido pelo seu backend |
 | `email` | `string` | — | Sem sessão: a tela de login do webphone sobe com este e-mail — ver acima |
 | `iceServers` | `RTCIceServer[]` | — | STUN/TURN da negociação de mídia — ver abaixo |
-| `branding` | `object` | — | Tira (ou troca) o logotipo e os links do BCVOZ no login — ver abaixo |
+| `branding` | `object` | — | A sua marca no lugar da nossa: logotipos, nome, links e cor — ver abaixo |
 | `mode` | `'srcdoc' \| 'hosted'` | `'srcdoc'` | Como o webphone é carregado — ver abaixo |
 | `hostUrl` | `string` | `https://webphone.bravophone.com/` | Origem do webphone (só no modo `hosted`) |
 | `position` | `string` | `'bottom-right'` | Canto inicial |
@@ -858,18 +858,77 @@ BCVoz.init({
 })
 ```
 
-`logo` aceita `https:` ou `data:image/…` e é limitado a 44px de altura; os
-links aceitam `https:`, `mailto:` e `tel:`. URL fora disso é ignorada com aviso
-no console — vale como cerca contra erro de digitação, não como segurança: a
-página é sua.
+`logo` aceita `https:` ou `data:image/…` e é limitado a 44px de altura (ou a
+`logoHeight`); os links aceitam `https:`, `mailto:` e `tel:`. URL fora disso é
+ignorada com aviso no console — vale como cerca contra erro de digitação, não
+como segurança: a página é sua.
+
+#### Dois logotipos: o da tela e o da barra
+
+A barra de título da janela tem 36px de altura e lê o logotipo a 16px. Um
+logotipo por extenso ali vira um borrão — então são **dois arquivos do mesmo
+manual de marca**, cada um pela sua chave:
+
+```js
+BCVoz.init({
+  branding: {
+    logo:      'https://cdn.acme.com/logotipo.svg',  // tela de login: a marca inteira
+    titleLogo: 'https://cdn.acme.com/simbolo.svg',   // barra de título: o símbolo
+  },
+})
+```
+
+| chave | onde | padrão |
+|---|---|---|
+| `logo` · `logoLight` · `logoHeight` | tela de login, acima do "Entrar" | 44px |
+| `titleLogo` · `titleLogoLight` · `titleLogoHeight` | barra de título da janela | 16px |
+
+`titleLogo` **não** herda de `logo`, de propósito: a barra fica com o texto
+até você mandar um símbolo para lá. As versões `*Light` são a arte para o tema
+claro; sem elas, a mesma arte serve aos dois temas — e a herança é por par,
+nunca cruzada, para o logotipo inteiro não acabar na barra de 16px só no tema
+claro.
+
+#### A cor da marca
+
+`palette` troca a cor da moldura — aba de abertura, barra de título, borda,
+badge, realces — em combinações já conferidas de contraste:
+
+```js
+BCVoz.init({ branding: { palette: 'teal' } })
+```
+
+| id | | id | |
+|---|---|---|---|
+| `violet` | Violeta (BCVOZ, o padrão) | `emerald` | Esmeralda |
+| `indigo` | Índigo | `amber` | Âmbar |
+| `blue` | Azul | `crimson` | Carmim |
+| `teal` | Oceano | `slate` | Grafite |
+
+A lista sai em `BCVoz.palettes`, com `label` — quem monta um seletor de marca
+itera nela em vez de repetir os hexadecimais. Cada sugestão passa, em teste,
+pelo mínimo do WCAG nos dois temas: 3:1 do ícone branco sobre a aba e 4.5:1 do
+texto sobre a barra.
+
+Campo avulso vence o da paleta: `{ palette: 'teal', color: '#047857' }`
+funciona. São quatro, todos em hexadecimal — `color`, `colorHover`, `surface`
+(a moldura no tema escuro) e `surfaceLight` (no claro). Texto, bordas e
+realces saem da **luminância** da superfície: uma cor clara no tema escuro
+recebe texto escuro e continua legível.
+
+O que a paleta **não** pinta: o interior do webphone, que tem tema próprio
+auditado nos dois modos, e o botão verde de atender — verde ali quer dizer
+"atender", não "marca".
 
 Como funciona, e o que isso implica: esconder é CSS no documento do `srcdoc`,
 aplicado **antes** de o bundle avaliar, então o logotipo não chega a piscar.
 Os seletores são os que não mudam entre builds — a classe `bcvoz-logo` e o
 domínio de cada link —, e há teste que falha se a extensão mexer neles. Trocar
 o destino de um link exige mexer no atributo, e só nesse caso um observador
-entra em cena. **Só em `mode: 'srcdoc'`** (o padrão): no hospedado o documento
-é de outra origem e o SDK não alcança o CSS dele.
+entra em cena. **`name`, `logo` e `links` só valem em `mode: 'srcdoc'`** (o
+padrão): no hospedado o documento é de outra origem e o SDK não alcança o CSS
+dele. As cores e o `titleLogo` são da moldura, que é do SDK nos dois modos, e
+continuam valendo.
 
 ### Chamada muda: quando o navegador não gera candidato ICE
 
