@@ -245,7 +245,7 @@ fetch(<span class="c-str">'https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webp
 <tr><td><code>token</code></td><td><code>string</code></td><td>—</td><td>Sessão do usuário, emitida pelo <strong>seu</strong> backend</td></tr>
 <tr><td><code>email</code></td><td><code>string</code></td><td>—</td><td>Só <strong>sem</strong> sessão: a tela de login sobe com este e-mail</td></tr>
 <tr><td><code>iceServers</code></td><td><code>RTCIceServer[]</code></td><td>—</td><td>STUN/TURN da mídia; sem eles, só os candidatos do navegador</td></tr>
-<tr><td><code>branding</code></td><td><code>object</code></td><td>—</td><td><code>{ name, logo, links }</code> — nome do cliente no lugar do logotipo, no título e nos textos; vazio não renderiza nada</td></tr>
+<tr><td><code>branding</code></td><td><code>object</code></td><td>—</td><td><code>{ name, logo, titleLogo, palette, links }</code> — a sua marca no lugar da nossa: nome, logotipo da tela de login (<code>logo</code>, <code>logoLight</code>, <code>logoHeight</code>), logotipo da barra da janela (<code>titleLogo</code>, <code>titleLogoLight</code>, <code>titleLogoHeight</code>, lido a 16px e sem herdar de <code>logo</code>) e a cor da moldura (<code>palette</code> ou <code>color</code>/<code>surface</code> em hex)</td></tr>
 <tr><td><code>mode</code></td><td><code>'hosted' | 'srcdoc'</code></td><td><code>'srcdoc'</code></td><td>Como o webphone é carregado</td></tr>
 <tr><td><code>hostBase</code></td><td><code>string</code></td><td>CDN da versão</td><td>Só em <code>srcdoc</code>. Deve terminar em <code>/</code></td></tr>
 <tr><td><code>hostUrl</code></td><td><code>string</code></td><td>domínio oficial</td><td>Só em <code>hosted</code></td></tr>
@@ -445,6 +445,7 @@ off()   <span class="c-com">// remove o listener — útil ao desmontar um compo
 <thead><tr><th>Propriedade</th><th>Tipo</th><th>Descrição</th></tr></thead>
 <tbody>
 <tr><td><code>version</code></td><td><code>string</code></td><td>Versão do SDK carregado</td></tr>
+<tr><td><code>palettes</code></td><td><code>object</code></td><td>As paletas sugeridas para <code>branding.palette</code>, por id: <code>{ id, label, color, colorHover, surface, surfaceLight }</code></td></tr>
 <tr><td><code>isOpen</code></td><td><code>boolean</code></td><td>A janela está visível</td></tr>
 <tr><td><code>geometry</code></td><td><code>object | null</code></td><td><code>{x, y, width, height, dock}</code>; <code>null</code> antes do <code>init</code></td></tr>
 </tbody>

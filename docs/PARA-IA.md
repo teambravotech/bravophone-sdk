@@ -100,7 +100,7 @@ Chame uma vez, com o `<body>` já existindo. Devolve a instância.
 | `token` | `string` | — | Sessão do usuário, emitida pelo backend do integrador |
 | `email` | `string` | — | **Só sem sessão.** A tela de login do webphone sobe com este e-mail preenchido; a pessoa digita só a senha. Só em `srcdoc` |
 | `iceServers` | `RTCIceServer[]` | — | STUN/TURN da mídia. Sem isto, o webphone usa só os candidatos do navegador — e fica mudo se ele não gerar nenhum |
-| `branding` | `{ name?, logo?, links? }` | — | White-label: `name` escreve o nome do cliente no lugar do logotipo, no titulo da janela e nos textos (`name: ''` deixa tudo vazio); `logo: false\|url`, `links: false\|{ signup, support, portal }`. `false` tira, URL troca. Só em `srcdoc` |
+| `branding` | `{ name?, logo?, titleLogo?, palette?, links? }` | — | White-label. `name` escreve o nome do cliente no lugar do logotipo, no titulo da janela e nos textos (`name: ''` deixa tudo vazio); `logo: false\|url` e o logotipo da tela de login (+ `logoLight`, `logoHeight`); `titleLogo` e o da barra da janela, lido a 16px (+ `titleLogoLight`, `titleLogoHeight`) e NAO herda de `logo`; `palette` (ver `BCVoz.palettes`) ou `color`/`colorHover`/`surface`/`surfaceLight` em hex pintam a moldura; `links: false\|{ signup, support, portal }`. `false` tira, URL troca. `name`, `logo` e `links` só em `srcdoc`; cor e `titleLogo` nos dois modos |
 | `mode` | `'srcdoc' \| 'hosted'` | `'srcdoc'` | `'hosted'` exige `hostUrl` e um host publicado |
 | `hostBase` | `string` | CDN desta versão | Só em `srcdoc`. Deve terminar em `/` |
 | `hostUrl` | `string` | domínio oficial | Só em `hosted` |
@@ -182,7 +182,8 @@ relatórios: `{ name, crm, photo, gateway, dealId, url }`.
 
 ### Propriedades
 
-`BCVoz.version` · `BCVoz.isOpen` · `BCVoz.geometry`
+`BCVoz.version` · `BCVoz.isOpen` · `BCVoz.geometry` · `BCVoz.palettes`
+(as paletas sugeridas para `branding.palette`, por id, congeladas)
 (`{x, y, width, height, dock}` ou `null` antes do `init`).
 
 ---

@@ -44,11 +44,31 @@ export interface BCVozDevice {
   user?: string | null
 }
 
+/** Identificador de uma paleta sugerida. Ver `BCVoz.palettes`. */
+export type BCVozPaletteId =
+  | 'violet' | 'indigo' | 'blue' | 'teal'
+  | 'emerald' | 'amber' | 'crimson' | 'slate'
+
+/** Uma paleta sugerida, como `BCVoz.palettes` a devolve. */
+export interface BCVozPalette {
+  id: BCVozPaletteId
+  /** Nome para exibir numa tela de preferências (ex.: 'Oceano'). */
+  label: string
+  color: string
+  colorHover: string
+  surface: string
+  surfaceLight: string
+}
+
 /**
- * White-label: o que da marca BCVOZ aparece na tela de login.
+ * White-label: o que da marca BCVOZ aparece na tela, e o que entra no lugar.
  *
- * Só em `mode: 'srcdoc'` (o padrão) — é lá que o documento é do SDK. Nada
- * disto muda o que o webphone faz; muda o que ele mostra.
+ * Dois lugares, regras diferentes. `name`, `logo` e `links` vivem DENTRO do
+ * webphone (tela de login) e por isso só valem em `mode: 'srcdoc'` (o padrão).
+ * As cores e o `titleLogo` são da moldura — barra de título, aba de abertura,
+ * borda — que é do SDK nos dois modos.
+ *
+ * Nada disto muda o que o webphone faz; muda o que ele mostra.
  */
 export interface BCVozBranding {
   /**
@@ -65,10 +85,57 @@ export interface BCVozBranding {
    */
   name?: false | string
   /**
-   * O logotipo acima do "Entrar". `false` tira; uma URL (`https:` ou
-   * `data:image/…`) põe a sua no lugar, limitada a 44px de altura.
+   * O logotipo acima do "Entrar" — a marca inteira, que ali tem espaço.
+   * `false` tira; uma URL (`https:` ou `data:image/…`) põe a sua no lugar,
+   * limitada a 44px de altura (ou a `logoHeight`).
    */
   logo?: false | string
+  /**
+   * A arte do `logo` para o tema claro. Sem ela, o `logo` serve aos dois — o
+   * que basta quando o desenho se lê nos dois fundos.
+   */
+  logoLight?: string
+  /** Altura máxima do `logo`, em px. Padrão: 44. */
+  logoHeight?: number
+  /**
+   * O logotipo da BARRA DE TÍTULO da janela: a versão compacta, lida a 16px de
+   * altura. Entra no lugar do texto.
+   *
+   * Não herda de `logo` de propósito: um logotipo por extenso espremido em
+   * 16px vira um borrão. São dois arquivos do mesmo manual de marca — o
+   * símbolo e o logotipo — e cada um entra pela sua chave.
+   *
+   * Vale nos dois modos: a barra é do SDK.
+   */
+  titleLogo?: string
+  /** A arte do `titleLogo` para o tema claro. Sem ela, vale o `titleLogo`. */
+  titleLogoLight?: string
+  /** Altura do `titleLogo`, em px. Padrão: 16; o máximo útil é 24. */
+  titleLogoHeight?: number
+  /**
+   * Uma paleta sugerida, que define `color`, `colorHover`, `surface` e
+   * `surfaceLight` de uma vez — em combinações já conferidas de contraste.
+   * Ver `BCVoz.palettes`. Campo avulso informado à parte vence o da paleta.
+   */
+  palette?: BCVozPaletteId
+  /**
+   * A cor da marca na moldura: aba de abertura, badge de chamadas perdidas,
+   * realces. Hexadecimal (`#0f766e` ou `#0f7`).
+   *
+   * Não pinta o interior do webphone, que tem tema próprio, nem o botão verde
+   * de atender — verde ali quer dizer "atender", não "marca".
+   */
+  color?: string
+  /** A cor da aba sob o ponteiro. Padrão: o `color` 12% mais escuro. */
+  colorHover?: string
+  /**
+   * O fundo da moldura no tema escuro — barra de título e borda da janela.
+   * Texto, bordas e realces saem da luminância dela: uma superfície clara
+   * recebe texto escuro e continua legível.
+   */
+  surface?: string
+  /** O mesmo, no tema claro. */
+  surfaceLight?: string
   /**
    * Os três links do rodapé do login. `false` tira os três de uma vez;
    * por chave, `false` tira aquele e uma URL troca o destino.
@@ -404,6 +471,11 @@ export interface BCVozAPI {
   ): void
 
   destroy(): void
+  /**
+   * As paletas sugeridas para `branding.palette`, por id. Congelado — é
+   * sugestão nossa, não estado do integrador.
+   */
+  readonly palettes: Readonly<Record<BCVozPaletteId, BCVozPalette>>
   readonly version: string
 }
 

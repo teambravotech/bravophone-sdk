@@ -7,7 +7,7 @@ import { buildSrcdoc } from './srcdoc.js'
 import { acompanharRamal } from './ramal.js'
 import { manterSessao } from './sessao.js'
 import { normalizarEmail } from './login.js'
-import { normalizarMarca } from './marca.js'
+import { normalizarMarca, cssDaMarcaNaMoldura, logoDaBarra, soNoSrcdoc } from './marca.js'
 
 const DEFAULTS = {
   // 380x640 é a geometria da janela nativa da extensão — o layout do
@@ -109,8 +109,9 @@ export function createWidget(options) {
     // `disable_non_proxied_udp`). Ver o aviso `media:blocked`.
     iceServers = null,
     // White-label: tira (ou troca) o logotipo e os links do BCVOZ na tela de
-    // login. Para quem revende o webphone dentro do próprio produto — ver
-    // src/marca.js.
+    // login, põe o logotipo do integrador na barra de título e pinta a moldura
+    // com a cor dele. Para quem revende o webphone dentro do próprio produto —
+    // ver src/marca.js.
     branding = null,
     // () => Promise<sessão>: busca uma sessão nova no backend do integrador.
     // Sem ela o token vence e o login cai (ver sessao.js).
@@ -159,9 +160,14 @@ export function createWidget(options) {
   // A moldura acompanha o tema do webphone. Antes de o iframe carregar não há
   // quem perguntar, então partimos do sistema — que é o padrão do webphone
   // também, e por isso os dois combinam desde o primeiro quadro.
+  // O logotipo da barra tem uma arte por tema, e quem troca a imagem é este
+  // gancho — preenchido adiante, quando houver logotipo. Declarado aqui porque
+  // o seguirTema já existe antes do header ser montado.
+  let aoTrocarTema = null
   const seguirTema = (tema) => {
     if (tema === 'claro') mount.setAttribute('data-bp-tema', 'claro')
     else mount.removeAttribute('data-bp-tema')
+    if (aoTrocarTema) aoTrocarTema(tema === 'claro' ? 'claro' : 'escuro')
   }
   try {
     seguirTema(window.matchMedia('(prefers-color-scheme: light)').matches ? 'claro' : 'escuro')
@@ -169,6 +175,12 @@ export function createWidget(options) {
 
   const shadow = mount.attachShadow({ mode: 'open' })
   shadow.appendChild(h('style', { text: WIDGET_CSS }))
+  // A cor da marca entra numa SEGUNDA folha, depois da nossa. Mesmo seletor,
+  // ordem decide: `:host` do integrador vence o `:host` de fábrica sem precisar
+  // de !important, e o bloco do tema claro continua valendo no tema claro —
+  // o que um style inline no host estragaria, por vencer os dois de uma vez.
+  const marcaCss = cssDaMarcaNaMoldura(marca)
+  if (marcaCss) shadow.appendChild(h('style', { text: marcaCss }))
 
   const geometryDefaults = (() => {
     const { width, height, margin } = DEFAULTS
@@ -202,11 +214,24 @@ export function createWidget(options) {
   const btnClose = h('button', { class: 'bp-btn bp-btn-close', title: 'Fechar', text: '×' })
   const btnRecentes = h('button', { class: 'bp-btn bp-btn-recentes', type: 'button' })
   btnRecentes.innerHTML = ICONE_RECENTES
+  // O logotipo da barra, quando há: uma imagem no lugar do texto. É a versão
+  // compacta da marca (titleLogo), não a da tela de login — ver src/marca.js.
+  const barra = logoDaBarra(marca)
+  const marcaEl = barra
+    ? h('img', {
+      class: 'bp-logo', src: barra.escuro,
+      alt: titulo || 'Webphone', draggable: 'false',
+    })
+    : (titulo ? h('span', { class: 'bp-title', text: titulo }) : null)
+  if (barra) {
+    aoTrocarTema = (tema) => { marcaEl.src = tema === 'claro' ? barra.claro : barra.escuro }
+    aoTrocarTema(mount.getAttribute('data-bp-tema') === 'claro' ? 'claro' : 'escuro')
+  }
   const header = h('div', { class: 'bp-header' }, [
     status,
     // Sem título não entra elemento nenhum: um <span> vazio ainda ocuparia o
     // espaço do flex e empurraria os botões.
-    ...(titulo ? [h('span', { class: 'bp-title', text: titulo })] : []),
+    ...(marcaEl ? [marcaEl] : []),
     ...(recents ? [btnRecentes] : []),
     btnMin,
     btnClose,
@@ -239,10 +264,15 @@ export function createWidget(options) {
         "[BCVoz] email só vale em mode 'srcdoc': no hospedado a tela de login " +
         'é de outra origem, e um e-mail na URL do iframe acabaria em log de servidor.')
     }
-    if (marca) {
+    // Só o que vive DENTRO do documento do webphone se perde aqui. Cor,
+    // paleta e logotipo da barra são da moldura, que é nossa nos dois modos —
+    // avisar sobre eles seria avisar errado.
+    const perdidos = soNoSrcdoc(marca)
+    if (perdidos.length) {
       console.warn(
-        "[BCVoz] branding só vale em mode 'srcdoc': no hospedado o documento é " +
-        'de outra origem e o SDK não alcança o CSS dele.')
+        "[BCVoz] branding." + perdidos.join(', branding.') + " só vale em mode 'srcdoc': " +
+        'no hospedado o documento é de outra origem e o SDK não alcança o CSS dele. ' +
+        'As cores e o titleLogo continuam valendo.')
     }
     frameEl.setAttribute('src',
       buildSrc(new URL(hostUrl), { token, embed: '1', parent: location.origin }))

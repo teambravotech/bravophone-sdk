@@ -11,9 +11,29 @@ export const WIDGET_CSS = `
      webphone emite ao trocar de tema.
 
      Só o que é MOLDURA entra aqui. A cor da marca no lançador, o vermelho do
-     badge e o verde/âmbar do status ficam fixos: são identidade e semântica,
-     e valem igual nos dois temas. */
+     badge e o verde/âmbar do status não mudam com o tema: são identidade e
+     semântica, e valem igual nos dois. */
   all: initial;
+
+  /* ---- marca ----
+     Os valores abaixo são a marca BCVOZ, e continuam valendo quando o
+     integrador não pede outra. Com brand.color no init, o widget.js
+     sobrescreve estes tokens no style inline do host (ver src/marca.js) —
+     inline vence o "all: initial", e "all" não alcança custom property.
+     Ficam fora do bloco do tema claro de propósito: marca é identidade, e
+     identidade não troca de cor quando o usuário troca de tema. */
+  --bpw-marca: #6c5ce7;
+  --bpw-marca-hover: #5b4bd6;
+  /* Realce sobre fundo escuro: botão de Recentes aberto, halo de atenção. */
+  --bpw-marca-clara: #8b7cf8;
+  /* Anel de foco por teclado: precisa contrastar com a própria marca. */
+  --bpw-marca-foco: #c7d2fe;
+  /* Estes dois são TRIPLOS "r,g,b", não cores: entram em rgba(...) com
+     opacidades diferentes, e rgba() não aceita hex dentro. */
+  --bpw-marca-sombra: 76,58,190;
+  --bpw-marca-halo: 124,108,245;
+  /* Altura do logo do integrador na barra de título. */
+  --bpw-logo-altura: 16px;
 
   --bpw-bg: #1e1e2d;
   --bpw-header-bg: #15151f;
@@ -114,6 +134,28 @@ export const WIDGET_CSS = `
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Logo do integrador, no lugar do título. O object-position à esquerda mantém
+   o desenho encostado na borda.
+   O margin-right: auto é que empurra os botões para a borda direita. Com
+   flex-grow o logo esticaria, mas o max-width o trava em 62% e a sobra de
+   espaço cairia DEPOIS do último filho - o buraco à direita do X. Margem
+   automática come essa sobra antes de ela virar buraco.
+   O pointer-events: none é o que importa: a barra inteira é a alça de arraste,
+   e um <img> no caminho roubaria o gesto para o drag nativo do navegador. */
+.bp-logo {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 62%;
+  margin-right: auto;
+  height: var(--bpw-logo-altura);
+  width: auto;
+  object-fit: contain;
+  object-position: left center;
+  display: block;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
 .bp-status {
   width: 8px; height: 8px; border-radius: 50%;
   background: #6b7280; flex: 0 0 auto;
@@ -136,7 +178,7 @@ export const WIDGET_CSS = `
 .bp-btn-close:hover { background: #dc2626; color: #fff; }
 .bp-btn-recentes svg { display: block; }
 /* Aberto: a cor da marca diz "este painel está à mostra". */
-.bp-btn-recentes[aria-pressed="true"] { color: #8b7cf8; background: var(--bpw-realce); }
+.bp-btn-recentes[aria-pressed="true"] { color: var(--bpw-marca-clara); background: var(--bpw-realce); }
 
 .bp-body { flex: 1 1 auto; position: relative; min-height: 0; }
 .bp-frame {
@@ -180,14 +222,14 @@ export const WIDGET_CSS = `
    some, no lugar de um shake: em interface, tremer significa erro ou acao
    negada (senha errada), e aqui nada deu errado. */
 @keyframes bp-attention {
-  0%   { box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 0 0 0 rgba(124,108,245,.55); }
-  55%  { box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 0 0 12px rgba(124,108,245,0); }
-  100% { box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 0 0 0 rgba(124,108,245,0); }
+  0%   { box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 0 0 0 rgba(var(--bpw-marca-halo),.55); }
+  55%  { box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 0 0 12px rgba(var(--bpw-marca-halo),0); }
+  100% { box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 0 0 0 rgba(var(--bpw-marca-halo),0); }
 }
 .bp-root.bp-attention { animation: bp-attention .85s ease-out 2; }
 
 @media (prefers-reduced-motion: reduce) {
-  .bp-root.bp-attention { animation: none; outline: 2px solid #7c6cf5; outline-offset: 2px; }
+  .bp-root.bp-attention { animation: none; outline: 2px solid var(--bpw-marca-clara); outline-offset: 2px; }
 }
 
 /* ---- previa de encaixe (docking) ----
@@ -215,11 +257,11 @@ export const WIDGET_CSS = `
   gap: 0;
   height: 48px;
   padding: 0 11px;
-  background: #6c5ce7;
+  background: var(--bpw-marca);
   color: #fff;
   border: 0;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(76,58,190,.42), 0 0 0 1px rgba(255,255,255,.08) inset;
+  box-shadow: 0 4px 16px rgba(var(--bpw-marca-sombra),.42), 0 0 0 1px rgba(255,255,255,.08) inset;
   transition: padding .16s ease, background .16s ease, box-shadow .16s ease;
   touch-action: none;
   user-select: none;
@@ -233,10 +275,10 @@ export const WIDGET_CSS = `
 
 .bp-launcher:hover,
 .bp-launcher:focus-visible {
-  background: #5b4bd6;
-  box-shadow: 0 6px 22px rgba(76,58,190,.55), 0 0 0 1px rgba(255,255,255,.12) inset;
+  background: var(--bpw-marca-hover);
+  box-shadow: 0 6px 22px rgba(var(--bpw-marca-sombra),.55), 0 0 0 1px rgba(255,255,255,.12) inset;
 }
-.bp-launcher:focus-visible { outline: 2px solid #c7d2fe; outline-offset: 2px; }
+.bp-launcher:focus-visible { outline: 2px solid var(--bpw-marca-foco); outline-offset: 2px; }
 .bp-launcher.bp-launcher-dragging { cursor: grabbing; transition: none; }
 
 /* Alca de arraste: os pontos ficam sempre com largura fixa e somem por
@@ -288,7 +330,7 @@ export const WIDGET_CSS = `
   font: 700 11px/18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   text-align: center;
   display: none;
-  box-shadow: 0 0 0 2px #6c5ce7;
+  box-shadow: 0 0 0 2px var(--bpw-marca);
 }
 .bp-launcher[data-side="right"] .bp-badge { left: -6px; }
 .bp-launcher[data-side="left"] .bp-badge { right: -6px; }
@@ -296,7 +338,7 @@ export const WIDGET_CSS = `
 
 /* Chamada entrante: a aba pulsa para chamar atencao mesmo fechada. */
 @keyframes bp-launcher-ring {
-  0%, 100% { box-shadow: 0 4px 16px rgba(76,58,190,.42); }
+  0%, 100% { box-shadow: 0 4px 16px rgba(var(--bpw-marca-sombra),.42); }
   50% { box-shadow: 0 4px 16px rgba(239,68,68,.75), 0 0 0 4px rgba(239,68,68,.25); }
 }
 .bp-launcher[data-badge]:not([data-badge=""]) { animation: bp-launcher-ring 1.1s infinite; }
