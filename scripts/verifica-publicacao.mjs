@@ -28,6 +28,9 @@ const NOME = pkg.name
 const CDN = `https://cdn.jsdelivr.net/npm/${NOME}@${versao}`
 
 let pass = 0, fail = 0
+// Vira false quando a versão nem está no registro: daí não há o que conferir
+// no CDN, e repetir o mesmo 404 seis vezes só parece estrago.
+let publicada = true
 const check = (nome, cond, extra) => {
   if (cond) { pass++; console.log(`  ✓ ${nome}`) }
   else { fail++; console.log(`  ✗ ${nome}${extra !== undefined ? '  → ' + extra : ''}`) }
@@ -46,7 +49,21 @@ console.log('\nregistro do npm:')
   const { corpo, erro } = await buscar(`https://registry.npmjs.org/${NOME}`, 'json')
   if (erro) { check('o registro responde', false, erro) }
   else {
-    check(`a versão ${versao} existe no registro`, !!corpo.versions[versao])
+    // Antes de publicar, TUDO daqui para baixo seria 404 pela mesma razão. Sete
+    // linhas vermelhas descrevendo um fato só dão a impressão de estrago onde
+    // não houve nenhum — a versão simplesmente ainda não saiu.
+    if (!corpo.versions[versao]) {
+      const latest = corpo['dist-tags'].latest
+      console.log(`  · a ${versao} ainda não foi publicada — nada a verificar no CDN.`)
+      console.log(`  · produção segue na ${latest}, intacta.`)
+      console.log('\nPara publicar sem mexer em produção:')
+      console.log('  npm publish --tag next --access public')
+      console.log('  npm run verifica:cdn')
+      console.log(`  npm dist-tag add ${NOME}@${versao} latest && npm run purge   # só então produção se move`)
+      process.exitCode = 1
+      publicada = false
+    }
+    check(`a versão ${versao} existe no registro`, true)
     const latest = corpo['dist-tags'].latest
     check(`dist-tag latest = ${latest}`, true)
     if (latest !== versao) {
@@ -60,8 +77,8 @@ console.log('\nregistro do npm:')
   }
 }
 
-console.log('\nbundle no CDN:')
-{
+if (publicada) {
+  console.log('\nbundle no CDN:')
   const { corpo, erro } = await buscar(`${CDN}/dist/bcvoz.umd.js`)
   if (erro) { check('o bundle baixa', false, erro) }
   else {
@@ -88,8 +105,8 @@ console.log('\nbundle no CDN:')
   }
 }
 
-console.log('\nassets do host no CDN (é de onde o srcdoc carrega):')
-{
+if (publicada) {
+  console.log('\nassets do host no CDN (é de onde o srcdoc carrega):')
   const { corpo, erro } = await buscar(`${CDN}/host/index.html`)
   if (erro) { check('host/index.html baixa', false, erro) }
   else {
@@ -105,8 +122,8 @@ console.log('\nassets do host no CDN (é de onde o srcdoc carrega):')
   }
 }
 
-console.log('\nresolvedor de versão (o que o snippet do README carrega):')
-{
+if (publicada) {
+  console.log('\nresolvedor de versão (o que o snippet do README carrega):')
   const { corpo, erro } = await buscar(
     `https://data.jsdelivr.com/v1/packages/npm/${NOME}/resolved`, 'json')
   if (erro) check('o resolvedor responde', false, erro)
@@ -121,5 +138,7 @@ console.log('\nresolvedor de versão (o que o snippet do README carrega):')
   }
 }
 
-console.log(`\n${pass} passaram, ${fail} falharam`)
-process.exit(fail ? 1 : 0)
+if (publicada) {
+  console.log(`\n${pass} passaram, ${fail} falharam`)
+  if (fail) process.exitCode = 1
+}

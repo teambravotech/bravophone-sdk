@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BCVoz SDK — conferir a versão publicada</title>
+<style>
+  body { font: 15px/1.6 system-ui, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px 80px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  p.nota { font-size: 13px; color: #64748b; }
+  code { background: #f1f5f9; padding: 1px 5px; border-radius: 3px; }
+  #log { background: #0f172a; color: #e2e8f0; padding: 14px; border-radius: 8px;
+         font: 12px/1.7 ui-monospace, monospace; white-space: pre-wrap; margin-top: 16px; }
+  .ok { color: #4ade80 } .ruim { color: #f87171 } .dim { color: #94a3b8 }
+</style>
+</head>
+<body>
+<h1>Conferir a versão publicada</h1>
+<p class="nota">
+  Carrega o SDK <strong>do CDN</strong>, não do <code>dist/</code> daqui. É o último
+  teste antes de promover uma versão para <code>latest</code>: o <code>npm test</code>
+  roda contra arquivos locais, e o <code>verifica:cdn</code> baixa e avalia o bundle —
+  mas só o navegador exercita o caminho inteiro, com o iframe buscando os assets do
+  host no subpath do CDN e o CSS da marca entrando no documento.
+</p>
+<p class="nota">
+  Versão pela query: <code>?v=0.9.0</code>. Sem ela, usa a que o resolvedor do jsDelivr
+  responde — ou seja, <strong>a que está em produção agora</strong>.
+  Sem sessão o webphone para na tela de login, e é o bastante: é lá que o logotipo,
+  as fontes e o rodapé aparecem.
+</p>
+<div id="log">carregando…</div>
+
+<script>
+  const log = document.getElementById('log')
+  const linha = (texto, classe) => {
+    log.innerHTML += '\n<span class="' + (classe || 'dim') + '">' + texto + '</span>'
+  }
+  const pedida = new URLSearchParams(location.search).get('v')
+
+  ;(async () => {
+    log.textContent = ''
+    let versao = pedida
+    if (!versao) {
+      const r = await fetch('https://data.jsdelivr.com/v1/packages/npm/@bcvoz/webphone/resolved',
+        { cache: 'no-store' })
+      versao = (await r.json()).version
+      linha('resolvedor do jsDelivr → ' + versao + '  (o que produção carrega)')
+    }
+    linha('carregando @bcvoz/webphone@' + versao + ' do CDN…')
+
+    const s = document.createElement('script')
+    s.src = 'https://cdn.jsdelivr.net/npm/@bcvoz/webphone@' + versao + '/dist/bcvoz.umd.js'
+    s.onerror = () => linha('✗ o bundle não carregou do CDN', 'ruim')
+    s.onload = () => {
+      linha('✓ bundle carregado — BCVoz.version = ' + BCVoz.version,
+        BCVoz.version === versao ? 'ok' : 'ruim')
+      linha('✓ paletas: ' + (BCVoz.palettes
+        ? Object.keys(BCVoz.palettes).join(', ') : '(não existem nesta versão)'), 'ok')
+
+      // A marca entra junto: se o CSS do integrador alcança o documento do
+      // webphone, o logotipo trocado aparece na tela de login.
+      BCVoz.init({
+        open: true,
+        branding: {
+          name: 'ACME Telecom',
+          palette: 'teal',
+          titleLogo: 'https://cdn.jsdelivr.net/npm/@bcvoz/webphone@' + versao +
+            '/host/favicon.ico',
+          links: false,
+        },
+      })
+      linha('✓ init() chamado. A janela deve abrir com a barra verde-oceano,', 'ok')
+      linha('  o logotipo na barra de título e o rodapé do login sem os três links.', 'ok')
+      linha('')
+      linha('Olhe o console e a aba Network: nenhum 404 em /host/ é o que se espera.')
+    }
+    document.head.appendChild(s)
+  })()
+</script>
+</body>
+</html>
