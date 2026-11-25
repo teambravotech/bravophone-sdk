@@ -387,14 +387,22 @@ npm publish --tag next --access public
 npm run verifica:cdn
 
 # 3. promove — é este comando que move os integradores
-npm dist-tag add @bcvoz/webphone@<versão> latest && npm run purge
+npm dist-tag add @bcvoz/webphone@<versão> latest --otp=<código>
+npm run purge
 ```
+
+A conta tem 2FA: sem `--otp` o npm responde `EOTP` e manda abrir uma URL no
+navegador. O código é o do seu autenticador, e vale por poucos segundos —
+digite o comando inteiro antes de ler o código. Uma linha por comando, e não
+`a && b`: o PowerShell 5.1, que é o padrão do Windows, não tem `&&` e responde
+*"O token '&&' não é um separador de instruções válido"*.
 
 Deu errado depois de promover? O mesmo comando volta atrás, e produção só
 esteve na versão nova pelo tempo entre os dois:
 
 ```bash
-npm dist-tag add @bcvoz/webphone@<versão anterior> latest && npm run purge
+npm dist-tag add @bcvoz/webphone@<versão anterior> latest --otp=<código>
+npm run purge
 ```
 
 Quem travou a versão (`@bcvoz/webphone@0.9.0`) não é afetado por nenhum dos
