@@ -372,12 +372,49 @@ Como o iframe tem origem fixa, essa lista não cresce com o número de clientes.
 
 ### 3. npm
 
+**Publique em dois passos.** O snippet recomendado no topo deste arquivo
+pergunta ao resolvedor do jsDelivr qual é a última versão e carrega o que vier
+— então `npm publish` direto no `latest` move **todo** integrador em cerca de
+cinco minutos, sem etapa intermediária e sem volta fácil. Separar a publicação
+da promoção dá as duas coisas: tempo para conferir, e um desfazer de um
+comando.
+
 ```bash
-npm publish --access public
+# 1. publica sem tocar em produção: a versão existe no CDN, latest não muda
+npm publish --tag next --access public
+
+# 2. confere o que o CDN está servindo de verdade
+npm run verifica:cdn
+
+# 3. promove — é este comando que move os integradores
+npm dist-tag add @bcvoz/webphone@<versão> latest && npm run purge
+```
+
+Deu errado depois de promover? O mesmo comando volta atrás, e produção só
+esteve na versão nova pelo tempo entre os dois:
+
+```bash
+npm dist-tag add @bcvoz/webphone@<versão anterior> latest && npm run purge
+```
+
+Quem travou a versão (`@bcvoz/webphone@0.9.0`) não é afetado por nenhum dos
+dois passos — nem pela publicação, nem pela promoção.
+
+**Antes do passo 1**, o `host/` tem de vir da extensão certa. O
+`prepublishOnly` roda `sync-from-extension` **sem argumento**, e ele pega a
+pasta ao lado como estiver — inclusive num branch de trabalho, com alterações
+não commitadas. Para publicar a partir de uma tag:
+
+```bash
+git -C ../bravophone-extension archive v2.6.32 | tar -x -C /tmp/ext
+node scripts/sync-from-extension.mjs --cdn /tmp/ext
+npm run build && npm test
+npm publish --tag next --access public --ignore-scripts   # os passos acima já foram feitos
+node scripts/purge-cdn.mjs                                # o que o postpublish faria
 ```
 
 Disponível em `cdn.jsdelivr.net/npm/@bcvoz/webphone` e `unpkg.com` logo após.
-Recomende aos integradores a versão travada — `@bcvoz/webphone@0.7` — para que
+Recomende aos integradores a versão travada — `@bcvoz/webphone@0.9` — para que
 um major não quebre a página deles.
 
 > **Pendente — descontinuar o pacote antigo.** O `@bravophone/webphone` ainda

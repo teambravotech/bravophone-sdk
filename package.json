@@ -33,7 +33,8 @@
     "prepublishOnly": "npm run prepare:host && npm run build && npm test",
     "prepare:host": "node scripts/sync-from-extension.mjs --cdn",
     "purge": "node scripts/purge-cdn.mjs",
-    "postpublish": "node scripts/purge-cdn.mjs"
+    "postpublish": "node scripts/purge-cdn.mjs",
+    "verifica:cdn": "node scripts/verifica-publicacao.mjs"
   },
   "keywords": [
     "webphone",

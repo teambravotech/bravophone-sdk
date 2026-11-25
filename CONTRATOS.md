@@ -111,9 +111,18 @@ Os assets vão para a **raiz** de `host/` de propósito: o bundle foi buildado c
 nessas duas fontes e o navegador cai no fallback — a marca e os emojis mudam de
 aparência **depois do login**, que é onde a Audiowide aparece.
 
-Versão da extensão hoje: `2.6.11` (`manifest.json:531`). Versão do SDK: `0.7.2`
-(`package.json`). **As duas versões não são amarradas** — nada falha se
-divergirem, e é por isso que elas divergem.
+Versão do SDK: `0.9.0` (`package.json`). O `host/` desta release foi
+sincronizado da tag **`v2.6.32`** da extensão — e é essa a versão que vai no
+pacote, não a do checkout ao lado nem a do `/opt`. **As duas versões não são
+amarradas** — nada falha se divergirem, e é por isso que elas divergem.
+
+⚠ **A CONFIRMAR** — qual versão roda em `/opt/bravophone-extension` e na Chrome
+Web Store hoje não foi conferido daqui.
+
+Consequência prática na hora de publicar: quem publica decide, naquele
+comando, qual versão da extensão chega a todo integrador. O `prepublishOnly`
+sincroniza da pasta ao lado **como ela estiver**, inclusive num branch de
+trabalho — veja o procedimento em dois passos no README (*Publicar › npm*).
 
 ## 6. Carregamento: `hosted` ou `srcdoc` — e o CORS
 
